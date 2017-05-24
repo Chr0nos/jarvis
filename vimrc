@@ -1,20 +1,10 @@
+if $SHELL =~ 'bin/fish'
+set shell=/bin/bash
+endif
+set term=xterm-256color
+
 set nocompatible              " be iMproved, required
 filetype off                  " required
-syn on
-set number
-set hlsearch
-set tabstop=4
-syntax on
-set ruler
-set nu
-set colorcolumn=80
-
-set swapfile!
-
-nmap <s-tab> :tabnew
-nmap <tab> :tabnext<cr>
-imap <s-tab> <esc>:tabnext<cr>i
-nmap <s-r> :NERDTreeToggle<cr>
 
 " set the runtime path to include Vundle and initialize
 set rtp+=~/.vim/bundle/Vundle.vim
@@ -24,7 +14,23 @@ call vundle#begin()
 
 " let Vundle manage Vundle, required
 Plugin 'VundleVim/Vundle.vim'
-" ------------------------------------------------
+
+" The following are examples of different formats supported.
+" Keep Plugin commands between vundle#begin/end.
+" plugin on GitHub repo
+Plugin 'tpope/vim-fugitive'
+" plugin from http://vim-scripts.org/vim/scripts.html
+" Plugin 'L9'
+" Git plugin not hosted on GitHub
+Plugin 'git://git.wincent.com/command-t.git'
+" git repos on your local machine (i.e. when working on your own plugin)
+"Plugin 'file:///home/gmarik/path/to/plugin'
+" The sparkup vim script is in a subdirectory of this repo called vim.
+" Pass the path to set the runtimepath properly.
+Plugin 'rstacruz/sparkup', {'rtp': 'vim/'}
+" Install L9 and avoid a Naming conflict if you've already installed a
+" different version somewhere else.
+" Plugin 'ascenator/L9', {'name': 'newL9'}
 
 " Js
 Plugin 'crusoexia/vim-javascript-lib'
@@ -43,11 +49,34 @@ let g:vim_tags_auto_generate = 1
 " Graphical
 Plugin 'crusoexia/vim-monokai'
 Plugin 'flazz/vim-colorschemes'
-" ------------------------------------------------
 
+Plugin 'sheerun/vim-polyglot'
+
+" GLSL support
+Plugin 'tikhomirov/vim-glsl'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
 filetype plugin indent on    " required
+" To ignore plugin indent changes, instead use:
+"filetype plugin on
+"
+" Brief help
+" :PluginList       - lists configured plugins
+" :PluginInstall    - installs plugins; append `!` to update or just :PluginUpdate
+" :PluginSearch foo - searches for foo; append `!` to refresh local cache
+" :PluginClean      - confirms removal of unused plugins; append `!` to auto-approve removal
+"
+" see :h vundle for more details or wiki for FAQ
+" Put your non-Plugin stuff after this line
 
-colorscheme monokai
+autocmd! BufNewFile,BufRead *.glsl set filetype=glsl
+colorscheme molokai
+set tabstop=4
+set colorcolumn=80
+set hlsearch
+set mouse=a
+set softtabstop=0 noexpandtab
+set shiftwidth=4
+set number
+syntax on
