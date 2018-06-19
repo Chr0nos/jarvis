@@ -1,4 +1,3 @@
-#TARGET="/home/adamaru/jours/jarvis/test/"
 TARGET="/mnt"
 NAME="archlinux"
 
@@ -20,6 +19,7 @@ VIDEO="extra/nvidia-dkms extra/nvidia-settings"
 BROWSER="firefox extra/firefox-i18n-fr community/firefox-adblock-plus"
 #BROWSER="chromium"
 
+FIRMWARE="intel-ucode"
 DEVELOPPER="python python-pip git clang make tig geany rustup"
 EXTRA="libreoffice libreoffice-fr vlc extra/adwaita-icon-theme"
 
@@ -30,7 +30,7 @@ echo "browser: ${BROWSER}"
 echo "extra: ${EXTRA}"
 read -p "Press enter to continue or ctrl+c to abort."
 
-pacstrap $TARGET base base-devel intel-ucode grub xorg-server $VIDEO $DEVELOPPER networkmanager htop vim net-tools pulseaudio lightdm lightdm-gtk-greeter mpv gpm zsh terminator fish openssh openssl networkmanager-openvpn network-manager-applet ttf-liberation ttf-ubuntu-font-family xorg-fonts-75dpi xorg-fonts-100dpi ttf-dejavu ttf-freefont otf-font-awesome gnome-keyring smartmontools hdparm idle3-tools iw fail2ban pavucontrol gparted ntfs-3g exfat-utils xorg-xrandr xorg-xinit sshfs ffmpegthumbnailer $BROWSER $EXTRA
+pacstrap $TARGET base base-devel $FIRMWARE grub xorg-server $VIDEO $DEVELOPPER networkmanager htop vim net-tools pulseaudio lightdm lightdm-gtk-greeter mpv gpm zsh terminator fish openssh openssl networkmanager-openvpn network-manager-applet ttf-liberation ttf-ubuntu-font-family xorg-fonts-75dpi xorg-fonts-100dpi ttf-dejavu ttf-freefont otf-font-awesome gnome-keyring smartmontools hdparm idle3-tools iw fail2ban pavucontrol gparted ntfs-3g exfat-utils xorg-xrandr xorg-xinit sshfs ffmpegthumbnailer $BROWSER $EXTRA
 # check for installation success
 if [ $? == 0 ]; then
 	echo $NAME >> $TARGET/etc/hostname
