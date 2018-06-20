@@ -6,7 +6,7 @@ DESKTOP="mate mate-extra"
 #DESKTOP="xfce4"
 #DESKTOP="community/i3-wm"
 #DESTKOP="community/i3-gaps"
-#DESTKOP="plasma-meta"
+#DESTKOP="community/cinnamon"
 #DESKTOP="gnome"
 
 VIDEO="extra/nvidia-dkms extra/nvidia-settings"
