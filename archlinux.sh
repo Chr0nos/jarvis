@@ -45,6 +45,7 @@ if [ $? == 0 ]; then
 	arch-chroot $TARGET grub-mkconfig -o /boot/grub/grub.cfg
 	arch-chroot $TARGET mkinitcpio -p linux -g /boot/initramfs-linux.img
 	arch-chroot $TARGET passwd
+	arch-chroot $TARGET ln -s /usr/share/zoneinfo/Europe/Paris /etc/localtime
 else
 	echo "failed to install base packages."
 fi
