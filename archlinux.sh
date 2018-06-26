@@ -68,6 +68,7 @@ if [ $? == 0 ]; then
 	arch-chroot $TARGET passwd
 	# note this needs base-devel and git
 	arch-chroot $TARGET git clone https://aur.archlinux.org/trizen.git /tmp/trizen && cd /tmp/trizen && makepkg -si
+	arch-chroot $TARGET ln -s /usr/share/zoneinfo/Europe/Paris /etc/localtime
 else
 	echo "failed to install base packages."
 fi
