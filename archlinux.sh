@@ -22,7 +22,7 @@ BROWSER="firefox extra/firefox-i18n-fr community/firefox-adblock-plus"
 
 FIRMWARE="intel-ucode"
 DEVELOPPER="python python-pip git clang make tig geany rustup"
-EXTRA="libreoffice libreoffice-fr vlc extra/adwaita-icon-theme"
+EXTRA="libreoffice libreoffice-fr vlc extra/adwaita-icon-theme linux-headers"
 
 echo "I will install arch linux on ${TARGET}"
 echo "hostname: ${NAME}"
