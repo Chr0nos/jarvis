@@ -1,6 +1,7 @@
 TARGET="/mnt"
 NAME="archlinux"
 DEVICE=/dev/sda
+USER=someone
 
 #DESKTOP="extra/plasma-meta"
 DESKTOP="mate mate-extra"
@@ -65,10 +66,15 @@ if [ $? == 0 ]; then
 	arch-chroot $TARGET locale-gen
 	arch-chroot $TARGET grub-mkconfig -o /boot/grub/grub.cfg
 	arch-chroot $TARGET mkinitcpio -p linux -g /boot/initramfs-linux.img
-	arch-chroot $TARGET passwd
 	# note this needs base-devel and git
-	arch-chroot $TARGET git clone https://aur.archlinux.org/trizen.git /tmp/trizen && cd /tmp/trizen && makepkg -si
-	arch-chroot $TARGET ln -s /usr/share/zoneinfo/Europe/Paris /etc/localtime
+	arch-chroot $TARGET useradd -m -s /bin/zsh $USER
+	chmod 700 $TARGET/home/$USER
+	arch-chroot $TARGET su $USER -c git clone https://aur.archlinux.org/trizen.git /home/$USER/trizen
+	arch-chroot $TARGET su $USER -c "cd /home/$USER/trizen && makepkg -si"
+	arch-chroot $TARGET su $USER -c trizen -Sy visual-studio-code-bin
+	arch-chroot $TARGET ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
+	arch-chroot $TARGET passwd
+
 else
 	echo "failed to install base packages."
 fi
