@@ -71,7 +71,7 @@ if [ $? == 0 ]; then
 	chmod 700 $TARGET/home/$USER
 	arch-chroot $TARGET su $USER -c git clone https://aur.archlinux.org/trizen.git /home/$USER/trizen
 	arch-chroot $TARGET su $USER -c "cd /home/$USER/trizen && makepkg -si"
-	arch-chroot $TARGET su $USER -c trizen -Sy visual-studio-code-bin
+	arch-chroot $TARGET su $USER -c trizen -Sy --noedit --noconfirm visual-studio-code-bin
 	arch-chroot $TARGET ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
 	arch-chroot $TARGET passwd
 
