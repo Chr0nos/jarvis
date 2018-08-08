@@ -56,11 +56,11 @@ def packages_list(real=False):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("usage: {} [-r/-p]".format(sys.argv[0]))
-        print("if '-r' is not present, then the script will run in pretend mode");
+        print("if '-r' is not present, then the script will run in pretend mode")
         sys.exit(0)
     real = sys.argv[1] == "-r"
     try:
-        packages_list(real);
+        packages_list(real)
     except PermissionError:
         print("Cannot delete files in {}, please run me as root.".format(
             CACHE_DIR))
