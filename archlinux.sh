@@ -7,7 +7,7 @@ USER=someone
 DESKTOP="mate mate-extra"
 #DESKTOP="xfce4"
 #DESKTOP="community/i3-wm"
-#DESTKOP="community/i3-gaps"
+#DESTKOP="community/i3-gaps community/i3status"
 #DESTKOP="community/cinnamon"
 #DESKTOP="gnome"
 

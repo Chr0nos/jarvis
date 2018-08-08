@@ -2,6 +2,7 @@
 import os
 import stat
 import re
+import sys
 
 CACHE_DIR = "/var/cache/pacman/pkg/"
 
@@ -53,4 +54,11 @@ def packages_list(pretend=True):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("usage: {} [-r/-p]".format(sys.argv[0]))
+        print("if '-r' is not present, then the script will run in pretend mode");
+        sys.exit(0)
+    pretend = sys.argv[1] == "-r"
     packages_list(True);
+    if not pretend:
+        print("This script has run in pretend mode")
