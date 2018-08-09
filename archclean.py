@@ -17,12 +17,11 @@ def hsize(size):
 	return ("{}{}".format(round(size, 2), units[i]))
 
 
-def package_clean(name, lst, real=False):
+def package_clean(lst, real=False):
 	l = len(lst)
 	if (l == 1):
 		return(0)
 	gained_space = 0
-	# print("checking {} : {} versions present.".format(name, len(lst)))
 	lst = sorted(lst, key=lambda x: x[0], reverse=True)
 	keep_file = True
 	for ctime, filepath, filesize in lst:
@@ -51,7 +50,7 @@ def packages_list(real=False):
 	keys = list(dico.keys())
 	keys.sort()
 	for key in keys:
-		gained_space += package_clean(key, dico[key], real)
+		gained_space += package_clean(dico[key], real)
 	print("----\nGained space: {}".format(hsize(gained_space)))
 
 
