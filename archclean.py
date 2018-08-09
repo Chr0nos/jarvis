@@ -48,8 +48,10 @@ def packages_list(real=False):
         dico[base].append((st.st_ctime, file, st.st_size))
 
     gained_space = 0
-    for key, pkg in dico.items():
-        gained_space += package_clean(key, pkg, real)
+    keys = list(dico.keys())
+    keys.sort()
+    for key in keys:
+        gained_space += package_clean(key, dico[key], real)
     print("----\nGained space: {}".format(hsize(gained_space)))
 
 
