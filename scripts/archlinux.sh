@@ -1,3 +1,4 @@
+#!/bin/sh
 TARGET="/mnt"
 NAME="archlinux"
 DEVICE=/dev/sda
@@ -60,6 +61,7 @@ if [ $? == 0 ]; then
 	arch-chroot $TARGET su $USER -c "cd /home/$USER/trizen && makepkg -si"
 	arch-chroot $TARGET su $USER -c trizen -Sy --noedit --noconfirm visual-studio-code-bin
 	arch-chroot $TARGET ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
+	arch-chroot $TARGET mkdir -pv /etc/polkit-1/rules.d/
 	arch-chroot $TARGET passwd
 
 else
