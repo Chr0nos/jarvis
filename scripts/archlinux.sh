@@ -26,8 +26,8 @@ BROWSER="firefox extra/firefox-i18n-fr community/firefox-adblock-plus"
 #BROWSER="chromium"
 
 FIRMWARE="intel-ucode"
-DEVELOPPER="python python-pip git clang make tig geany gdp peda"
-EXTRA="libreoffice libreoffice-fr vlc extra/adwaita-icon-theme linux-headers"
+DEVELOPPER="python python-pip git clang make tig geany gdb peda"
+EXTRA="extra/adwaita-icon-theme linux-headers"
 
 echo "I will install arch linux on ${TARGET}"
 echo "hostname: ${NAME}"
@@ -36,22 +36,22 @@ echo "browser: ${BROWSER}"
 echo "extra: ${EXTRA}"
 read -p "Press enter to continue or ctrl+c to abort."
 
-pacstrap $TARGET base base-devel $FIRMWARE $BOOT xorg-server $VIDEO $DEVELOPPER networkmanager htop vim net-tools pulseaudio lightdm lightdm-gtk-greeter mpv gpm zsh terminator fish openssh openssl networkmanager-openvpn network-manager-applet ttf-liberation ttf-ubuntu-font-family xorg-fonts-75dpi xorg-fonts-100dpi ttf-dejavu ttf-freefont otf-font-awesome gnome-keyring smartmontools hdparm idle3-tools iw fail2ban pavucontrol gparted ntfs-3g exfat-utils xorg-xrandr xorg-xinit sshfs ffmpegthumbnailer $BROWSER $EXTRA
+pacstrap $TARGET base base-devel ${FIRMWARE} ${BOOT} xorg-server ${VIDEO} ${DEVELOPPER} networkmanager htop vim net-tools pulseaudio lightdm lightdm-gtk-greeter mpv gpm zsh terminator fish openssh openssl networkmanager-openvpn network-manager-applet ttf-liberation ttf-ubuntu-font-family xorg-fonts-75dpi xorg-fonts-100dpi ttf-dejavu ttf-freefont otf-font-awesome gnome-keyring smartmontools hdparm idle3-tools iw fail2ban pavucontrol gparted ntfs-3g exfat-utils xorg-xrandr xorg-xinit sshfs ffmpegthumbnailer ${BROWSER} ${EXTRA}
 # check for installation success
 if [ $? == 0 ]; then
 	echo $NAME >> $TARGET/etc/hostname
 	sed -i "s\# Defaults targetpw\Defaults targetpw\g" $TARGET/etc/sudoers
 	sed -i "s\# %wheel ALL=(ALL) ALL\%wheel ALL=(ALL) ALL" $TARGET/etc/sudoers
 	arch-chroot $TARGET systemctl enable NetworkManager
-	arch-chroot $TARGET systemctl enable lightdm
+	# arch-chroot $TARGET systemctl enable lightdm
 	arch-chroot $TARGET systemctl enable gpm
 	arch-chroot $TARGET systemctl enable fail2ban
 	arch-chroot $TARGET systemctl enable smartd
 	arch-chroot $TARGET locale-gen
 	if [ $BOOT == "grub" ]; then
-		arch-chroot $TARGET grub-mkconfig -o /boot/grub/grub.cfg
+		arch-chroot ${TARGET} grub-mkconfig -o /boot/grub/grub.cfg
 	else
-		arch-chroot $TARGET refind-install --alldrivers $DEVICE
+		arch-chroot ${TARGET} refind-install --alldrivers ${DEVICE}
 	fi
 	arch-chroot $TARGET mkinitcpio -p linux -g /boot/initramfs-linux.img
 	# note this needs base-devel and git
