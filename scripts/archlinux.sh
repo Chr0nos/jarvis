@@ -11,8 +11,8 @@ BOOT=refind-efi
 DESKTOP="mate mate-extra"
 #DESKTOP="xfce4"
 #DESKTOP="community/i3-wm"
-#DESTKOP="community/i3-gaps community/i3status"
-#DESTKOP="community/cinnamon"
+#DESKTOP="community/i3-gaps community/i3status i3blocks i3lock"
+#DESKTOP="community/cinnamon"
 #DESKTOP="gnome"
 
 VIDEO="extra/nvidia-dkms extra/nvidia-settings"
@@ -21,12 +21,13 @@ VIDEO="extra/nvidia-dkms extra/nvidia-settings"
 #VIDEO="extra/xf86-video-amdgpu"
 #VIDEO="extra/xf86-video-ati"
 #VIDEO="extra/xf86-video-vmware"
+#VIDEO="virtualbox-guest-modules-arch virtualbox-guest-utils"
 
 BROWSER="firefox extra/firefox-i18n-fr community/firefox-adblock-plus"
 #BROWSER="chromium"
 
 FIRMWARE="intel-ucode"
-DEVELOPPER="python python-pip git clang make tig geany gdb peda"
+DEVELOPPER="python python-pip git clang make tig gdb peda"
 EXTRA="extra/adwaita-icon-theme linux-headers"
 
 echo "I will install arch linux on ${TARGET}"
