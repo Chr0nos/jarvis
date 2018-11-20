@@ -20,8 +20,8 @@ static void	read_loop(DIR *d)
 	{
 		if (dir->d_name[0] == '.')
 			continue ;
-		snprintf(filepath, 1024, "%s%s", PATH, dir->d_name);
-		len = readlink(filepath, link, 1023);
+		snprintf(filepath, PATH_MAX, "%s%s", PATH, dir->d_name);
+		len = readlink(filepath, link, PATH_MAX - 1);
 		if (len < 0)
 			continue ;
 		link[len] = '\0';
