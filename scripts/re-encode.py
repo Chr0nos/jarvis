@@ -28,12 +28,12 @@ def encode_file(source, dest, threads=12):
     os.system(command_line)
 
 def encode_dir(source, dest):
+    if not os.path.exists(dest):
+        os.mkdir(dest)
     if not os.path.isdir(dest):
         raise(ValueError(dest))
     if not os.path.exists(source):
         raise(FileNotFoundError(source))
-    if not os.path.exists(dest):
-        os.mkdir(dest)
     # if the source is the same as the destination there is a problem.
     if source == dest:
             raise(ValueError)
@@ -57,3 +57,5 @@ if __name__ == "__main__":
         print("wrong dir as target specified.")
     except FileNotFoundError as e:
         print("No such file or directory.", e.filename)
+    except PermissionError:
+        print("You don't have permissions for this.")
