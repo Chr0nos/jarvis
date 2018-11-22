@@ -7,7 +7,7 @@ from subprocess import run
 def encode_file(source, dest, threads=12):
     cmd = [
         "/usr/bin/ffmpeg",
-        "-i", '"{}"'.format(str(source)),
+        "-i", str(source),
         "-scodec", "copy",
         "-map", "0:0",
         "-map", "0:2",
@@ -20,12 +20,11 @@ def encode_file(source, dest, threads=12):
         "-ar", "48000",
         "-ac", "2",
         "-vcodec", "hevc_nvenc",
-        '"{}"'.format(str(dest))
+        str(dest)
     ]
     command_line = " ".join(cmd)
-    # run(cmd, capture_output=True);
     print(command_line)
-    os.system(command_line)
+    run(cmd);
 
 def encode_dir(source, dest):
     if not os.path.exists(dest):
