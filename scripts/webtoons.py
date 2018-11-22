@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # Author: Chr0nos
-# Version: 1.01
+# Version: 1.02
 # License: GPL v3+
 
 import zipfile
@@ -13,6 +13,8 @@ import bs4 as BeautifulSoup
 import shutil
 from http.client import RemoteDisconnected
 import json
+
+DOWNLOAD_DIR = '/run/media/adamaru/Aiur/Scans/Webtoons'
 
 class Database():
 	def __init__(self):
@@ -139,13 +141,13 @@ class WebToons():
 			return False
 
 		if lst:
-			target = '/dev/shm/{}/{:03}'.format(name, toon['epno'])
+			target = '{}/{}/{:03}'.format(DOWNLOAD_DIR, name, toon['epno'])
 			print(target)
 			if not os.path.isdir(target):
 				print("creating", target)
 				os.makedirs(target)
 			self.fetch_list(lst, target)
-			self.cbz(target, os.path.join('/dev/shm/', name, '{}.cbz'.format(toon['episode'])))
+			self.cbz(target, os.path.join(DOWNLOAD_DIR, name, '{}.cbz'.format(toon['episode'])))
 			shutil.rmtree(target)
 			if not self.update(next_page):
 				self.db.c[self.subs].update_one({'name': name}, {'$set': {'done': True}})
@@ -335,6 +337,9 @@ usage:
 ./webtoons.py add unordinary
 """
 def main():
+	if not os.path.exists(DOWNLOAD_DIR):
+		print(DOWNLOAD_DIR, "is not currently available, think to mount it ?")
+		sys.exit(1)
 	if len(sys.argv) == 1:
 		help()
 		return
