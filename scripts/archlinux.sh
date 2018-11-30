@@ -14,6 +14,8 @@ DESKTOP="mate mate-extra"
 #DESKTOP="community/i3-gaps community/i3status i3blocks i3lock"
 #DESKTOP="community/cinnamon"
 #DESKTOP="gnome"
+#DESKTOP="weston"
+#DESKTOP="openbox"
 
 VIDEO="extra/nvidia-dkms extra/nvidia-settings"
 #VIDEO="extra/xf86-video-intel"
@@ -29,6 +31,8 @@ BROWSER="firefox extra/firefox-i18n-fr community/firefox-adblock-plus"
 FIRMWARE="intel-ucode"
 DEVELOPPER="python python-pip git clang make tig gdb peda"
 EXTRA="extra/adwaita-icon-theme linux-headers"
+XORG="xorg-server xorg-fonts-75dpi xorg-fonts-100dpi xorg-xrandr xorg-xinit"
+WAYLAND="wayland"
 
 echo "I will install arch linux on ${TARGET}"
 echo "hostname: ${NAME}"
@@ -37,7 +41,15 @@ echo "browser: ${BROWSER}"
 echo "extra: ${EXTRA}"
 read -p "Press enter to continue or ctrl+c to abort."
 
-pacstrap $TARGET base base-devel ${FIRMWARE} ${BOOT} xorg-server ${VIDEO} ${DEVELOPPER} networkmanager htop vim net-tools pulseaudio lightdm lightdm-gtk-greeter mpv gpm zsh terminator fish openssh openssl networkmanager-openvpn network-manager-applet ttf-liberation ttf-ubuntu-font-family xorg-fonts-75dpi xorg-fonts-100dpi ttf-dejavu ttf-freefont otf-font-awesome gnome-keyring smartmontools hdparm idle3-tools iw fail2ban pavucontrol gparted ntfs-3g exfat-utils xorg-xrandr xorg-xinit sshfs ffmpegthumbnailer ${BROWSER} ${EXTRA}
+pacstrap $TARGET base base-devel ${FIRMWARE} ${BOOT}  ${VIDEO} \
+	${DEVELOPPER} networkmanager htop vim net-tools pulseaudio lightdm \
+	lightdm-gtk-greeter mpv gpm zsh terminator fish openssh openssl \
+	networkmanager-openvpn network-manager-applet ttf-liberation \
+	ttf-ubuntu-font-family ttf-dejavu \
+	ttf-freefont otf-font-awesome gnome-keyring smartmontools hdparm \
+	idle3-tools iw fail2ban pavucontrol gparted ntfs-3g exfat-utils \
+	sshfs ffmpegthumbnailer ${BROWSER} ${EXTRA} ${XORG}
+
 # check for installation success
 if [ $? == 0 ]; then
 	echo $NAME >> $TARGET/etc/hostname
@@ -57,13 +69,14 @@ if [ $? == 0 ]; then
 	arch-chroot $TARGET mkinitcpio -p linux -g /boot/initramfs-linux.img
 	# note this needs base-devel and git
 	arch-chroot $TARGET useradd -m -s /bin/zsh $USER
+	chmod 751 $TARGET/home
 	chmod 700 $TARGET/home/$USER
-	arch-chroot $TARGET su $USER -c git clone https://aur.archlinux.org/trizen.git /home/$USER/trizen
-	arch-chroot $TARGET su $USER -c "cd /home/$USER/trizen && makepkg -si"
-	arch-chroot $TARGET su $USER -c trizen -Sy --noedit --noconfirm visual-studio-code-bin
 	arch-chroot $TARGET ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
 	arch-chroot $TARGET mkdir -pv /etc/polkit-1/rules.d/
 	arch-chroot $TARGET passwd
+	arch-chroot $TARGET su $USER -c git clone https://aur.archlinux.org/trizen.git /home/$USER/trizen
+	arch-chroot $TARGET su $USER -c "cd /home/$USER/trizen && makepkg -si"
+	arch-chroot $TARGET su $USER -c trizen -Sy --noedit --noconfirm visual-studio-code-bin
 
 else
 	echo "failed to install base packages."
