@@ -74,9 +74,9 @@ if [ $? == 0 ]; then
 	arch-chroot $TARGET ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
 	arch-chroot $TARGET mkdir -pv /etc/polkit-1/rules.d/
 	arch-chroot $TARGET passwd
-	arch-chroot $TARGET su $USER -c git clone https://aur.archlinux.org/trizen.git /home/$USER/trizen
+	arch-chroot $TARGET su $USER -c "git clone https://aur.archlinux.org/trizen.git /home/$USER/trizen"
 	arch-chroot $TARGET su $USER -c "cd /home/$USER/trizen && makepkg -si"
-	arch-chroot $TARGET su $USER -c trizen -Sy --noedit --noconfirm visual-studio-code-bin
+	arch-chroot $TARGET su $USER -c "trizen -Sy --noedit --noconfirm visual-studio-code-bin"
 
 else
 	echo "failed to install base packages."
