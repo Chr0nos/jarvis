@@ -1,3 +1,17 @@
+/*
+** Author : Chr0nos
+** Compilation:
+**    cd to this script dir
+**    git clone https://github.com/Chr0nos/libft
+**    clang mydu.c -I ./libft/include -L ./libft/ -lft -Weverything -Ofast
+** What is it ?
+**     this is a little .c program i'm using to find quickly big folders on
+**     a computer, it's sorting the output by order of size and is not dumb as
+**     "du -h" is.
+** License:
+**     GPLv3+
+*/
+
 #include <sys/stat.h>
 #include <dirent.h>
 #include <fcntl.h>
