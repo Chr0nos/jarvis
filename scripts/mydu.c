@@ -27,6 +27,13 @@ struct node {
 	size_t          total_files;
 };
 
+/*
+** i'm forced to declare this static prototype for usage in node_walk_loop
+*/
+
+static struct node  *node_walk(const char *path, struct node *parent,
+	const struct config *cfg);
+
 static int      node_cmp(struct node *a, struct node *b)
 {
 	if (a->total_space < b->total_space)
@@ -64,11 +71,31 @@ static inline int   node_init(struct node *node, struct node *parent)
 	return (EXIT_SUCCESS);
 }
 
+static inline void	node_walk_loop(struct node *node,
+	const struct dirent *ent, struct stat *st,
+	const struct config *cfg)
+{
+	struct node     *newnode;
+
+	if (ent->d_type & DT_DIR)
+	{
+		newnode = node_walk(node->path, node, cfg);
+		if (!newnode)
+			return ;
+		ft_lstpush_sort(&node->childs, ft_lstnewlink(newnode, 0),
+			(cfg->flags & FLAG_REVERSE) ? lst_revcmp : lst_cmp);
+	}
+	else if (stat(node->path, st) >= 0)
+	{
+		node->space += (size_t)st->st_size;
+		node->files += 1;
+	}
+}
+
 static struct node  *node_walk(const char *path, struct node *parent,
 	const struct config *cfg)
 {
 	struct node     *node;
-	struct node     *newnode;
 	struct dirent   *ent;
 	struct stat     st;
 	DIR             *dir;
@@ -86,19 +113,7 @@ static struct node  *node_walk(const char *path, struct node *parent,
 		if (ent->d_name[0] == '.')
 			continue ;
 		ft_snprintf(node->path, PATH_MAX, "%s/%s", path, ent->d_name);
-		if (ent->d_type & DT_DIR)
-		{
-			newnode = node_walk(node->path, node, cfg);
-			if (!newnode)
-				continue ;
-			ft_lstpush_sort(&node->childs, ft_lstnewlink(newnode, 0),
-				(cfg->flags & FLAG_REVERSE) ? lst_revcmp : lst_cmp);
-		}
-		else if (stat(node->path, &st) >= 0)
-		{
-			node->space += (size_t)st.st_size;
-			node->files += 1;
-		}
+		node_walk_loop(node, ent, &st, cfg);
 	}
 	closedir(dir);
 	node->total_space += node->space;
