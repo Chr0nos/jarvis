@@ -9,6 +9,7 @@
 #define FLAG_FULLPATH_DISPLAY	(1u << 0)
 #define FLAG_LOCALSTAT			(1u << 1)
 #define FLAG_REVERSE			(1u << 2)
+#define FILENAME_MAX			256
 
 struct config {
 	const char		*root;
@@ -21,6 +22,7 @@ struct node {
 	struct node     *parent;
 	struct s_list   *childs;
 	char            path[PATH_MAX];
+	char			name[FILENAME_MAX];
 	size_t			path_len;
 	size_t          space;
 	size_t          total_space;
@@ -116,6 +118,7 @@ static struct node  *node_walk(const char *path, struct node *parent,
 		if (ent->d_name[0] == '.')
 			continue ;
 		ft_snprintf(node->path, PATH_MAX, "%s/%s", path, ent->d_name);
+		ft_strncpy(node->name, ent->d_name, FILENAME_MAX);
 		node_walk_loop(node, ent, &st, cfg);
 	}
 	closedir(dir);
@@ -149,11 +152,16 @@ static void node_iter_show(size_t level, struct node *node, void *config)
 	struct config	*cfg = config;
 	char			path[PATH_MAX];
 
+	if (node->total_files == 0)
+		return ;
 	(void)level;
 	ft_strcpy(path, node->path);
 	if ((!(cfg->flags & FLAG_FULLPATH_DISPLAY)) && (node->parent))
 		ft_memset(path, ' ', strcmplen(node->path, node->parent->path));
-	ft_printf("%-*s : %-8.2lk : %-6lu\n", cfg->path_len_align,
+	ft_snprintf(path, PATH_MAX, "%*.1hhk/%s",
+		level * 2, ft_printf_conv_padding, ' ', node->name);
+	ft_printf("%-*s : %-8.2lk : %-6lu\n",
+		cfg->path_len_align,
 		path, show_human,
 		(cfg->flags & FLAG_LOCALSTAT) ? node->space : node->total_space,
 		(cfg->flags & FLAG_LOCALSTAT) ? node->files : node->total_files);
