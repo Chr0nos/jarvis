@@ -30,6 +30,26 @@ struct node {
 	size_t          total_files;
 };
 
+#pragma pack(push, 4)
+
+struct parser_entry {
+	const int		letter;
+	const char		*name;
+	const size_t	flags;
+	const size_t	mask;
+
+};
+
+#pragma pack(pop)
+
+#define PARSER_ENTRIES 4
+
+static const struct parser_entry g_parsing_table[PARSER_ENTRIES] = {
+	(struct parser_entry){'p', "full-path", FLAG_FULLPATH_DISPLAY, 0},
+	(struct parser_entry){'r', "reverse", FLAG_REVERSE, 0},
+	(struct parser_entry){'l', "local", FLAG_LOCALSTAT, 0},
+};
+
 /*
 ** i'm forced to declare this static prototype for usage in node_walk_loop
 */
@@ -214,6 +234,27 @@ static void	node_iter_clean(size_t level, struct node *node, void *unused)
 	free(node);
 }
 
+static int		parser_loop(const char *input, struct config *cfg)
+{
+	const struct parser_entry		*ent;
+	size_t							p;
+
+	p = 0;
+	while (p < PARSER_ENTRIES)
+	{
+		ent = &g_parsing_table[p];
+		if (ent->letter == (int)input[1])
+		{
+			// ft_printf("param found: %s\n", ent->name);
+			cfg->flags |= ent->flags;
+			cfg->flags &= ~ent->mask;
+			return (EXIT_SUCCESS);
+		}
+		p++;
+	}
+	return (EXIT_FAILURE);
+}
+
 static int		parser(int ac, char **av, struct config *cfg)
 {
 	int		idx;
@@ -224,26 +265,17 @@ static int		parser(int ac, char **av, struct config *cfg)
 		ft_printf("usage: %s <path>\n", av[0]);
 		return (EXIT_FAILURE);
 	}
+	cfg->path_len_align = 42;
+	cfg->maxlen = 170;
 	for (idx = 1; idx < ac; idx++)
 	{
 		if (av[idx][0] != '-')
 			cfg->root = av[idx];
-		else if (!ft_strcmp(av[idx], "-p"))
-			cfg->flags |= FLAG_FULLPATH_DISPLAY;
-		else if (!ft_strcmp(av[idx], "-l"))
-			cfg->flags |= FLAG_LOCALSTAT;
-		else if (!ft_strcmp(av[idx], "-r"))
-			cfg->flags |= FLAG_REVERSE;
-		else if (!ft_strcmp(av[idx], "--"))
-		{
-			cfg->root = av[idx + 1];
-			break ;
-		}
+		else if (parser_loop(av[idx], cfg) != EXIT_SUCCESS)
+			cfg->root = av[idx];
 	}
 	if (!cfg->root)
 		return (EXIT_FAILURE);
-	cfg->path_len_align = 42;
-	cfg->maxlen = 170;
 	return (EXIT_SUCCESS);
 }
 
