@@ -14,6 +14,7 @@ struct config {
 	const char		*root;
 	size_t			flags;
 	size_t			path_len_align;
+	size_t			maxlen;
 };
 
 struct node {
@@ -169,7 +170,12 @@ static void	node_iter_get_maxpl(size_t level, struct node *node, void *config)
 
 	(void)level;
 	if (node->path_len > cfg->path_len_align)
-		cfg->path_len_align = node->path_len;
+	{
+		if (node->path_len > cfg->maxlen)
+			cfg->path_len_align = cfg->maxlen;
+		else
+			cfg->path_len_align = node->path_len;
+	}
 }
 
 #define PREFIX 1
@@ -229,6 +235,7 @@ static int		parser(int ac, char **av, struct config *cfg)
 	if (!cfg->root)
 		return (EXIT_FAILURE);
 	cfg->path_len_align = 42;
+	cfg->maxlen = 170;
 	return (EXIT_SUCCESS);
 }
 
