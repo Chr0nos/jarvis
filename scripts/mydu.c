@@ -7,7 +7,7 @@
 struct node {
     struct node     *parent;
     struct s_list   *childs;
-    char            path[PATH_MAX + 1];
+    char            path[PATH_MAX];
     size_t          space;
     size_t          total_space;
     size_t          files;
@@ -76,7 +76,7 @@ static struct node  *node_walk(const char *path, struct node *parent)
         }
         else if (stat(node->path, &st) >= 0)
         {
-            node->space += st.st_size;
+            node->space += (size_t)st.st_size;
             node->files += 1;
         }
     }
@@ -90,22 +90,23 @@ static struct node  *node_walk(const char *path, struct node *parent)
 
 static void show_human(struct s_printf *pf)
 {
-    size_t      align;
-    size_t      len;
-    char        buf[80];
+    const size_t        align = 6;
+    size_t              len;
+    char                buf[80];
 
-    align = 6;
-    ft_wsize(pf->raw_value, buf);
+    ft_wsize((unsigned long long)pf->raw_value, buf);
     len = ft_printf_append(pf, buf, ft_strlen(buf));
     pf->slen += len;
     if (len < align)
-        ft_printf_padding(pf, ' ', align - len);
+        ft_printf_padding(pf, ' ', (int)(align - len));
 }
 
 static void node_show(void *level, size_t size, void *content)
 {
     struct node     *node = content;
 
+    (void)size;
+    (void)level;
     ft_printf("%-72s : %20lk : %-6lu\n", node->path, show_human,
         node->total_space,
         node->total_files);
@@ -116,6 +117,8 @@ static void node_clean(void *userdata, size_t size, void *content)
 {
     struct node     *node = content;
 
+    (void)userdata;
+    (void)size;
     if (node->childs)
     {
         ft_lstforeach(node->childs, NULL, node_clean);
