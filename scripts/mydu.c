@@ -116,9 +116,10 @@ static inline void	node_walk_loop(struct node *node,
 		ft_lstpush_sort(&node->childs, ft_lstnewlink(newnode, 0),
 			(cfg->flags & FLAG_REVERSE) ? lst_revcmp : lst_cmp);
 	}
-	else if ((stat(node->path, st) >= 0) && (st->st_mode & S_IFREG))
+	else if ((ent->d_type & DT_REG) && (stat(node->path, st) >= 0))
 	{
-		node->space += (size_t)st->st_size;
+		if (st->st_size > 0)
+			node->space += (size_t)st->st_size;
 		node->files += 1;
 	}
 }
