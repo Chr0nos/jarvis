@@ -6,6 +6,15 @@
 #include <string.h>
 #include "libft.h"
 
+#define FLAG_FULLPATH_DISPLAY	(1u << 0)
+#define FLAG_LOCALSIZE			(1u << 1)
+
+struct config {
+	const char		*root;
+	size_t			level;
+	size_t			flags;
+};
+
 struct node {
 	struct node     *parent;
 	struct s_list   *childs;
@@ -90,29 +99,59 @@ static struct node  *node_walk(const char *path, struct node *parent)
 	return node;
 }
 
+static int	wsize(const size_t size, char *buf, const size_t n)
+{
+	double	x;
+	size_t	unit;
+
+	x = (double)size;
+	unit = 0;
+	while ((x >= 1024.0) && (unit < 7))
+	{
+		x /= 1024.0;
+		unit++;
+	}
+	return (ft_snprintf(buf, n, "%.2f%c", x, "bKMGTPE"[unit]));
+}
+
 static void show_human(struct s_printf *pf)
 {
 	const size_t        align = 6;
 	size_t              len;
 	char                buf[80];
 
-	ft_wsize((unsigned long long)pf->raw_value, buf);
-	len = ft_printf_append(pf, buf, ft_strlen(buf));
+	len = ft_printf_append(pf, buf,
+		(size_t)wsize((size_t)pf->raw_value, buf, 80));
 	pf->slen += len;
 	if (len < align)
 		ft_printf_padding(pf, ' ', (int)(align - len));
 }
 
-static void node_show(void *level, size_t size, void *content)
+static size_t strcmplen(const char *sa, const char *sb)
 {
+	size_t		len;
+
+	for (len = 0; sa[len] && sa[len] == sb[len]; len++)
+		;
+	return (len);
+}
+
+static void node_show(void *config, size_t size, void *content)
+{
+	struct config	*cfg = config;
 	struct node     *node = content;
+	char			path[PATH_MAX];
 
 	(void)size;
-	(void)level;
-	ft_printf("%-72s : %20lk : %-6lu\n", node->path, show_human,
-		node->total_space,
+	ft_strcpy(path, node->path);
+	if ((!(cfg->flags & FLAG_FULLPATH_DISPLAY)) && (node->parent))
+		memset(path, ' ', strcmplen(node->path, node->parent->path));
+	ft_printf("%-72s : %20lk : %-6lu\n", path, show_human,
+		(cfg->flags & FLAG_LOCALSIZE) ? node->space : node->total_space,
 		node->total_files);
-	ft_lstforeach(node->childs, (void*)((size_t)level + 1), node_show);
+	cfg->level++;
+	ft_lstforeach(node->childs, cfg, node_show);
+	cfg->level--;
 }
 
 static void node_clean(void *userdata, size_t size, void *content)
@@ -129,22 +168,42 @@ static void node_clean(void *userdata, size_t size, void *content)
 	free(node);
 }
 
-int     main(int ac, char **av)
+static int		parser(int ac, char **av, struct config *cfg)
 {
-	struct node     *node;
+	int		idx;
 
+	ft_bzero(cfg, sizeof(*cfg));
 	if (ac < 2)
 	{
 		ft_printf("usage: %s <path>\n", av[0]);
 		return (EXIT_FAILURE);
 	}
-	node = node_walk(av[1], NULL);
+	for (idx = 1; idx < ac; idx++)
+	{
+		if (av[idx][0] != '-')
+			cfg->root = av[idx];
+		else if (!ft_strcmp(av[idx], "-p"))
+			cfg->flags |= FLAG_FULLPATH_DISPLAY;
+		else if (!ft_strcmp(av[idx], "-l"))
+			cfg->flags |= FLAG_LOCALSIZE;
+	}
+	return (EXIT_SUCCESS);
+}
+
+int     main(int ac, char **av)
+{
+	struct config	cfg;
+	struct node     *node;
+
+	if (parser(ac, av, &cfg) != EXIT_SUCCESS)
+		return (EXIT_FAILURE);
+	node = node_walk(cfg.root, NULL);
 	if (!node)
 	{
 		ft_dprintf(STDERR_FILENO, "%s%s\n", "Error: ", strerror(errno));
 		return (EXIT_FAILURE);
 	}
-	node_show(0, 0, node);
+	node_show(&cfg, 0, node);
 	node_clean(NULL, 0, node);
 	return (EXIT_SUCCESS);
 }
