@@ -55,6 +55,8 @@ static int		lst_revcmp(t_list *a, t_list *b)
 
 static inline void  node_update_parent(struct node *node)
 {
+	node->total_space += node->space;
+	node->total_files += node->files;
 	if (node->parent)
 	{
 		node->parent->total_files += node->total_files;
@@ -116,8 +118,6 @@ static struct node  *node_walk(const char *path, struct node *parent,
 		node_walk_loop(node, ent, &st, cfg);
 	}
 	closedir(dir);
-	node->total_space += node->space;
-	node->total_files += node->files;
 	node_update_parent(node);
 	node->path_len = ft_strlen(path);
 	ft_strcpy(node->path, path);
@@ -220,7 +220,14 @@ static int		parser(int ac, char **av, struct config *cfg)
 			cfg->flags |= FLAG_LOCALSTAT;
 		else if (!ft_strcmp(av[idx], "-r"))
 			cfg->flags |= FLAG_REVERSE;
+		else if (!ft_strcmp(av[idx], "--"))
+		{
+			cfg->root = av[idx + 1];
+			break ;
+		}
 	}
+	if (!cfg->root)
+		return (EXIT_FAILURE);
 	cfg->path_len_align = 42;
 	return (EXIT_SUCCESS);
 }
