@@ -8,10 +8,10 @@
 
 #define FLAG_FULLPATH_DISPLAY	(1u << 0)
 #define FLAG_LOCALSTAT			(1u << 1)
+#define FLAG_REVERSE			(1u << 2)
 
 struct config {
 	const char		*root;
-	size_t			level;
 	size_t			flags;
 	size_t			path_len_align;
 };
@@ -41,6 +41,11 @@ static int      lst_cmp(t_list *a, t_list *b)
 	return (node_cmp(a->content, b->content));
 }
 
+static int		lst_revcmp(t_list *a, t_list *b)
+{
+	return (-node_cmp(a->content, b->content));
+}
+
 static inline void  node_update_parent(struct node *node)
 {
 	if (node->parent)
@@ -59,7 +64,8 @@ static inline int   node_init(struct node *node, struct node *parent)
 	return (EXIT_SUCCESS);
 }
 
-static struct node  *node_walk(const char *path, struct node *parent)
+static struct node  *node_walk(const char *path, struct node *parent,
+	const struct config *cfg)
 {
 	struct node     *node;
 	struct node     *newnode;
@@ -82,10 +88,11 @@ static struct node  *node_walk(const char *path, struct node *parent)
 		ft_snprintf(node->path, PATH_MAX, "%s/%s", path, ent->d_name);
 		if (ent->d_type & DT_DIR)
 		{
-			newnode = node_walk(node->path, node);
+			newnode = node_walk(node->path, node, cfg);
 			if (!newnode)
 				continue ;
-			ft_lstpush_sort(&node->childs, ft_lstnewlink(newnode, 0), lst_cmp);
+			ft_lstpush_sort(&node->childs, ft_lstnewlink(newnode, 0),
+				(cfg->flags & FLAG_REVERSE) ? lst_revcmp : lst_cmp);
 		}
 		else if (stat(node->path, &st) >= 0)
 		{
@@ -102,32 +109,14 @@ static struct node  *node_walk(const char *path, struct node *parent)
 	return node;
 }
 
-static int	wsize(const size_t size, char *buf, const size_t n)
-{
-	double	x;
-	size_t	unit;
-
-	x = (double)size;
-	unit = 0;
-	while ((x >= 1024.0) && (unit < 7))
-	{
-		x /= 1024.0;
-		unit++;
-	}
-	return (ft_snprintf(buf, n, "%.2f%c", x, "bKMGTPE"[unit]));
-}
-
 static void show_human(struct s_printf *pf)
 {
-	const size_t        align = 8;
 	size_t              len;
 	char                buf[80];
 
 	len = ft_printf_append(pf, buf,
-		(size_t)wsize((size_t)pf->raw_value, buf, 80));
+		(size_t)ft_wsize((size_t)pf->raw_value, buf, 80));
 	pf->slen += len;
-	if (len < align)
-		ft_printf_padding(pf, ' ', (int)(align - len));
 }
 
 static size_t strcmplen(const char *sa, const char *sb)
@@ -147,8 +136,8 @@ static void node_iter_show(size_t level, struct node *node, void *config)
 	(void)level;
 	ft_strcpy(path, node->path);
 	if ((!(cfg->flags & FLAG_FULLPATH_DISPLAY)) && (node->parent))
-		memset(path, ' ', strcmplen(node->path, node->parent->path));
-	ft_printf("%-*s : %20lk : %-6lu\n", cfg->path_len_align,
+		ft_memset(path, ' ', strcmplen(node->path, node->parent->path));
+	ft_printf("%-*s : %-8.2lk : %-6lu\n", cfg->path_len_align,
 		path, show_human,
 		(cfg->flags & FLAG_LOCALSTAT) ? node->space : node->total_space,
 		(cfg->flags & FLAG_LOCALSTAT) ? node->files : node->total_files);
@@ -214,8 +203,10 @@ static int		parser(int ac, char **av, struct config *cfg)
 			cfg->flags |= FLAG_FULLPATH_DISPLAY;
 		else if (!ft_strcmp(av[idx], "-l"))
 			cfg->flags |= FLAG_LOCALSTAT;
+		else if (!ft_strcmp(av[idx], "-r"))
+			cfg->flags |= FLAG_REVERSE;
 	}
-	cfg->path_len_align = 72;
+	cfg->path_len_align = 42;
 	return (EXIT_SUCCESS);
 }
 
@@ -223,17 +214,20 @@ int     main(int ac, char **av)
 {
 	struct config	cfg;
 	struct node     *node;
+	size_t			dorder = PREFIX;
 
 	if (parser(ac, av, &cfg) != EXIT_SUCCESS)
 		return (EXIT_FAILURE);
-	node = node_walk(cfg.root, NULL);
+	node = node_walk(cfg.root, NULL, &cfg);
+	if (cfg.flags & FLAG_REVERSE)
+		dorder = SUFFIX;
 	if (!node)
 	{
 		ft_dprintf(STDERR_FILENO, "%s%s\n", "Error: ", strerror(errno));
 		return (EXIT_FAILURE);
 	}
 	node_iter(PREFIX, node, &cfg, 0, node_iter_get_maxpl);
-	node_iter(PREFIX, node, &cfg, 0, node_iter_show);
+	node_iter(dorder, node, &cfg, 0, node_iter_show);
 	node_iter(SUFFIX, node, NULL, 0, node_iter_clean);
 	return (EXIT_SUCCESS);
 }
