@@ -10,6 +10,7 @@
 #define FLAG_LOCALSTAT			(1u << 1)
 #define FLAG_REVERSE			(1u << 2)
 #define FLAG_EMPTY_NODES		(1u << 3)
+#define FLAG_ASCSV				(1u << 4)
 #define FILENAME_MAX			256
 
 struct config {
@@ -43,13 +44,14 @@ struct parser_entry {
 
 #pragma pack(pop)
 
-#define PARSER_ENTRIES 4
+#define PARSER_ENTRIES 5
 
 static const struct parser_entry g_parsing_table[PARSER_ENTRIES] = {
 	(struct parser_entry){'p', "full-path", FLAG_FULLPATH_DISPLAY, 0},
 	(struct parser_entry){'r', "reverse", FLAG_REVERSE, 0},
 	(struct parser_entry){'l', "local", FLAG_LOCALSTAT, 0},
-	(struct parser_entry){'e', "empty", FLAG_EMPTY_NODES, 0}
+	(struct parser_entry){'e', "empty", FLAG_EMPTY_NODES, 0},
+	(struct parser_entry){'c', "csv", FLAG_ASCSV, FLAG_LOCALSTAT}
 };
 
 /*
@@ -179,6 +181,14 @@ static void node_iter_show(size_t level, struct node *node, void *config)
 		(cfg->flags & FLAG_LOCALSTAT) ? node->files : node->total_files);
 }
 
+static void	node_iter_csv(size_t level, struct node *node, void *config)
+{
+	(void)config;
+	ft_printf("%lu,%s,%s,%lu,%lu,%lu,%lu\n",
+		level, node->name, node->path, node->total_space, node->total_files,
+		node->space, node->files);
+}
+
 /*
 ** get the max path lenght
 ** this is need for alignment purposes
@@ -287,7 +297,8 @@ int     main(int ac, char **av)
 		return (EXIT_FAILURE);
 	}
 	node_iter(PREFIX, node, &cfg, 0, node_iter_get_maxpl);
-	node_iter(dorder, node, &cfg, 0, node_iter_show);
+	node_iter(dorder, node, &cfg, 0,
+		(cfg.flags & FLAG_ASCSV) ? node_iter_csv : node_iter_show);
 	node_iter(SUFFIX, node, NULL, 0, node_iter_clean);
 	return (EXIT_SUCCESS);
 }
