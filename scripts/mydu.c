@@ -9,6 +9,7 @@
 #define FLAG_FULLPATH_DISPLAY	(1u << 0)
 #define FLAG_LOCALSTAT			(1u << 1)
 #define FLAG_REVERSE			(1u << 2)
+#define FLAG_EMPTY_NODES		(1u << 3)
 #define FILENAME_MAX			256
 
 struct config {
@@ -48,6 +49,7 @@ static const struct parser_entry g_parsing_table[PARSER_ENTRIES] = {
 	(struct parser_entry){'p', "full-path", FLAG_FULLPATH_DISPLAY, 0},
 	(struct parser_entry){'r', "reverse", FLAG_REVERSE, 0},
 	(struct parser_entry){'l', "local", FLAG_LOCALSTAT, 0},
+	(struct parser_entry){'e', "empty", FLAG_EMPTY_NODES, 0}
 };
 
 /*
@@ -107,10 +109,11 @@ static inline void	node_walk_loop(struct node *node,
 		newnode = node_walk(node->path, node, cfg);
 		if (!newnode)
 			return ;
+		ft_snprintf(newnode->name, FILENAME_MAX, "%s", ent->d_name);
 		ft_lstpush_sort(&node->childs, ft_lstnewlink(newnode, 0),
 			(cfg->flags & FLAG_REVERSE) ? lst_revcmp : lst_cmp);
 	}
-	else if (stat(node->path, st) >= 0)
+	else if ((stat(node->path, st) >= 0) && (st->st_mode & S_IFREG))
 	{
 		node->space += (size_t)st->st_size;
 		node->files += 1;
@@ -138,7 +141,6 @@ static struct node  *node_walk(const char *path, struct node *parent,
 		if (ent->d_name[0] == '.')
 			continue ;
 		ft_snprintf(node->path, PATH_MAX, "%s/%s", path, ent->d_name);
-		ft_strncpy(node->name, ent->d_name, FILENAME_MAX);
 		node_walk_loop(node, ent, &st, cfg);
 	}
 	closedir(dir);
@@ -158,28 +160,18 @@ static void show_human(struct s_printf *pf)
 	pf->slen += len;
 }
 
-static size_t strcmplen(const char *sa, const char *sb)
-{
-	size_t		len;
-
-	for (len = 0; sa[len] && sa[len] == sb[len]; len++)
-		;
-	return (len);
-}
-
 static void node_iter_show(size_t level, struct node *node, void *config)
 {
 	struct config	*cfg = config;
 	char			path[PATH_MAX];
 
-	if (node->total_files == 0)
+	if ((node->total_files == 0) && (!(cfg->flags & FLAG_EMPTY_NODES)))
 		return ;
-	(void)level;
-	ft_strcpy(path, node->path);
-	if ((!(cfg->flags & FLAG_FULLPATH_DISPLAY)) && (node->parent))
-		ft_memset(path, ' ', strcmplen(node->path, node->parent->path));
-	ft_snprintf(path, PATH_MAX, "%*.1hhk/%s",
-		level * 2, ft_printf_conv_padding, ' ', node->name);
+	if (cfg->flags & FLAG_FULLPATH_DISPLAY)
+		ft_memcpy(path, node->path, node->path_len + 1);
+	else
+		ft_snprintf(path, PATH_MAX, "%-*.1hhk/%s",
+			level * 2, ft_printf_conv_padding, ' ', node->name);
 	ft_printf("%-*s : %-8.2lk : %-6lu\n",
 		cfg->path_len_align,
 		path, show_human,
@@ -245,7 +237,6 @@ static int		parser_loop(const char *input, struct config *cfg)
 		ent = &g_parsing_table[p];
 		if (ent->letter == (int)input[1])
 		{
-			// ft_printf("param found: %s\n", ent->name);
 			cfg->flags |= ent->flags;
 			cfg->flags &= ~ent->mask;
 			return (EXIT_SUCCESS);
