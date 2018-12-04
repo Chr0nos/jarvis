@@ -18,6 +18,7 @@ struct config {
 	size_t			flags;
 	size_t			path_len_align;
 	size_t			maxlen;
+	size_t			maxlevel;
 };
 
 struct node {
@@ -169,12 +170,14 @@ static void node_iter_show(size_t level, struct node *node, void *config)
 
 	if ((node->total_files == 0) && (!(cfg->flags & FLAG_EMPTY_NODES)))
 		return ;
+	if (level > cfg->maxlevel)
+		return ;
 	if (cfg->flags & FLAG_FULLPATH_DISPLAY)
 		ft_memcpy(path, node->path, node->path_len + 1);
 	else
 		ft_snprintf(path, PATH_MAX, "%-*.1hhk/%s",
 			level * 2, ft_printf_conv_padding, ' ', node->name);
-	ft_printf("%-*s : %-8.2lk : %-6lu\n",
+	ft_printf("%-*s : %-8.2lk : %lu\n",
 		cfg->path_len_align,
 		path, show_human,
 		(cfg->flags & FLAG_LOCALSTAT) ? node->space : node->total_space,
@@ -268,11 +271,16 @@ static int		parser(int ac, char **av, struct config *cfg)
 	}
 	cfg->path_len_align = 42;
 	cfg->maxlen = 170;
+	cfg->maxlevel = (size_t)-1;
 	for (idx = 1; idx < ac; idx++)
 	{
 		if (av[idx][0] != '-')
 			cfg->root = av[idx];
-		else if (parser_loop(av[idx], cfg) != EXIT_SUCCESS)
+		else if (parser_loop(av[idx], cfg) == EXIT_SUCCESS)
+			;
+		else if (ft_sscanf(av[idx], "--max-level=%lu", &cfg->maxlevel) == 1)
+			;
+		else
 			cfg->root = av[idx];
 	}
 	if (!cfg->root)
