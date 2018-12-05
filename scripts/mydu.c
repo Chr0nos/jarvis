@@ -224,14 +224,16 @@ static void	node_iter_csv(size_t level, struct node *node, void *config)
 static void	node_iter_get_maxpl(size_t level, struct node *node, void *config)
 {
 	struct config	*cfg = config;
+	size_t			len;
 
-	(void)level;
-	if (node->path_len > cfg->path_len_align)
+	len	= (cfg->flags & FLAG_FULLPATH_DISPLAY)
+		? node->path_len : (ft_strlen(node->name) + (level * 2));
+	if (len > cfg->path_len_align)
 	{
-		if (node->path_len > cfg->maxlen)
+		if (len > cfg->maxlen)
 			cfg->path_len_align = cfg->maxlen;
 		else
-			cfg->path_len_align = node->path_len;
+			cfg->path_len_align = len;
 	}
 }
 
