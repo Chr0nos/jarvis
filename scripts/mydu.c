@@ -121,7 +121,9 @@ static inline void	node_walk_loop(struct node *node,
 {
 	struct node     *newnode;
 
-	if (ent->d_type & DT_DIR)
+	if (lstat(node->path, st) < 0)
+		return ;
+	if (st->st_mode & S_IFDIR)
 	{
 		newnode = node_walk(node->path, node, cfg);
 		if (!newnode)
@@ -130,7 +132,7 @@ static inline void	node_walk_loop(struct node *node,
 		ft_lstpush_sort(&node->childs, ft_lstnewlink(newnode, 0),
 			(cfg->flags & FLAG_REVERSE) ? lst_revcmp : lst_cmp);
 	}
-	else if ((ent->d_type & DT_REG) && (stat(node->path, st) >= 0))
+	else if (st->st_mode & S_IFREG)
 	{
 		if (st->st_size > 0)
 			node->space += (size_t)st->st_size;
@@ -153,6 +155,8 @@ static struct node  *node_walk(const char *path, struct node *parent,
 	dir = opendir(path);
 	if (!dir)
 	{
+		if (!parent)
+			ft_dprintf(2, "failed to opendir: %s\n", path);
 		free(node);
 		return NULL;
 	}
