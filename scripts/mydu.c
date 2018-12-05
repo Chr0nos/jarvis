@@ -229,12 +229,7 @@ static void	node_iter_get_maxpl(size_t level, struct node *node, void *config)
 	len	= (cfg->flags & FLAG_FULLPATH_DISPLAY)
 		? node->path_len : (ft_strlen(node->name) + (level * 2));
 	if (len > cfg->path_len_align)
-	{
-		if (len > cfg->maxlen)
-			cfg->path_len_align = cfg->maxlen;
-		else
-			cfg->path_len_align = len;
-	}
+		cfg->path_len_align = (len > cfg->maxlen) ? cfg->maxlen : len;
 }
 
 #define PREFIX 1
