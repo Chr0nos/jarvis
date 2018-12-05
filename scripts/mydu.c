@@ -109,7 +109,10 @@ static inline void  node_update_parent(struct node *node)
 static inline int   node_init(struct node *node, struct node *parent)
 {
 	if (!node)
+	{
+		ft_dprintf(STDERR_FILENO, "%s", "Error: out of memory\n");
 		return (EXIT_FAILURE);
+	}
 	ft_bzero(node, sizeof(*node));
 	node->parent = parent;
 	return (EXIT_SUCCESS);
