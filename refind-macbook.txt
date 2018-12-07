@@ -1,0 +1,19 @@
+# Getting started
+# reboot the mac
+# hold command+r at boot, then open a terminal
+# csrutil disable
+# reboot
+
+sudo mkdir /Volumes/esp
+sudo mount -t msdos /dev/disks0p1 /Volumes/esp
+cd /Volumes/esp/EFI/
+wget http://sourceforge.net/projects/refind/files/0.11.3/refind-bin-0.11.3.zip/download -O /tmp/refind.zip
+unzip /tmp/refind.zip
+mv refind-bin-0.11.3/refind ./
+rm -rf refind-bin-0.11.3
+cd refind
+rm -rf {drivers_aa64,drivers_ia32,tools_aa64,tools_ia32}
+mv refind.conf-sample refind.conf
+bless --folder /Volumes/esp --setBoot --file /EFI/refind/refind_x64.efi --shortform
+
+# ready to reboot
