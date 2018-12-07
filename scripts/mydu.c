@@ -35,16 +35,19 @@ struct config {
 	size_t			maxlevel;
 };
 
+struct nodestat {
+	size_t			local;
+	size_t			total;
+};
+
 struct node {
 	struct node     *parent;
 	struct s_list   *childs;
 	char            path[PATH_MAX];
 	char			name[FILENAME_MAX];
 	size_t			path_len;
-	size_t          space;
-	size_t          total_space;
-	size_t          files;
-	size_t          total_files;
+	struct nodestat	space;
+	struct nodestat	files;
 };
 
 #pragma pack(push, 4)
@@ -78,9 +81,9 @@ static struct node  *node_walk(const char *path, struct node *parent,
 
 static int      node_cmp(struct node *a, struct node *b)
 {
-	if (a->total_space < b->total_space)
+	if (a->space.total < b->space.total)
 		return (1);
-	else if (a->total_space > b->total_space)
+	else if (a->space.total > b->space.total)
 		return (-1);
 	return (ft_strcmp(a->path, b->path));
 }
@@ -97,12 +100,12 @@ static int		lst_revcmp(t_list *a, t_list *b)
 
 static inline void  node_update_parent(struct node *node)
 {
-	node->total_space += node->space;
-	node->total_files += node->files;
+	node->space.total += node->space.local;
+	node->files.total += node->files.local;
 	if (node->parent)
 	{
-		node->parent->total_files += node->total_files;
-		node->parent->total_space += node->total_space;
+		node->parent->files.total += node->files.total;
+		node->parent->space.total += node->space.total;
 	}
 }
 
@@ -138,8 +141,8 @@ static inline void	node_walk_loop(struct node *node,
 	else if (st->st_mode & S_IFREG)
 	{
 		if (st->st_size > 0)
-			node->space += (size_t)st->st_size;
-		node->files += 1;
+			node->space.local += (size_t)st->st_size;
+		node->files.local += 1;
 	}
 }
 
@@ -192,7 +195,7 @@ static void node_iter_show(size_t level, struct node *node, void *config)
 	struct config	*cfg = config;
 	char			path[PATH_MAX];
 
-	if ((node->total_files == 0) && (!(cfg->flags & FLAG_EMPTY_NODES)))
+	if ((node->files.total == 0) && (!(cfg->flags & FLAG_EMPTY_NODES)))
 		return ;
 	if (level > cfg->maxlevel)
 		return ;
@@ -204,16 +207,16 @@ static void node_iter_show(size_t level, struct node *node, void *config)
 	ft_printf("%-*s : %-8.2lk : %lu\n",
 		cfg->path_len_align,
 		path, show_human,
-		(cfg->flags & FLAG_LOCALSTAT) ? node->space : node->total_space,
-		(cfg->flags & FLAG_LOCALSTAT) ? node->files : node->total_files);
+		(cfg->flags & FLAG_LOCALSTAT) ? node->space.local : node->space.total,
+		(cfg->flags & FLAG_LOCALSTAT) ? node->files.local : node->files.total);
 }
 
 static void	node_iter_csv(size_t level, struct node *node, void *config)
 {
 	(void)config;
 	ft_printf("%lu,%s,%s,%lu,%lu,%lu,%lu\n",
-		level, node->name, node->path, node->total_space, node->total_files,
-		node->space, node->files);
+		level, node->name, node->path, node->space.total, node->files.total,
+		node->space.local, node->files.local);
 }
 
 /*
