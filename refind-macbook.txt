@@ -5,7 +5,7 @@
 # reboot
 
 sudo mkdir /Volumes/esp
-sudo mount -t msdos /dev/disks0p1 /Volumes/esp
+sudo mount -t msdos /dev/disk0s1 /Volumes/esp
 cd /Volumes/esp/EFI/
 wget http://sourceforge.net/projects/refind/files/0.11.3/refind-bin-0.11.3.zip/download -O /tmp/refind.zip
 unzip /tmp/refind.zip

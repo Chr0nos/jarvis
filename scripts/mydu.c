@@ -177,16 +177,6 @@ static struct node  *node_walk(const char *path, struct node *parent,
 	return node;
 }
 
-static void show_human(struct s_printf *pf)
-{
-	size_t              len;
-	char                buf[80];
-
-	len = ft_printf_append(pf, buf,
-		(size_t)ft_wsize((size_t)pf->raw_value, buf, 80));
-	pf->slen += len;
-}
-
 static void node_iter_show(size_t level, struct node *node, void *config)
 {
 	struct config	*cfg = config;
@@ -203,7 +193,7 @@ static void node_iter_show(size_t level, struct node *node, void *config)
 			level * 2, ft_printf_conv_padding, ' ', node->name);
 	ft_printf("%-*s : %-8.2lk : %lu\n",
 		cfg->path_len_align,
-		path, show_human,
+		path, ft_printf_conv_wsize,
 		(cfg->flags & FLAG_LOCALSTAT) ? node->space : node->total_space,
 		(cfg->flags & FLAG_LOCALSTAT) ? node->files : node->total_files);
 }
