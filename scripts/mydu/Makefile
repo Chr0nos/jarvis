@@ -1,5 +1,5 @@
 NAME=mydu
-CFLAGS=-Wall -Werror -Wextra -Weverything -Ofast
+CFLAGS=-Wall -Werror -Wextra -Weverything -Wpedantic -Ofast
 CC=clang
 LIBFT_DIR=./libft
 LIBFT=$(LIBFT_DIR)/libft.a
