@@ -4,14 +4,12 @@ import sys
 import os
 from subprocess import run
 
-def encode_file(source, dest, threads=12):
+def encode_file(source, dest, threads=12, mapping=['-map', "0"]):
     cmd = [
         "/usr/bin/ffmpeg",
         "-i", str(source),
-        "-scodec", "copy",
-        "-map", "0:0",
-        "-map", "0:2",
-        "-map", "0:3",
+        "-scodec", "copy"
+    ] + mapping + [
         "-threads", str(threads),
         "-aspect", "16:9",
         "-y",
@@ -19,6 +17,10 @@ def encode_file(source, dest, threads=12):
         "-ab", "128k",
         "-ar", "48000",
         "-ac", "2",
+        "-preset", "slow",
+        "-crf", "14",
+        "-rc", "vbr_hq",
+        "-rc-lookahead", "32",
         "-vcodec", "hevc_nvenc",
         str(dest)
     ]
