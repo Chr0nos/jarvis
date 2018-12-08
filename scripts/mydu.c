@@ -33,6 +33,7 @@ struct config {
 	size_t			path_len_align;
 	size_t			maxlen;
 	size_t			maxlevel;
+	int				(*sorter)(struct s_list *, struct s_list *);
 };
 
 struct nodestat {
@@ -135,8 +136,7 @@ static inline void	node_walk_loop(struct node *node,
 		if (!newnode)
 			return ;
 		ft_snprintf(newnode->name, FILENAME_MAX, "%s", ent->d_name);
-		ft_lstpush_sort(&node->childs, ft_lstnewlink(newnode, 0),
-			(cfg->flags & FLAG_REVERSE) ? lst_revcmp : lst_cmp);
+		ft_lstpush_sort(&node->childs, ft_lstnewlink(newnode, 0), cfg->sorter);
 	}
 	else if (st->st_mode & S_IFREG)
 	{
@@ -287,6 +287,7 @@ static int		parser(int ac, char **av, struct config *cfg)
 	cfg->path_len_align = 42;
 	cfg->maxlen = 170;
 	cfg->maxlevel = (size_t)-1;
+	cfg->sorter = &lst_cmp;
 	for (idx = 1; idx < ac; idx++)
 	{
 		if (av[idx][0] != '-')
@@ -298,6 +299,8 @@ static int		parser(int ac, char **av, struct config *cfg)
 		else
 			cfg->root = av[idx];
 	}
+	if (cfg->flags & FLAG_REVERSE)
+		cfg->sorter = &lst_revcmp;
 	if (!cfg->root)
 		return (EXIT_FAILURE);
 	return (EXIT_SUCCESS);
