@@ -11,6 +11,9 @@
 # define FLAG_ASCSV				(1u << 4)
 # define FILENAME_MAX			256
 
+# define PREFIX 1
+# define SUFFIX 2
+
 struct config {
 	const char		*root;
 	size_t			flags;
@@ -57,8 +60,14 @@ static const struct parser_entry g_parsing_table[PARSER_ENTRIES] = {
 	(struct parser_entry){'c', "csv", FLAG_ASCSV, FLAG_LOCALSTAT}
 };
 
-int		parser(int ac, char **av, struct config *cfg);
-int     lst_cmp(t_list *a, t_list *b);
-int		lst_revcmp(t_list *a, t_list *b);
+struct node	*node_walk(const char *path, struct node *parent,
+	const struct config *cfg);
+void		node_iter_clean(size_t level, struct node *node, void *unused);
+void		node_iter(const size_t mode, struct node *node, void *userdata,
+	size_t level, void (*f)(size_t, struct node *, void *));
+
+int			parser(int ac, char **av, struct config *cfg);
+int     	lst_cmp(t_list *a, t_list *b);
+int			lst_revcmp(t_list *a, t_list *b);
 
 #endif
