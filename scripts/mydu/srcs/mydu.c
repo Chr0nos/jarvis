@@ -74,6 +74,8 @@ static void	node_iter_get_maxpl(size_t level, struct node *node, void *config)
 	struct config	*cfg = config;
 	size_t			len;
 
+	if (cfg->maxlevel < level)
+		return ;
 	len	= (cfg->flags & FLAG_FULLPATH_DISPLAY)
 		? node->path_len : (ft_strlen(node->name) + (level * 2));
 	if (len > cfg->path_len_align)
