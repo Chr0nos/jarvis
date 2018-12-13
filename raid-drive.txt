@@ -1,0 +1,18 @@
+# create a GPT partition table then a partition
+cfdisk /dev/sdx
+	create new partition
+	type : Linux RAID
+udisksctl unmount -b /dev/md0	
+
+# remove the speed limit for the raid sync
+echo 50000 > /proc/sys/dev/raid/speed_limit_min
+echo 200000 > /proc/sys/dev/raid/speed_limit_max
+
+# append the new drive into the array
+sudo mdadm --manage --add /dev/sdx /dev/md0
+
+# extend the raid device
+sudo mdadm --grow /dev/md0 --raid-devices=n
+
+# extend the file system to fit the whole disk
+sudo xfs_growfs /dev/md0
