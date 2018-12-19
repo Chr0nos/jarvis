@@ -4,7 +4,7 @@ import sys
 import os
 from subprocess import run
 
-def encode_file(source, dest, threads=12, mapping=['-map', "0"]):
+def encode_file(source, dest, threads=12, mapping=['-map', "0"], scale=None):
     cmd = [
         "/usr/bin/ffmpeg",
         "-i", str(source),
@@ -24,11 +24,14 @@ def encode_file(source, dest, threads=12, mapping=['-map', "0"]):
         "-vcodec", "hevc_nvenc",
         str(dest)
     ]
+    if scale:
+        cmd.insert(2, ["-vf", "scale=-1:{}".format(scale)])
+
     command_line = " ".join(cmd)
     print(command_line)
     run(cmd);
 
-def encode_dir(source, dest):
+def encode_dir(source, dest, scale=None):
     if not os.path.exists(dest):
         os.mkdir(dest)
     if not os.path.isdir(dest):
@@ -41,17 +44,17 @@ def encode_dir(source, dest):
     # is the source a file ? if so we just encode it an return
     if os.path.isfile(source):
         filename = source.split('/')[-1]
-        return encode_file(source, os.path.join(dest, filename))
+        return encode_file(source, os.path.join(dest, filename, scale))
     for file in os.listdir(source):
         full_source_path = os.path.join(source, file)
         if os.path.isfile(full_source_path):
-            encode_file(full_source_path, "{}/{}".format(dest, file))
+            encode_file(full_source_path, "{}/{}".format(dest, file, scale))
         else:
-            encode_dir(full_source_path)
+            encode_dir(full_source_path, scale)
 
 if __name__ == "__main__":
     try:
-        encode_dir(os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2]))
+        encode_dir(os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2]), 720)
     except IndexError:
         print("usage: {} <source dir> <destination dir>".format(sys.argv[0]))
     except ValueError:
