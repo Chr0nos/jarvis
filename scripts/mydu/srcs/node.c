@@ -2,6 +2,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <errno.h>
 
 void	node_iter(const size_t mode,
 	struct node *node,
@@ -58,7 +59,12 @@ static inline void	node_walk_loop(struct node *node,
 	struct node     *newnode;
 
 	if (lstat(node->path, st) < 0)
+	{
+		if (cfg->flags & FLAG_VERBOSE)
+			ft_dprintf(STDERR_FILENO, "failed to stat: %s: %s\n",
+				node->path, strerror(errno));
 		return ;
+	}
 	if (st->st_mode & S_IFDIR)
 	{
 		newnode = node_walk(node->path, node, cfg);
@@ -91,8 +97,8 @@ struct node  *node_walk(const char *path, struct node *parent,
 	dir = opendir(path);
 	if (!dir)
 	{
-		if (!parent)
-			ft_dprintf(STDERR_FILENO, "failed to opendir: %s\n", path);
+		if ((!parent) || (cfg->flags & FLAG_VERBOSE))
+			ft_dprintf(STDERR_FILENO, "failed to opendir: %s: %s\n", path, strerror(errno));
 		free(node);
 		return NULL;
 	}
