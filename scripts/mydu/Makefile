@@ -32,7 +32,7 @@ fclean: clean
 
 re: fclean all
 
-install:
+install: $(NAME)
 	sudo cp -v $(NAME) /usr/bin
 
 .PHONY: clean fclean all re install
