@@ -10,6 +10,8 @@
 # define FLAG_EMPTY_NODES		(1u << 3)
 # define FLAG_ASCSV				(1u << 4)
 # define FLAG_VERBOSE			(1u << 5)
+# define FLAG_BLOCKS			(1u << 6)
+# define BLK_SIZE				512
 # define FILENAME_MAX			256
 
 # define PREFIX 1
@@ -51,7 +53,7 @@ struct parser_entry {
 
 #pragma pack(pop)
 
-#define PARSER_ENTRIES 6
+#define PARSER_ENTRIES 7
 
 static const struct parser_entry g_parsing_table[PARSER_ENTRIES] = {
 	(struct parser_entry){'p', "full-path", FLAG_FULLPATH_DISPLAY, 0},
@@ -59,7 +61,8 @@ static const struct parser_entry g_parsing_table[PARSER_ENTRIES] = {
 	(struct parser_entry){'l', "local", FLAG_LOCALSTAT, 0},
 	(struct parser_entry){'e', "empty", FLAG_EMPTY_NODES, 0},
 	(struct parser_entry){'c', "csv", FLAG_ASCSV, FLAG_LOCALSTAT},
-	(struct parser_entry){'v', "verbose", FLAG_VERBOSE, 0}
+	(struct parser_entry){'v', "verbose", FLAG_VERBOSE, 0},
+	(struct parser_entry){'b', "blocks", FLAG_BLOCKS, 0}
 };
 
 struct node	*node_walk(const char *path, struct node *parent,

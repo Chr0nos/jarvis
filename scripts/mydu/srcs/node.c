@@ -75,7 +75,9 @@ static inline void	node_walk_loop(struct node *node,
 	}
 	else if (st->st_mode & S_IFREG)
 	{
-		if (st->st_size > 0)
+		if (cfg->flags & FLAG_BLOCKS)
+			node->space.local += (size_t)st->st_blocks * BLK_SIZE;
+		else if (st->st_size > 0)
 			node->space.local += (size_t)st->st_size;
 		node->files.local += 1;
 	}
