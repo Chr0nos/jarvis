@@ -88,7 +88,7 @@ static const struct parser_entry g_parsing_table[PARSER_ENTRIES] = {
 	(struct parser_entry){'c', "csv", FLAG_ASCSV, FLAG_LOCALSTAT | FLAG_CURSES},
 	(struct parser_entry){'v', "verbose", FLAG_VERBOSE, 0},
 	(struct parser_entry){'b', "blocks", FLAG_BLOCKS, 0},
-	(struct parser_entry){'i', "interactive", FLAG_CURSES, FLAG_VERBOSE}
+	(struct parser_entry){'i', "interactive", FLAG_CURSES, FLAG_VERBOSE | FLAG_ASCSV}
 };
 
 struct node		*node_walk(const char *path, struct node *parent,
