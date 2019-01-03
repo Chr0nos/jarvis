@@ -7,6 +7,7 @@
 #define ARROW_UP        65
 #define ARROW_DOWN      66
 #define BACKSPACE       127
+#define ESCAPE          27
 // #define ARROW_RIGHT     67
 // #define ARROW_LEFT      68
 
@@ -100,7 +101,7 @@ static void     curses_updir(struct curses_cfg *curse)
 
 static void     curses_control(const int key, struct curses_cfg *curse)
 {
-    if ((char)key == 'q')
+    if (((char)key == 'q') || (key == ESCAPE))
         curse->should_quit = true;
     else if ((char)key == '\n')
     {
@@ -141,7 +142,6 @@ int             curses_run(struct node *root, const struct config *cfg)
         curses_control(getch(), &curse);
     }
     endwin();
-    puts("quit");
 	node_iter(SUFFIX, root, NULL, 0, node_iter_clean);
     return (EXIT_SUCCESS);
 }
