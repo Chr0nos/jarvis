@@ -16,21 +16,26 @@ static enum e_iter_job   curses_display_iter(size_t level, struct node *node,
     char                    wsize[20];
     int                     pair;
 
-    pair = COLOR_PAIR((cfg->select == node ? COLOR_SELECTED + 1 : COLOR_DEFAULT));
+    pair = COLOR_PAIR((cfg->select == node ? COLOR_SELECTED : COLOR_DEFAULT));
     attron(pair);
     ft_wsize(node->space.total, wsize, 20);
-    mvprintw(cfg->line, 0, "| %s\n",
-        node->path);
+    mvprintw(cfg->line, 0, "%s\n", node->name);
     mvprintw(cfg->line, ALIGN_WSIZE, "%s", wsize);
     mvprintw(cfg->line, ALIGN_FILES, "%lu", node->files.total);
     attroff(pair);
     cfg->line++;
+    // if (node == cfg->root)
+    //     mvprintw(cfg->line++, 0, "--------------------\n");
     return (level == 0 ? CONTINUE : STOP_NODE);
 }
 
-static void     curses_init(const struct config *cfg, struct curses_cfg *cufg)
+static void     curses_init(const struct config *cfg, struct curses_cfg *cufg,
+    struct node *root)
 {
     *cufg = (struct curses_cfg) {
+        .root = root,
+        .node = root,
+        .select = root,
         .cfg = cfg,
         .should_quit = false
     };
@@ -50,7 +55,7 @@ static void     curse_select(struct curses_cfg *curse, int index)
         }
         return ;
     }
-    item =  ft_lstat(curse->node->childs, index);
+    item = ft_lstat(curse->node->childs, index);
     if (!item)
         return ;
     curse->select = item->content;
@@ -63,9 +68,18 @@ static void     curses_control(const int key, struct curses_cfg *curse)
         curse->should_quit = true;
     else if ((char)key == '\n')
         curse->node = curse->select;
+    else if (key == 127)
+    {
+        if (!curse->node->parent)
+            return ;
+        curse->node = curse->node->parent;
+        curse->select = curse->node->parent;
+        curse->select_index = 0;
+    }
     else if ((key == ARROW_DOWN) || (key == ARROW_UP))
-        curse_select(curse, (int)curse->select_index + ((key == ARROW_UP) ? -1 : 1));
-    else if (curse->cfg->flags & FLAG_VERBOSE)
+        curse_select(curse,
+            (int)curse->select_index + ((key == ARROW_UP) ? -1 : 1));
+    else //if (curse->cfg->flags & FLAG_VERBOSE)
     {
         clear();
         mvprintw(LINES >> 1, COLS >> 1, "unknow key: %c (%d)\n", (char)key, key);
@@ -78,16 +92,13 @@ int             curses_run(struct node *root, const struct config *cfg)
 {
     struct curses_cfg   curse;
 
-    curses_init(cfg, &curse);
-    curse.node = root;
-    curse.select = root;
+    curses_init(cfg, &curse, root);
     curse.win = initscr();
     if (!curse.win)
         return (EXIT_FAILURE);
     start_color();
     init_pair(COLOR_DEFAULT, COLOR_WHITE, COLOR_GREEN);
-    init_pair(COLOR_SELECTED, COLOR_RED, COLOR_WHITE);
-
+    init_pair(COLOR_SELECTED, COLOR_CYAN, COLOR_BLACK);
     while (!curse.should_quit)
     {
         clear();

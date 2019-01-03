@@ -51,6 +51,7 @@ struct node {
 
 struct curses_cfg {
 	const struct config	*cfg;
+	struct node		*root;
 	struct node		*node;
 	struct node		*select;
 	size_t			select_index;
