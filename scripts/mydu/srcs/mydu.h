@@ -85,7 +85,7 @@ static const struct parser_entry g_parsing_table[PARSER_ENTRIES] = {
 	(struct parser_entry){'r', "reverse", FLAG_REVERSE, 0},
 	(struct parser_entry){'l', "local", FLAG_LOCALSTAT, 0},
 	(struct parser_entry){'e', "empty", FLAG_EMPTY_NODES, 0},
-	(struct parser_entry){'c', "csv", FLAG_ASCSV, FLAG_LOCALSTAT},
+	(struct parser_entry){'c', "csv", FLAG_ASCSV, FLAG_LOCALSTAT | FLAG_CURSES},
 	(struct parser_entry){'v', "verbose", FLAG_VERBOSE, 0},
 	(struct parser_entry){'b', "blocks", FLAG_BLOCKS, 0},
 	(struct parser_entry){'i', "interactive", FLAG_CURSES, FLAG_VERBOSE}

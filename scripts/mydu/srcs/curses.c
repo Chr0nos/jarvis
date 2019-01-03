@@ -2,8 +2,8 @@
 #include "mydu.h"
 #define COLOR_DEFAULT   0
 #define COLOR_SELECTED  1
-#define ALIGN_WSIZE     100
-#define ALIGN_FILES     122
+#define ALIGN_WSIZE     80
+#define ALIGN_FILES     102
 #define ARROW_UP        65
 #define ARROW_DOWN      66
 #define BACKSPACE       127
@@ -54,7 +54,8 @@ static void     curses_init(const struct config *cfg, struct curses_cfg *cufg,
     *cufg = (struct curses_cfg) {
         .root = root,
         .node = root,
-        .select = root,
+        .select = (root->childs) ? root->childs->content : root,
+        .select_index = 0,
         .cfg = cfg,
         .should_quit = false
     };
@@ -119,7 +120,7 @@ static void     curses_control(const int key, struct curses_cfg *curse)
     else if ((key == ARROW_DOWN) || (key == ARROW_UP))
         curse_select(curse,
             (int)curse->select_index + ((key == ARROW_UP) ? -1 : 1));
-    else //if (curse->cfg->flags & FLAG_VERBOSE)
+    else if (curse->cfg->flags & FLAG_VERBOSE)
     {
         clear();
         mvprintw(LINES >> 1, COLS >> 1, "unknow key: %c (%d)\n", (char)key, key);
