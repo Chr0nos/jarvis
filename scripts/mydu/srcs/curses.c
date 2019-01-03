@@ -6,8 +6,24 @@
 #define ALIGN_FILES     122
 #define ARROW_UP        65
 #define ARROW_DOWN      66
+#define BACKSPACE       127
 // #define ARROW_RIGHT     67
 // #define ARROW_LEFT      68
+
+static int            lst_indexof(struct s_list *lst, const struct node *node)
+{
+    int      i;
+
+    i = 0;
+    while (lst)
+    {
+        if (node == lst->content)
+            return (i);
+        i++;
+        lst = lst->next;
+    }
+    return (-1);
+}
 
 static enum e_iter_job   curses_display_iter(size_t level, struct node *node,
     void *userdata)
@@ -19,13 +35,16 @@ static enum e_iter_job   curses_display_iter(size_t level, struct node *node,
     pair = COLOR_PAIR((cfg->select == node ? COLOR_SELECTED : COLOR_DEFAULT));
     attron(pair);
     ft_wsize(node->space.total, wsize, 20);
-    mvprintw(cfg->line, 0, "%s\n", node->name);
+    mvprintw(cfg->line, 0, "%s\n",
+        (node == cfg->node) ? node->path : node->name);
     mvprintw(cfg->line, ALIGN_WSIZE, "%s", wsize);
     mvprintw(cfg->line, ALIGN_FILES, "%lu", node->files.total);
     attroff(pair);
     cfg->line++;
-    // if (node == cfg->root)
-    //     mvprintw(cfg->line++, 0, "--------------------\n");
+    if (node == cfg->node)
+        mvprintw(cfg->line++, 0, "--------------------\n");
+    if (cfg->line > LINES)
+        return (STOP_TREE);
     return (level == 0 ? CONTINUE : STOP_NODE);
 }
 
@@ -47,9 +66,9 @@ static void     curse_select(struct curses_cfg *curse, int index)
 
     if (index < 0)
     {
-        if (curse->select->parent)
+        if (curse->node->parent)
         {
-            curse->select = curse->select->parent;
+            curse->select = curse->node->parent;
             curse->select_index = 0;
             return ;
         }
@@ -62,20 +81,34 @@ static void     curse_select(struct curses_cfg *curse, int index)
     curse->select_index = (size_t)index;
 }
 
+static void     curses_updir(struct curses_cfg *curse)
+{
+    int         idx;
+    struct node *last;
+
+    if (!curse->node->parent)
+        return ;
+    last = curse->node;
+    curse->node = curse->node->parent;
+    curse->select = last;
+    idx = lst_indexof(curse->node->childs, last);
+    if (idx >= 0)
+        curse->select_index = (size_t)idx;
+    else
+        curse->select_index = 0;
+}
+
 static void     curses_control(const int key, struct curses_cfg *curse)
 {
     if ((char)key == 'q')
         curse->should_quit = true;
     else if ((char)key == '\n')
-        curse->node = curse->select;
-    else if (key == 127)
     {
-        if (!curse->node->parent)
-            return ;
-        curse->node = curse->node->parent;
-        curse->select = curse->node->parent;
+        curse->node = curse->select;
         curse->select_index = 0;
     }
+    else if (key == BACKSPACE)
+        curses_updir(curse);
     else if ((key == ARROW_DOWN) || (key == ARROW_UP))
         curse_select(curse,
             (int)curse->select_index + ((key == ARROW_UP) ? -1 : 1));
