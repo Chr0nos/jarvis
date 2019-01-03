@@ -38,7 +38,7 @@ static enum e_iter_job   curses_display_iter(size_t level, struct node *node,
     mvprintw(cfg->line, 0, "%s\n",
         (node == cfg->node) ? node->path : node->name);
     mvprintw(cfg->line, ALIGN_WSIZE, "%s", wsize);
-    mvprintw(cfg->line, ALIGN_FILES, "%lu", node->files.total);
+    mvprintw(cfg->line, ALIGN_FILES, "%lu\n", node->files.total);
     attroff(pair);
     cfg->line++;
     if (node == cfg->node)
@@ -104,8 +104,15 @@ static void     curses_control(const int key, struct curses_cfg *curse)
         curse->should_quit = true;
     else if ((char)key == '\n')
     {
-        curse->node = curse->select;
-        curse->select_index = 0;
+        if (curse->select == curse->node)
+            curses_updir(curse);
+        else
+        {
+            curse->node = curse->select;
+            curse->select_index = 0;
+            curse->select = (curse->node->childs) ?
+                curse->node->childs->content : curse->node;
+        }
     }
     else if (key == BACKSPACE)
         curses_updir(curse);
