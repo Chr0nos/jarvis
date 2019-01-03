@@ -82,7 +82,7 @@ static void			node_walk_file(struct node *parent,
 	ft_snprintf(leaf->path, PATH_MAX, "%s/%s", parent->path, ent->d_name);
 	leaf->space.local = (size_t)(st->st_blocks * BLK_SIZE);
 	leaf->space.total = leaf->space.local;
-	leaf->files = (struct nodestat){.local = 0, .total = 0};
+	leaf->files = (struct nodestat){.local = 1, .total = 0};
 	ft_lstpush_sort(&parent->childs,
 		ft_lstnewlink(leaf, sizeof(*leaf)), cfg->sorter);
 }
@@ -110,10 +110,7 @@ static inline void	node_walk_loop(struct node *node,
 	}
 	else if (st->st_mode & S_IFREG)
 	{
-		if (cfg->flags & FLAG_BLOCKS)
-			node->space.local += (size_t)st->st_blocks * BLK_SIZE;
-		else if (st->st_size > 0)
-			node->space.local += (size_t)st->st_size;
+		node->space.local += (size_t)st->st_blocks * BLK_SIZE;
 		node->files.local += 1;
 		if (cfg->flags & FLAG_FILES)
 			node_walk_file(node, cfg, ent, st);

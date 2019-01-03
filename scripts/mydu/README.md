@@ -21,5 +21,10 @@ Option          | Purpose
 | -f            | display files too
 | --max-level=x | x is the max amount of sub-directories to DISPLAY (not to scan), x must be a positive or 0
 
+# Interactive mode
+You can use the up/down arrow to select the target to go, then press enter,
+use backspace to go to the parent directory.
+Press "q" to quit.
+
 # Build it
 Just type "make" and make sure to have "git" and "clang" installed
