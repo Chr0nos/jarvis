@@ -128,7 +128,7 @@ static void         curses_control(const int key, struct curses_cfg *curse)
     {
         if (curse->select == curse->node)
             curses_updir(curse);
-        else
+        else if (curse->select->files.total > 0)
         {
             curse->node = curse->select;
             curse->select_index = 0;
