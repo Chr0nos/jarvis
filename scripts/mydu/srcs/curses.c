@@ -48,6 +48,7 @@ static void     curse_select(struct curses_cfg *curse, int index)
             curse->select_index = 0;
             return ;
         }
+        return ;
     }
     item =  ft_lstat(curse->node->childs, index);
     if (!item)
