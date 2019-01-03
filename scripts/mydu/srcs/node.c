@@ -4,29 +4,38 @@
 #include <sys/stat.h>
 #include <errno.h>
 
-void	node_iter(const size_t mode,
+enum e_iter_job	node_iter(const size_t mode,
 	struct node *node,
 	void *userdata,
 	size_t level,
-	void (*f)(size_t, struct node *, void *))
+	enum e_iter_job (*f)(size_t, struct node *, void *))
 {
-	struct s_list	*lst;
+	struct s_list		*lst;
+	enum e_iter_job		ret;
 
 	if (mode & PREFIX) 
 		f(level, node, userdata);
 	for (lst = node->childs; lst; lst = lst->next)
-		node_iter(mode, lst->content, userdata, level + 1, f);
+	{
+		ret = node_iter(mode, lst->content, userdata, level + 1, f);
+		if (ret == STOP_NODE)
+			return (CONTINUE);
+		if (ret == STOP_TREE)
+			return (STOP_TREE);
+	}
 	if (mode & SUFFIX)
 		f(level, node, userdata);
+	return (CONTINUE);
 }
 
-void	node_iter_clean(size_t level, struct node *node, void *unused)
+enum e_iter_job	node_iter_clean(size_t level, struct node *node, void *unused)
 {
 	(void)level;
 	(void)unused;
 	if (node->childs)
 		ft_lstdel(&node->childs, NULL);
 	free(node);
+	return (CONTINUE);
 }
 
 static inline int   node_init(struct node *node, struct node *parent)
@@ -70,7 +79,7 @@ static inline void	node_walk_loop(struct node *node,
 		newnode = node_walk(node->path, node, cfg);
 		if (!newnode)
 			return ;
-		ft_snprintf(newnode->name, FILENAME_MAX, "%s", ent->d_name);
+		ft_snprintf(newnode->name, FILENAME_MAXLEN, "%s", ent->d_name);
 		ft_lstpush_sort(&node->childs, ft_lstnewlink(newnode, 0), cfg->sorter);
 	}
 	else if (st->st_mode & S_IFREG)

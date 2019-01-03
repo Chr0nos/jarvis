@@ -1,8 +1,8 @@
 #!/bin/sh
-TARGET="/mnt"
-NAME="archlinux"
-DEVICE=/dev/sda
-USER=someone
+TARGET="/mnt/tmp/"
+NAME="minitom"
+DEVICE=/dev/sdk
+USER=tomtom
 
 #BOOT=grub
 BOOT=refind-efi
@@ -17,9 +17,9 @@ DESKTOP="mate mate-extra"
 #DESKTOP="weston"
 #DESKTOP="openbox"
 
-VIDEO="extra/nvidia-dkms extra/nvidia-settings"
+#VIDEO="extra/nvidia-dkms extra/nvidia-settings"
 #VIDEO="extra/xf86-video-intel"
-#VIDEO="extra/xf86-video-vesa"
+VIDEO="extra/xf86-video-vesa"
 #VIDEO="extra/xf86-video-amdgpu"
 #VIDEO="extra/xf86-video-ati"
 #VIDEO="extra/xf86-video-vmware"
@@ -29,7 +29,7 @@ BROWSER="firefox extra/firefox-i18n-fr community/firefox-adblock-plus"
 #BROWSER="chromium"
 
 FIRMWARE="intel-ucode"
-DEVELOPPER="python python-pip git clang make tig gdb peda"
+# DEVELOPPER="python python-pip git clang make tig gdb peda"
 EXTRA="extra/adwaita-icon-theme linux-headers"
 XORG="xorg-server xorg-fonts-75dpi xorg-fonts-100dpi xorg-xrandr xorg-xinit"
 WAYLAND="wayland"

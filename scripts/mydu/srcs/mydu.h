@@ -11,8 +11,9 @@
 # define FLAG_ASCSV				(1u << 4)
 # define FLAG_VERBOSE			(1u << 5)
 # define FLAG_BLOCKS			(1u << 6)
+# define FLAG_CURSES			(1u << 7)
 # define BLK_SIZE				512
-# define FILENAME_MAX			256
+# define FILENAME_MAXLEN		256
 
 # define PREFIX 1
 # define SUFFIX 2
@@ -35,10 +36,17 @@ struct node {
 	struct node     *parent;
 	struct s_list   *childs;
 	char            path[PATH_MAX];
-	char			name[FILENAME_MAX];
+	char			name[FILENAME_MAXLEN];
 	size_t			path_len;
 	struct nodestat	space;
 	struct nodestat	files;
+	size_t			flags;
+};
+
+enum e_iter_job {
+	CONTINUE,
+	STOP_NODE,
+	STOP_TREE
 };
 
 #pragma pack(push, 4)
@@ -53,7 +61,7 @@ struct parser_entry {
 
 #pragma pack(pop)
 
-#define PARSER_ENTRIES 7
+#define PARSER_ENTRIES 8
 
 static const struct parser_entry g_parsing_table[PARSER_ENTRIES] = {
 	(struct parser_entry){'p', "full-path", FLAG_FULLPATH_DISPLAY, 0},
@@ -62,17 +70,20 @@ static const struct parser_entry g_parsing_table[PARSER_ENTRIES] = {
 	(struct parser_entry){'e', "empty", FLAG_EMPTY_NODES, 0},
 	(struct parser_entry){'c', "csv", FLAG_ASCSV, FLAG_LOCALSTAT},
 	(struct parser_entry){'v', "verbose", FLAG_VERBOSE, 0},
-	(struct parser_entry){'b', "blocks", FLAG_BLOCKS, 0}
+	(struct parser_entry){'b', "blocks", FLAG_BLOCKS, 0},
+	(struct parser_entry){'i', "interactive", FLAG_CURSES, FLAG_VERBOSE}
 };
 
-struct node	*node_walk(const char *path, struct node *parent,
+struct node		*node_walk(const char *path, struct node *parent,
 	const struct config *cfg);
-void		node_iter_clean(size_t level, struct node *node, void *unused);
-void		node_iter(const size_t mode, struct node *node, void *userdata,
-	size_t level, void (*f)(size_t, struct node *, void *));
+enum e_iter_job	node_iter_clean(size_t level, struct node *node, void *unused);
+enum e_iter_job	node_iter(const size_t mode, struct node *node, void *userdata,
+	size_t level, enum e_iter_job (*f)(size_t, struct node *, void *));
 
-int			parser(int ac, char **av, struct config *cfg);
-int     	lst_cmp(t_list *a, t_list *b);
-int			lst_revcmp(t_list *a, t_list *b);
+int				parser(int ac, char **av, struct config *cfg);
+int     		lst_cmp(t_list *a, t_list *b);
+int				lst_revcmp(t_list *a, t_list *b);
+
+int	 	 		curses_run(struct node *root, const struct config *cfg);
 
 #endif

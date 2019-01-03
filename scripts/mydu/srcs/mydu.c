@@ -35,15 +35,16 @@ int		lst_revcmp(t_list *a, t_list *b)
 	return (-node_cmp(a->content, b->content));
 }
 
-static void node_iter_show(size_t level, struct node *node, void *config)
+static enum e_iter_job node_iter_show(size_t level, struct node *node,
+	void *config)
 {
 	struct config	*cfg = config;
 	char			path[PATH_MAX];
 
 	if ((node->files.total == 0) && (!(cfg->flags & FLAG_EMPTY_NODES)))
-		return ;
+		return (CONTINUE);
 	if (level > cfg->maxlevel)
-		return ;
+		return (CONTINUE);
 	if (cfg->flags & FLAG_FULLPATH_DISPLAY)
 		ft_memcpy(path, node->path, node->path_len + 1);
 	else
@@ -54,14 +55,17 @@ static void node_iter_show(size_t level, struct node *node, void *config)
 		path, ft_printf_conv_wsize,
 		(cfg->flags & FLAG_LOCALSTAT) ? node->space.local : node->space.total,
 		(cfg->flags & FLAG_LOCALSTAT) ? node->files.local : node->files.total);
+	return (CONTINUE);
 }
 
-static void	node_iter_csv(size_t level, struct node *node, void *config)
+static enum e_iter_job	node_iter_csv(size_t level, struct node *node,
+	void *config)
 {
 	(void)config;
 	ft_printf("%lu,%s,%s,%lu,%lu,%lu,%lu\n",
 		level, node->name, node->path, node->space.total, node->files.total,
 		node->space.local, node->files.local);
+	return (CONTINUE);
 }
 
 /*
@@ -69,38 +73,48 @@ static void	node_iter_csv(size_t level, struct node *node, void *config)
 ** this is need for alignment purposes
 */
 
-static void	node_iter_get_maxpl(size_t level, struct node *node, void *config)
+static enum e_iter_job	node_iter_get_maxpl(size_t level, struct node *node,
+	void *config)
 {
 	struct config	*cfg = config;
 	size_t			len;
 
 	if (cfg->maxlevel < level)
-		return ;
+		return (CONTINUE);
 	len	= (cfg->flags & FLAG_FULLPATH_DISPLAY)
 		? node->path_len : (ft_strlen(node->name) + (level * 2));
 	if (len > cfg->path_len_align)
 		cfg->path_len_align = (len > cfg->maxlen) ? cfg->maxlen : len;
+	return (CONTINUE); 
+}
+
+static int		display(struct node *node, struct config *cfg)
+{
+	size_t			dorder = PREFIX;
+
+	if (cfg->flags & FLAG_CURSES)
+		return (curses_run(node, cfg));
+	if (cfg->flags & FLAG_REVERSE)
+		dorder = SUFFIX;
+	node_iter(PREFIX, node, cfg, 0, node_iter_get_maxpl);
+	node_iter(dorder, node, cfg, 0,
+		(cfg->flags & FLAG_ASCSV) ? node_iter_csv : node_iter_show);
+	node_iter(SUFFIX, node, NULL, 0, node_iter_clean);
+	return (EXIT_SUCCESS);
 }
 
 int     main(int ac, char **av)
 {
 	struct config	cfg;
 	struct node     *node;
-	size_t			dorder = PREFIX;
 
 	if (parser(ac, av, &cfg) != EXIT_SUCCESS)
 		return (EXIT_FAILURE);
 	node = node_walk(cfg.root, NULL, &cfg);
-	if (cfg.flags & FLAG_REVERSE)
-		dorder = SUFFIX;
 	if (!node)
 	{
 		ft_dprintf(STDERR_FILENO, "%s%s\n", "Error: ", strerror(errno));
 		return (EXIT_FAILURE);
 	}
-	node_iter(PREFIX, node, &cfg, 0, node_iter_get_maxpl);
-	node_iter(dorder, node, &cfg, 0,
-		(cfg.flags & FLAG_ASCSV) ? node_iter_csv : node_iter_show);
-	node_iter(SUFFIX, node, NULL, 0, node_iter_clean);
-	return (EXIT_SUCCESS);
+	return (display(node, &cfg));
 }

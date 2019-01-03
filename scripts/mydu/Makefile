@@ -3,14 +3,14 @@ CFLAGS=-Wall -Werror -Wextra -Weverything -Wpedantic -Ofast
 CC=clang
 LIBFT_DIR=./libft
 LIBFT=$(LIBFT_DIR)/libft.a
-SRCS=mydu.c parser.c node.c
+SRCS=mydu.c parser.c node.c curses.c
 BUILD_DIR=./build
 OBJS=$(SRCS:%.c=$(BUILD_DIR)/%.o)
 
 all: $(NAME)
 
 $(NAME): $(LIBFT) $(BUILD_DIR) $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -L $(LIBFT_DIR) -o $(NAME) -lft
+	$(CC) $(CFLAGS) $(OBJS) -L $(LIBFT_DIR) -o $(NAME) -lft -lcurses
 
 $(BUILD_DIR)/%.o: ./srcs/%.c
 	$(CC) $(CFLAGS) -I $(LIBFT_DIR)/include -c $< -o $@
