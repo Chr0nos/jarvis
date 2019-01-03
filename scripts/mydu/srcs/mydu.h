@@ -47,6 +47,7 @@ struct node {
 /*
 ** node  : the current active node
 ** select : current selected node on the screen
+** display_index: used to know wich entry we are actualy displaying (pagination purpose)
 */
 
 struct curses_cfg {
@@ -58,6 +59,7 @@ struct curses_cfg {
 	WINDOW          *win;
 	int				line;
 	int				should_quit;
+	size_t			display_index;
 };
 
 enum e_iter_job {
@@ -104,5 +106,6 @@ int     		lst_cmp(t_list *a, t_list *b);
 int				lst_revcmp(t_list *a, t_list *b);
 
 int	 	 		curses_run(struct node *root, const struct config *cfg);
+void         	curses_debug(const struct curses_cfg *curse);
 
 #endif

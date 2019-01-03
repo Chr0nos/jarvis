@@ -3,10 +3,12 @@
 #define COLOR_DEFAULT   0
 #define COLOR_SELECTED  1
 #define ALIGN_WSIZE     80
+#define ALIGN_PC        90
 #define ALIGN_FILES     102
 #define ARROW_UP        65
 #define ARROW_DOWN      66
 #define BACKSPACE       127
+#define OFFSET          10
 // #define ARROW_RIGHT     67
 // #define ARROW_LEFT      68
 
@@ -29,19 +31,33 @@ static int            lst_indexof(struct s_list *lst, const struct node *node)
     return (-1);
 }
 
+/*
+** diff : number of lines under the display
+*/
+
 static enum e_iter_job   curses_display_iter(size_t level, struct node *node,
     void *userdata)
 {
     struct curses_cfg       *cfg = userdata;
     char                    wsize[20];
     int                     pair;
+    int                     diff;
 
+    if (level > 1)
+        return (STOP_NODE);
+    cfg->display_index++;
+    diff = (int)cfg->select_index - LINES;
+    if ((int)cfg->display_index < diff + OFFSET)
+        return CONTINUE;
     pair = COLOR_PAIR((cfg->select == node ? COLOR_SELECTED : COLOR_DEFAULT));
     attron(pair);
     ft_wsize(node->space.total, wsize, 20);
-    mvprintw(cfg->line, 0, "%s\n",
+    mvprintw(cfg->line, 0, "%3d %s\n", cfg->display_index,
         (node == cfg->node) ? node->path : node->name);
     mvprintw(cfg->line, ALIGN_WSIZE, "%s", wsize);
+    mvprintw(cfg->line, ALIGN_PC, "%4.2f%%", (node->parent) ?
+        (double)node->space.total / (double)node->parent->space.total * 100.0
+        : 100);
     mvprintw(cfg->line, ALIGN_FILES, "%lu\n", node->files.total);
     attroff(pair);
     cfg->line++;
@@ -145,6 +161,12 @@ static void         curses_control(const int key, struct curses_cfg *curse)
         curses_error_key(key);
 }
 
+void                curses_debug(const struct curses_cfg *curse)
+{
+    mvprintw(0, 140, "%u\n", curse->select_index);
+    mvprintw(1, 140, "%s\n", curse->node->path);
+}
+
 int                 curses_run(struct node *root, const struct config *cfg)
 {
     struct curses_cfg   curse;
@@ -164,6 +186,8 @@ int                 curses_run(struct node *root, const struct config *cfg)
         clear();
         node_iter(PREFIX, curse.node, &curse, 0, &curses_display_iter);
         curse.line = 0;
+        curse.display_index = 0;
+        // curses_debug(&curse);
         refresh();
         curses_control(getch(), &curse);
     }
