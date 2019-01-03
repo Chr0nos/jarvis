@@ -63,6 +63,30 @@ static inline void  node_update_parent(struct node *node)
 	}
 }
 
+/*
+** create a new struct node describing a file on the filesystem
+** this function is only called if FLAG_FILES is present (option -f)
+*/
+
+static void			node_walk_file(struct node *parent,
+	const struct config *cfg,
+	const struct dirent *ent,
+	const struct stat *st)
+{
+	struct node			*leaf;
+
+	node_init(leaf = malloc(sizeof(struct node)), parent);
+	if (!leaf)
+		return ;
+	ft_snprintf(leaf->name, FILENAME_MAXLEN, "%s", ent->d_name);
+	ft_snprintf(leaf->path, PATH_MAX, "%s/%s", parent->path, ent->d_name);
+	leaf->space.local = (size_t)(st->st_blocks * BLK_SIZE);
+	leaf->space.total = leaf->space.local;
+	leaf->files = (struct nodestat){.local = 0, .total = 0};
+	ft_lstpush_sort(&parent->childs,
+		ft_lstnewlink(leaf, sizeof(*leaf)), cfg->sorter);
+}
+
 static inline void	node_walk_loop(struct node *node,
 	const struct dirent *ent, struct stat *st,
 	const struct config *cfg)
@@ -91,6 +115,8 @@ static inline void	node_walk_loop(struct node *node,
 		else if (st->st_size > 0)
 			node->space.local += (size_t)st->st_size;
 		node->files.local += 1;
+		if (cfg->flags & FLAG_FILES)
+			node_walk_file(node, cfg, ent, st);
 	}
 }
 

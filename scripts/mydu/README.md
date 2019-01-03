@@ -17,6 +17,8 @@ Option          | Purpose
 | -r            | reverses the display
 | -l            | local stats only (does not take children in the stats)
 | -p            | displays the full path, not only the current node name
+| -i            | interactive mode (ncurses)
+| -f            | display files too
 | --max-level=x | x is the max amount of sub-directories to DISPLAY (not to scan), x must be a positive or 0
 
 # Build it
