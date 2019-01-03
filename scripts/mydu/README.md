@@ -19,6 +19,7 @@ Option          | Purpose
 | -p            | displays the full path, not only the current node name
 | -i            | interactive mode (ncurses)
 | -f            | display files too
+| -a            | wakk into hiddens directories (be carefull with .git dirs...)
 | --max-level=x | x is the max amount of sub-directories to DISPLAY (not to scan), x must be a positive or 0
 
 # Interactive mode

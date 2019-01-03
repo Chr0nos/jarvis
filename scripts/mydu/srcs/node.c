@@ -77,7 +77,11 @@ static void			node_walk_file(struct node *parent,
 
 	node_init(leaf = malloc(sizeof(struct node)), parent);
 	if (!leaf)
+	{
+		if (cfg->flags & FLAG_VERBOSE)
+			ft_dprintf(STDERR_FILENO, "%s\n", "Error: out of memory (leaf)\n");
 		return ;
+	}
 	ft_snprintf(leaf->name, FILENAME_MAXLEN, "%s", ent->d_name);
 	ft_snprintf(leaf->path, PATH_MAX, "%s/%s", parent->path, ent->d_name);
 	leaf->space.local = (size_t)(st->st_blocks * BLK_SIZE);
@@ -140,7 +144,9 @@ struct node  *node_walk(const char *path, struct node *parent,
 	}
 	while ((ent = readdir(dir)) != NULL)
 	{
-		if (ent->d_name[0] == '.')
+		if ((ent->d_name[0] == '.') && (!(cfg->flags & FLAG_HIDENS)))
+			continue ;
+		if ((!ft_strcmp(ent->d_name, "..")) || (!ft_strcmp(ent->d_name, ".")))
 			continue ;
 		ft_snprintf(node->path, PATH_MAX, "%s/%s", path, ent->d_name);
 		node_walk_loop(node, ent, &st, cfg);
