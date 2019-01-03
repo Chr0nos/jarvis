@@ -2,6 +2,7 @@
 # define MYDU_H
 # include <string.h>
 # include <limits.h>
+# include <ncurses.h>
 # include "libft.h"
 
 # define FLAG_FULLPATH_DISPLAY	(1u << 0)
@@ -41,6 +42,21 @@ struct node {
 	struct nodestat	space;
 	struct nodestat	files;
 	size_t			flags;
+};
+
+/*
+** node  : the current active node
+** select : current selected node on the screen
+*/
+
+struct curses_cfg {
+	const struct config	*cfg;
+	struct node		*node;
+	struct node		*select;
+	size_t			select_index;
+	WINDOW          *win;
+	int				line;
+	int				should_quit;
 };
 
 enum e_iter_job {

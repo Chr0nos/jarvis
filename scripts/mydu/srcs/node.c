@@ -11,20 +11,22 @@ enum e_iter_job	node_iter(const size_t mode,
 	enum e_iter_job (*f)(size_t, struct node *, void *))
 {
 	struct s_list		*lst;
-	enum e_iter_job		ret;
+	enum e_iter_job		ret = CONTINUE;
 
-	if (mode & PREFIX) 
-		f(level, node, userdata);
+	if (mode & PREFIX)
+	{
+		ret = f(level, node, userdata);
+		if (ret != CONTINUE)
+			return (ret == STOP_NODE ? CONTINUE : STOP_TREE);
+	}
 	for (lst = node->childs; lst; lst = lst->next)
 	{
 		ret = node_iter(mode, lst->content, userdata, level + 1, f);
-		if (ret == STOP_NODE)
-			return (CONTINUE);
-		if (ret == STOP_TREE)
-			return (STOP_TREE);
+		if (ret != CONTINUE)
+			return (ret == STOP_NODE ? CONTINUE : STOP_TREE);
 	}
-	if (mode & SUFFIX)
-		f(level, node, userdata);
+	if ((mode & SUFFIX) && (ret != STOP_TREE))
+		return (f(level, node, userdata));
 	return (CONTINUE);
 }
 
