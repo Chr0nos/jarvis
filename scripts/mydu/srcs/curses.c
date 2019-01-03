@@ -10,6 +10,10 @@
 // #define ARROW_RIGHT     67
 // #define ARROW_LEFT      68
 
+/*
+** search for "node" into lst, each lst->content is a (struct node *)
+*/
+
 static int            lst_indexof(struct s_list *lst, const struct node *node)
 {
     int      i;
@@ -48,8 +52,8 @@ static enum e_iter_job   curses_display_iter(size_t level, struct node *node,
     return (level == 0 ? CONTINUE : STOP_NODE);
 }
 
-static void     curses_init(const struct config *cfg, struct curses_cfg *cufg,
-    struct node *root)
+static void         curses_init(const struct config *cfg,
+    struct curses_cfg *cufg, struct node *root)
 {
     *cufg = (struct curses_cfg) {
         .root = root,
@@ -61,7 +65,7 @@ static void     curses_init(const struct config *cfg, struct curses_cfg *cufg,
     };
 }
 
-static void     curse_select(struct curses_cfg *curse, int index)
+static void         curses_select(struct curses_cfg *curse, int index)
 {
     struct s_list       *item;
 
@@ -82,7 +86,12 @@ static void     curse_select(struct curses_cfg *curse, int index)
     curse->select_index = (size_t)index;
 }
 
-static void     curses_updir(struct curses_cfg *curse)
+/*
+** move the current directory into the parent one.
+** if no parent is available then does nothing
+*/
+
+static void         curses_updir(struct curses_cfg *curse)
 {
     int         idx;
     struct node *last;
@@ -99,7 +108,19 @@ static void     curses_updir(struct curses_cfg *curse)
         curse->select_index = 0;
 }
 
-static void     curses_control(const int key, struct curses_cfg *curse)
+static inline void  curses_error_key(const int key)
+{
+    clear();
+    mvprintw(LINES >> 1, COLS >> 1, "unknow key: %c (%d)\n", (char)key, key);
+    refresh();
+    getch();
+}
+
+/*
+** all user inputs are proceed here
+*/
+
+static void         curses_control(const int key, struct curses_cfg *curse)
 {
     if ((char)key == 'q')
         curse->should_quit = true;
@@ -118,25 +139,23 @@ static void     curses_control(const int key, struct curses_cfg *curse)
     else if (key == BACKSPACE)
         curses_updir(curse);
     else if ((key == ARROW_DOWN) || (key == ARROW_UP))
-        curse_select(curse,
+        curses_select(curse,
             (int)curse->select_index + ((key == ARROW_UP) ? -1 : 1));
     else if (curse->cfg->flags & FLAG_VERBOSE)
-    {
-        clear();
-        mvprintw(LINES >> 1, COLS >> 1, "unknow key: %c (%d)\n", (char)key, key);
-        refresh();
-        getch();
-    }
+        curses_error_key(key);
 }
 
-int             curses_run(struct node *root, const struct config *cfg)
+int                 curses_run(struct node *root, const struct config *cfg)
 {
     struct curses_cfg   curse;
 
     curses_init(cfg, &curse, root);
     curse.win = initscr();
     if (!curse.win)
+    {
+        ft_dprintf(STDERR_FILENO, "%s", "Error: failed to create window.\n");
         return (EXIT_FAILURE);
+    }
     start_color();
     init_pair(COLOR_DEFAULT, COLOR_WHITE, COLOR_GREEN);
     init_pair(COLOR_SELECTED, COLOR_CYAN, COLOR_BLACK);
