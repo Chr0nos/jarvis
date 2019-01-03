@@ -43,7 +43,7 @@ static enum e_iter_job   curses_display_iter(size_t level, struct node *node,
     int                     pair;
     int                     diff;
 
-    if (level > 1)
+    if ((level > 1) || ((node->space.total == 0) && (!(cfg->cfg->flags & FLAG_EMPTY_NODES))))
         return (STOP_NODE);
     cfg->display_index++;
     diff = (int)cfg->select_index - LINES;
@@ -52,13 +52,13 @@ static enum e_iter_job   curses_display_iter(size_t level, struct node *node,
     pair = COLOR_PAIR((cfg->select == node ? COLOR_SELECTED : COLOR_DEFAULT));
     attron(pair);
     ft_wsize(node->space.total, wsize, 20);
-    mvprintw(cfg->line, 0, "%3d %s\n", cfg->display_index,
-        (node == cfg->node) ? node->path : node->name);
     mvprintw(cfg->line, ALIGN_WSIZE, "%s", wsize);
     mvprintw(cfg->line, ALIGN_PC, "%4.2f%%", (node->parent) ?
         (double)node->space.total / (double)node->parent->space.total * 100.0
         : 100);
-    mvprintw(cfg->line, ALIGN_FILES, "%lu\n", node->files.total);
+    mvprintw(cfg->line, ALIGN_FILES, "%lu", node->files.total);
+    mvprintw(cfg->line, 0, "%3d %s", cfg->display_index,
+        (node == cfg->node) ? node->path : node->name);
     attroff(pair);
     cfg->line++;
     if (node == cfg->node)
@@ -181,6 +181,7 @@ int                 curses_run(struct node *root, const struct config *cfg)
     start_color();
     init_pair(COLOR_DEFAULT, COLOR_WHITE, COLOR_GREEN);
     init_pair(COLOR_SELECTED, COLOR_CYAN, COLOR_BLACK);
+    curs_set(0);
     while (!curse.should_quit)
     {
         clear();
