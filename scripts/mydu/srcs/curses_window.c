@@ -29,6 +29,28 @@ int                curses_new_window(struct curses_window *win, void *userdata)
     return (0);
 }
 
+void         curses_refresh_parents(struct curses_window *win)
+{
+    if (!win)
+        return ;
+    if (win->draw)
+        win->draw(win, NULL);
+    if (win->parent)
+        curses_refresh_parents(win->parent);
+}
+
+static int          curses_window_info_input(struct curses_window *win,
+    void *userdata, int key)
+{
+    (void)userdata;
+    if (key == 'p')
+    {
+        curses_window_info(win);
+        curses_refresh_parents(win);
+    }
+    return (0);
+}
+
 void                curses_window_info(struct curses_window *win)
 {
     struct curses_window    info;
@@ -40,7 +62,8 @@ void                curses_window_info(struct curses_window *win)
         .w = 80,
         .h = 10,
         .title = "Window information",
-        .curse = win->curse
+        .curse = win->curse,
+        .input = curses_window_info_input
     };
     curses_new_window(&info, NULL);
 }
