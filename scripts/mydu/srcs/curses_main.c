@@ -149,5 +149,7 @@ int   main_window_input(struct curses_window *win, void *userdata, int key)
             (int)curse->select_index + ((key == ARROW_UP) ? -1 : 1));
     else if (curse->cfg->flags & FLAG_VERBOSE)
         curses_error_key(key);
+    else if (key == 'p')
+        curses_window_info(win);
     return (0);
 }

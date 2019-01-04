@@ -34,7 +34,7 @@ struct curses_cfg {
 };
 
 struct curses_window {
-	struct cursed_window	*parent;
+	struct curses_window	*parent;
 	const char				*title;
 	int						x;
 	int						y;
@@ -47,10 +47,10 @@ struct curses_window {
 };
 
 int	 	 		curses_run(struct node *root, const struct config *cfg);
-void         	curses_debug(const struct curses_cfg *curse);
 int             curses_confirm(const char *message, const int initial);
 void  			curses_box(int x, int y, int w, int h);
 int             curses_new_window(struct curses_window *win, void *userdata);
+void            curses_window_info(struct curses_window *win);
 
 int         	main_window_draw(struct curses_window *win, void *userdata);
 int   			main_window_input(struct curses_window *win, void *userdata, int key);

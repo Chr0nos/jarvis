@@ -1,8 +1,11 @@
 #include "mydu.h"
-#define CONFIRM_DECO    "+----------------------------------+"
-#define CONFIRM_BORDER  '|'
-#define CONFIRM_DECOLEN 36
-#define MARGIN          15
+#define CORNER_TOP_LEFT     'A'
+#define CORNER_TOP_RIGHT    'B'
+#define CORNER_BOT_LEFT     'C'
+#define CORNER_BOT_RIGHT    'D'
+#define CONFIRM_BORDER      '|'
+#define CONFIRM_DECOLEN     36
+#define MARGIN              15
 
 /*
 ** just draw an empty rectangle on the screen
@@ -12,14 +15,24 @@
 void  curses_box(int x, int y, int w, int h)
 {
     int     line;
+    int     col;
 
     if (x < 0)
         x = (LINES >> 1) - (h >> 1);
     if (y < 0)
         y = (COLS >> 1) - (w >> 1);
     line = x + h;
-    mvprintw(x, y, "%s", CONFIRM_DECO);
-    mvprintw(line, y, "%s", CONFIRM_DECO);
+    col = y + w - 2;
+    mvprintw(x, y, "%c", CORNER_TOP_LEFT);
+    mvprintw(x, col + 1, "%c", CORNER_TOP_RIGHT);
+    mvprintw(line, y, "%c", CORNER_BOT_LEFT);
+    mvprintw(line, col + 1, "%c", CORNER_BOT_RIGHT);
+    while (col > y)
+    {
+        mvprintw(x, col, "-");
+        mvprintw(line, col, "-");
+        col--;
+    }
     line--;
     while (line > x)
     {
