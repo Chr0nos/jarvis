@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <locale.h>
 #include "mydu.h"
 
 static void         curses_init(const struct config *cfg,
@@ -25,6 +26,7 @@ int                 curses_run(struct node *root, const struct config *cfg)
         ft_dprintf(STDERR_FILENO, "%s", "Error: failed to create window.\n");
         return (EXIT_FAILURE);
     }
+    setlocale(LC_ALL, "");
     start_color();
     init_pair(COLOR_DEFAULT, COLOR_WHITE, COLOR_GREEN);
     init_pair(COLOR_SELECTED, COLOR_CYAN, COLOR_BLACK);
