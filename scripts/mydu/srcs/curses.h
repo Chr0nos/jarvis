@@ -54,6 +54,8 @@ void  			curses_box(int x, int y, int w, int h);
 int             curses_new_window(struct curses_window *win, void *userdata);
 void            curses_window_info(struct curses_window *win);
 void         	curses_refresh_parents(struct curses_window *win);
+void            curses_puts_center(struct curses_window *win, const int line,
+    const char *text, const size_t len);
 
 int         	main_window_draw(struct curses_window *win, void *userdata);
 int   			main_window_input(struct curses_window *win, void *userdata, int key);

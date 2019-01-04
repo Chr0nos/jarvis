@@ -1,16 +1,27 @@
 #include "mydu.h"
 
+void               curses_puts_center(struct curses_window *win, const int line,
+    const char *text, const size_t len)
+{
+    mvprintw(
+        win->x + line,
+        win->y + 1 + (win->w / 2) - ((int)len / 2),
+        "%s",
+        text);
+}
+
 int                curses_new_window(struct curses_window *win, void *userdata)
 {
     int             ret;
     int             key;
+    const size_t    title_len = (win->title) ? ft_strlen(win->title) : 0;
 
     do
     {
         if (!(win->flags & WIN_NOBORDER))
             curses_box(win->x, win->y, win->w, win->h);
         if (win->title)
-            mvprintw(win->x + 1, win->y + 2, "%s", win->title);
+            curses_puts_center(win, 1, win->title, title_len);
         if (win->draw)
         {
             ret = win->draw(win, userdata);
