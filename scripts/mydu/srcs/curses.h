@@ -29,7 +29,7 @@ struct curses_cfg {
 	size_t			        select_index;
 	WINDOW                  *win;
 	int				        line;
-	int				        should_quit;
+	int						padding;
 	size_t			        display_index;
 };
 

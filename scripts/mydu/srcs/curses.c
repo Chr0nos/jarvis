@@ -10,7 +10,6 @@ static void         curses_init(const struct config *cfg,
         .select = (root->childs) ? root->childs->content : root,
         .select_index = 0,
         .cfg = cfg,
-        .should_quit = false
     };
 }
 
