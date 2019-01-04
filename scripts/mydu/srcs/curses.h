@@ -4,6 +4,8 @@
 # include "mydu.h"
 # define WIN_NOBORDER		(1u << 0)
 # define WIN_QUIT			(1u << 1)
+# define WIN_NOQ			(1u << 2)
+# define WIN_CONFIRM_CLOSE	(1u << 3)
 
 # define BACKSPACE       	127
 

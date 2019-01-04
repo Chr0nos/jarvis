@@ -128,9 +128,7 @@ int   main_window_input(struct curses_window *win, void *userdata, int key)
     struct curses_cfg   *curse = win->curse;
 
     (void)userdata;
-    if (((char)key == 'q') && (curses_confirm("Quit ?", false)))
-        win->flags |= WIN_QUIT;
-    else if (((char)key == '\n') || (key == ARROW_RIGHT))
+    if (((char)key == '\n') || (key == ARROW_RIGHT))
     {
         if (curse->select == curse->node)
             curses_updir(curse);

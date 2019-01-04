@@ -24,8 +24,11 @@ int                curses_new_window(struct curses_window *win, void *userdata)
         key = getch();
         if (win->input)
             win->input(win, userdata, key);
+        if ((win->flags & WIN_CONFIRM_CLOSE) && (key == 'q') &&
+                (!curses_confirm("Quit ?", false)))
+            key = 0;
     }
-    while (key != 'q');
+    while ((key != 'q') || (win->flags & WIN_NOQ));
     return (0);
 }
 

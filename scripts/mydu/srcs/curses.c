@@ -34,7 +34,7 @@ int                 curses_run(struct node *root, const struct config *cfg)
     main = (struct curses_window) {
         .w = COLS,
         .h = LINES,
-        .flags = WIN_NOBORDER,
+        .flags = WIN_NOBORDER | WIN_CONFIRM_CLOSE,
         .curse = &curse,
         .draw = &main_window_draw,
         .input = &main_window_input
