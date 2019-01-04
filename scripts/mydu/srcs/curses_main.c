@@ -1,5 +1,4 @@
 #include "mydu.h"
-#define OFFSET          10
 #define ALIGN_WSIZE     80
 #define ALIGN_PC        90
 #define ALIGN_FILES     102
@@ -21,7 +20,7 @@ static enum e_iter_job   curses_display_iter(size_t level, struct node *node,
         return (STOP_NODE);
     cfg->display_index++;
     diff = (int)cfg->select_index - LINES;
-    if ((int)cfg->display_index < diff + OFFSET)
+    if ((int)cfg->display_index < diff + (LINES >> 1))
         return CONTINUE;
     pair = COLOR_PAIR((cfg->select == node ? COLOR_SELECTED : COLOR_DEFAULT));
     attron(pair);
