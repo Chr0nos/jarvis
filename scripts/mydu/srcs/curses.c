@@ -135,7 +135,7 @@ static void         curses_control(const int key, struct curses_cfg *curse)
 {
     if (((char)key == 'q') && (curses_confirm("Quit ?", false)))
         curse->should_quit = true;
-    else if ((char)key == '\n')
+    else if (((char)key == '\n') || (key == ARROW_RIGHT))
     {
         if (curse->select == curse->node)
             curses_updir(curse);
@@ -147,7 +147,7 @@ static void         curses_control(const int key, struct curses_cfg *curse)
                 curse->node->childs->content : curse->node;
         }
     }
-    else if (key == BACKSPACE)
+    else if ((key == BACKSPACE) || (key == ARROW_LEFT))
         curses_updir(curse);
     else if ((key == ARROW_DOWN) || (key == ARROW_UP))
         curses_select(curse,

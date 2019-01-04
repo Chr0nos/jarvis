@@ -23,10 +23,10 @@
 # define COLOR_DEFAULT			0
 # define COLOR_SELECTED			1
 
-#define	 ARROW_UP      			65
-#define  ARROW_DOWN      		66
-#define  ARROW_RIGHT     		67
-#define  ARROW_LEFT     		68
+# define	 ARROW_UP      		65
+# define  ARROW_DOWN      		66
+# define  ARROW_RIGHT     		67
+# define  ARROW_LEFT     		68
 
 struct config {
 	const char		*root;
@@ -68,6 +68,15 @@ struct curses_cfg {
 	int				line;
 	int				should_quit;
 	size_t			display_index;
+};
+
+struct curses_window {
+	const char		*title;
+	int				x;
+	int				y;
+	int				w;
+	int				h;
+	struct curses_cfg	*curse;
 };
 
 enum e_iter_job {
