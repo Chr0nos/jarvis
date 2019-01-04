@@ -3,7 +3,7 @@ CFLAGS=-Wall -Werror -Wextra -Weverything -Wpedantic -Ofast
 CC=clang
 LIBFT_DIR=./libft
 LIBFT=$(LIBFT_DIR)/libft.a
-SRCS=mydu.c parser.c node.c curses.c curses_confirm.c
+SRCS=mydu.c parser.c node.c curses.c curses_confirm.c curses_main.c
 BUILD_DIR=./build
 OBJS=$(SRCS:%.c=$(BUILD_DIR)/%.o)
 
