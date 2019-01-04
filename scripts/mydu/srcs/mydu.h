@@ -2,8 +2,8 @@
 # define MYDU_H
 # include <string.h>
 # include <limits.h>
-# include <ncurses.h>
 # include "libft.h"
+# include "curses.h"
 
 # define FLAG_FULLPATH_DISPLAY	(1u << 0)
 # define FLAG_LOCALSTAT			(1u << 1)
@@ -52,33 +52,6 @@ struct node {
 	struct nodestat	files;
 };
 
-/*
-** node  : the current active node
-** select : current selected node on the screen
-** display_index: used to know wich entry we are actualy displaying (pagination purpose)
-*/
-
-struct curses_cfg {
-	const struct config	*cfg;
-	struct node		*root;
-	struct node		*node;
-	struct node		*select;
-	size_t			select_index;
-	WINDOW          *win;
-	int				line;
-	int				should_quit;
-	size_t			display_index;
-};
-
-struct curses_window {
-	const char		*title;
-	int				x;
-	int				y;
-	int				w;
-	int				h;
-	struct curses_cfg	*curse;
-};
-
 enum e_iter_job {
 	CONTINUE,
 	STOP_NODE,
@@ -121,9 +94,5 @@ enum e_iter_job	node_iter(const size_t mode, struct node *node, void *userdata,
 int				parser(int ac, char **av, struct config *cfg);
 int     		lst_cmp(t_list *a, t_list *b);
 int				lst_revcmp(t_list *a, t_list *b);
-
-int	 	 		curses_run(struct node *root, const struct config *cfg);
-void         	curses_debug(const struct curses_cfg *curse);
-int             curses_confirm(const char *message, const int initial);
 
 #endif

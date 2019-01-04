@@ -162,9 +162,49 @@ void                curses_debug(const struct curses_cfg *curse)
     mvprintw(1, 140, "%s\n", curse->node->path);
 }
 
+int                curses_new_window(
+    struct curses_window *win,
+    void *userdata,
+    int (*draw)(struct curses_window *, void *),
+    int (*input)(struct curses_window *, void *, int))
+{
+    int             ret;
+    int             key;
+
+    do
+    {
+        curses_box(win->x, win->y, win->w, win->h);
+        mvprintw(win->x + 1, win->y + 2, "%s", win->title);
+        if (draw)
+        {
+            ret = draw(win, userdata);
+            if (ret)
+                return (ret);
+        }
+        else
+            refresh();
+        key = getch();
+        if (input)
+            input(win, userdata, key);
+    }
+    while (key != 'q');
+    return (0);
+}
+
+// static void         curses_main_window_draw(struct curses_window *win, void *unused)
+// {
+//     (void)unused;
+//     clear();
+//     node_iter(PREFIX, win->curse->node, win->curse, 0, &curses_display_iter);
+//     win->curse->line = 0;
+//     win->curse->display_index = 0;
+//     refresh();
+//     curses_control(getch(), win->curse);
+// }
+
 int                 curses_run(struct node *root, const struct config *cfg)
 {
-    struct curses_cfg   curse;
+    struct curses_cfg       curse;
 
     curses_init(cfg, &curse, root);
     curse.win = initscr();

@@ -9,7 +9,7 @@
 ** if "x" or "y" is negative then the center of the screen will be choosed
 */
 
-static inline void  curses_confirm_empty(int x, int y, int w, int h)
+void  curses_box(int x, int y, int w, int h)
 {
     int     line;
 
@@ -44,6 +44,7 @@ static void         curses_confirm_button(const int x, const int y,
 ** if the user quit before selecting a value the intial value will be returned
 */
 
+__attribute__((pure))
 int                curses_confirm(const char *message, const int initial)
 {
     const size_t    len = ft_strlen(message);
@@ -54,7 +55,7 @@ int                curses_confirm(const char *message, const int initial)
     line_center = (int)LINES >> 1;
     do
     {
-        curses_confirm_empty(-1, -1, CONFIRM_DECOLEN, 6);
+        curses_box(-1, -1, CONFIRM_DECOLEN, 6);
         mvprintw(line_center - 1, (COLS >> 1) - (int)(len >> 1), "%s", message);
         curses_confirm_button(
             line_center + 1,
