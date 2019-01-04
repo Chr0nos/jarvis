@@ -1,6 +1,6 @@
 NAME=mydu
-CFLAGS=-Wall -Werror -Wextra -Weverything -Wpedantic -Ofast
 CC=clang
+CFLAGS=-Wall -Werror -Wextra -Weverything -Wpedantic -Ofast
 LIBFT_DIR=./libft
 LIBFT=$(LIBFT_DIR)/libft.a
 SRCS=mydu.c parser.c node.c curses.c curses_confirm.c curses_main.c curses_window.c
@@ -10,7 +10,7 @@ OBJS=$(SRCS:%.c=$(BUILD_DIR)/%.o)
 all: $(NAME)
 
 $(NAME): $(LIBFT) $(BUILD_DIR) $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -L $(LIBFT_DIR) -o $(NAME) -lft -lcurses
+	$(CC) $(CFLAGS) $(OBJS) -L $(LIBFT_DIR) -o $(NAME) -lft -lncursesw
 
 $(BUILD_DIR)/%.o: ./srcs/%.c
 	$(CC) $(CFLAGS) -I $(LIBFT_DIR)/include -c $< -o $@
