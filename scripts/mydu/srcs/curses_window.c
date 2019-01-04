@@ -72,8 +72,8 @@ void                curses_window_info(struct curses_window *win)
 
     info = (struct curses_window){
         .parent = win,
-        .x = (int)(win->h * 0.25f),
-        .y = (int)(win->w * 0.25f),
+        .x = (int)((win->x == 0) ? win->h >> 2 : win->x + 3),
+        .y = (int)((win->y == 0) ? win->w >> 2 : win->y + 3),
         .w = 80,
         .h = 10,
         .title = "Window information",
