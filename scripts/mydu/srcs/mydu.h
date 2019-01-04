@@ -17,8 +17,16 @@
 # define BLK_SIZE				512
 # define FILENAME_MAXLEN		256
 
-# define PREFIX 1
-# define SUFFIX 2
+# define PREFIX					1
+# define SUFFIX					2
+
+# define COLOR_DEFAULT			0
+# define COLOR_SELECTED			1
+
+#define	 ARROW_UP      			65
+#define  ARROW_DOWN      		66
+#define  ARROW_RIGHT     		67
+#define  ARROW_LEFT     		68
 
 struct config {
 	const char		*root;
@@ -107,5 +115,6 @@ int				lst_revcmp(t_list *a, t_list *b);
 
 int	 	 		curses_run(struct node *root, const struct config *cfg);
 void         	curses_debug(const struct curses_cfg *curse);
+int             curses_confirm(const char *message, const int initial);
 
 #endif

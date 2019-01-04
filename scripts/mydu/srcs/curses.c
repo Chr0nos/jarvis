@@ -1,16 +1,10 @@
 #include <stdlib.h>
 #include "mydu.h"
-#define COLOR_DEFAULT   0
-#define COLOR_SELECTED  1
 #define ALIGN_WSIZE     80
 #define ALIGN_PC        90
 #define ALIGN_FILES     102
-#define ARROW_UP        65
-#define ARROW_DOWN      66
 #define BACKSPACE       127
 #define OFFSET          10
-// #define ARROW_RIGHT     67
-// #define ARROW_LEFT      68
 
 /*
 ** search for "node" into lst, each lst->content is a (struct node *)
@@ -139,7 +133,7 @@ static inline void  curses_error_key(const int key)
 
 static void         curses_control(const int key, struct curses_cfg *curse)
 {
-    if ((char)key == 'q')
+    if (((char)key == 'q') && (curses_confirm("Quit ?", false)))
         curse->should_quit = true;
     else if ((char)key == '\n')
     {
