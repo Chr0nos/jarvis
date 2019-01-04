@@ -1,16 +1,24 @@
 NAME=mydu
 CC=clang
+OS=$(shell uname -s)
 CFLAGS=-Wall -Werror -Wextra -Weverything -Wpedantic -Ofast
+LINKER=-lft
 LIBFT_DIR=./libft
 LIBFT=$(LIBFT_DIR)/libft.a
 SRCS=mydu.c parser.c node.c curses.c curses_confirm.c curses_main.c curses_window.c
 BUILD_DIR=./build
 OBJS=$(SRCS:%.c=$(BUILD_DIR)/%.o)
 
+ifeq ($(OS), Darwin)
+	LINKER+=-lcurses
+else
+	LINKER+=-lncursesw
+endif
+
 all: $(NAME)
 
 $(NAME): $(LIBFT) $(BUILD_DIR) $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -L $(LIBFT_DIR) -o $(NAME) -lft -lncursesw
+	$(CC) $(CFLAGS) $(OBJS) -L $(LIBFT_DIR) -o $(NAME) $(LINKER)
 
 $(BUILD_DIR)/%.o: ./srcs/%.c
 	$(CC) $(CFLAGS) -I $(LIBFT_DIR)/include -c $< -o $@
