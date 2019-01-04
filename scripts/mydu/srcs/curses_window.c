@@ -47,10 +47,11 @@ void         curses_refresh_parents(struct curses_window *win)
 {
     if (!win)
         return ;
-    if (win->draw)
-        win->draw(win, NULL);
+
     if (win->parent)
         curses_refresh_parents(win->parent);
+    if (win->draw)
+        win->draw(win, NULL);
 }
 
 static int          curses_window_info_input(struct curses_window *win,
