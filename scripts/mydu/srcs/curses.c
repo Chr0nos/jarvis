@@ -43,7 +43,8 @@ static enum e_iter_job   curses_display_iter(size_t level, struct node *node,
     int                     pair;
     int                     diff;
 
-    if ((level > 1) || ((node->space.total == 0) && (!(cfg->cfg->flags & FLAG_EMPTY_NODES))))
+    if ((level > 1) || ((node->space.total == 0) &&
+            (!(cfg->cfg->flags & FLAG_EMPTY_NODES))))
         return (STOP_NODE);
     cfg->display_index++;
     diff = (int)cfg->select_index - LINES;
