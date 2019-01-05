@@ -61,4 +61,6 @@ void            curses_puts_center(struct curses_window *win, const int line,
 int         	main_window_draw(struct curses_window *win, void *userdata);
 int   			main_window_input(struct curses_window *win, void *userdata, int key);
 
+void 	       curses_files_run(struct curses_window *win, struct node *node);
+
 #endif

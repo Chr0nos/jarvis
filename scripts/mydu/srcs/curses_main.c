@@ -148,5 +148,7 @@ int   main_window_input(struct curses_window *win, void *userdata, int key)
         curses_error_key(key);
     else if (key == 'p')
         curses_window_info(win);
+    else if (key == 'f')
+        curses_files_run(win, win->curse->node);
     return (0);
 }

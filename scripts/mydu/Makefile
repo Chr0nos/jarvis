@@ -5,7 +5,8 @@ CFLAGS=-Wall -Werror -Wextra -Weverything -Wpedantic -Ofast
 LINKER=-lft
 LIBFT_DIR=./libft
 LIBFT=$(LIBFT_DIR)/libft.a
-SRCS=mydu.c parser.c node.c curses.c curses_confirm.c curses_main.c curses_window.c
+SRCS=mydu.c parser.c node.c curses.c curses_confirm.c curses_main.c \
+	curses_window.c curses_files.c
 BUILD_DIR=./build
 OBJS=$(SRCS:%.c=$(BUILD_DIR)/%.o)
 
