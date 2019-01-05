@@ -19,37 +19,37 @@ void  curses_box(int x, int y, int w, int h)
     int     col;
 
     if (x < 0)
-        x = (LINES >> 1) - (h >> 1);
+        x = (LINES >> 1) - (w >> 1);
     if (y < 0)
-        y = (COLS >> 1) - (w >> 1);
-    line = x + h;
-    col = y + w - 2;
-    mvprintw(x, y, "%c", CORNER_TOP_LEFT);
-    mvprintw(x, col + 1, "%c", CORNER_TOP_RIGHT);
-    mvprintw(line, y, "%c", CORNER_BOT_LEFT);
+        y = (COLS >> 1) - (h >> 1);
+    line = y + h;
+    col = x + w - 2;
+    mvprintw(y, x, "%c", CORNER_TOP_LEFT);
+    mvprintw(y, col + 1, "%c", CORNER_TOP_RIGHT);
+    mvprintw(line, x, "%c", CORNER_BOT_LEFT);
     mvprintw(line, col + 1, "%c", CORNER_BOT_RIGHT);
-    while (col > y)
+    while (col > x)
     {
-        mvprintw(x, col, "-");
+        mvprintw(y, col, "-");
         mvprintw(line, col, "-");
         col--;
     }
     line--;
-    while (line > x)
+    while (line > y)
     {
-        mvprintw(line, y, "%c%-*s%c", CONFIRM_BORDER, w - 2, "", CONFIRM_BORDER);
+        mvprintw(line, x, "%c%-*s%c", CONFIRM_BORDER, w - 2, "", CONFIRM_BORDER);
         line--;
     }
 }
 
-static void         curses_confirm_button(const int x, const int y,
+static void         curses_confirm_button(const int y, const int x,
     const char *button, const bool selected)
 {
     int             pair;
 
     pair = COLOR_PAIR((selected == false) ? COLOR_DEFAULT : COLOR_SELECTED);
     attron(pair);
-    mvprintw(x, y, "%s", button);
+    mvprintw(y, x, "%s", button);
     attroff(pair);
 }
 
@@ -72,8 +72,8 @@ static int          curses_confirm_draw(struct curses_window *win,
     void *userdata)
 {
     const int ret = *((int *)userdata);
-    const int line = LINES >> 1;
-    const int col = win->y + (win->w >> 1);
+    const int line = win->y + (win->h >> 1);
+    const int col = win->x + (win->w >> 1);
 
     curses_confirm_button(line, col - MARGIN, "Yes", ret);
     curses_confirm_button(line, col + MARGIN, "No", !ret);
@@ -94,8 +94,8 @@ int                 curses_confirm(struct curses_window *win,
 
     this = (struct curses_window) {
         .parent = win,
-        .x = win->x + (win->h >> 1) - (CONFIRM_HEIGHT >> 1),
-        .y = win->y + (win->w >> 1) - (CONFIRM_WIDTH >> 1),
+        .x = win->x + (win->w >> 1) - (CONFIRM_WIDTH >> 1),
+        .y = win->y + (win->h >> 1) - (CONFIRM_HEIGHT >> 1),
         .w = CONFIRM_WIDTH,
         .h = CONFIRM_HEIGHT,
         .title = message,

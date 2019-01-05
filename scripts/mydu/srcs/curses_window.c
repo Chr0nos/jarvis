@@ -4,8 +4,8 @@ void                curses_puts_center(struct curses_window *win, const int line
     const char *text, const size_t len)
 {
     mvprintw(
-        win->x + line,
-        win->y + 1 + (win->w / 2) - ((int)len / 2),
+        win->y + line,
+        win->x + 1 + (win->w / 2) - ((int)len / 2),
         "%s",
         text);
 }
