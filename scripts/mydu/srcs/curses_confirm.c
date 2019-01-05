@@ -4,8 +4,9 @@
 #define CORNER_BOT_LEFT     'C'
 #define CORNER_BOT_RIGHT    'D'
 #define CONFIRM_BORDER      '|'
-#define CONFIRM_DECOLEN     36
-#define MARGIN              15
+#define CONFIRM_WIDTH       36
+#define CONFIRM_HEIGHT      6
+#define MARGIN              7
 
 /*
 ** just draw an empty rectangle on the screen
@@ -52,39 +53,54 @@ static void         curses_confirm_button(const int x, const int y,
     attroff(pair);
 }
 
+static int          curses_confirm_input(struct curses_window *win,
+    void *userdata, int key)
+{
+    int         *ret = userdata;
+
+    if ((key == ARROW_LEFT) || (key == ARROW_RIGHT))
+        *ret = !*ret;
+    else if (key == '\n')
+    {
+        win->flags |= WIN_QUIT;
+        return (*ret);
+    }
+    return (EXIT_SUCCESS);
+}
+
+static int          curses_confirm_draw(struct curses_window *win,
+    void *userdata)
+{
+    const int ret = *((int *)userdata);
+    const int line = LINES >> 1;
+    const int col = win->y + (win->w >> 1);
+
+    curses_confirm_button(line, col - MARGIN, "Yes", ret);
+    curses_confirm_button(line, col + MARGIN, "No", !ret);
+    return (EXIT_SUCCESS);
+}
+
 /*
 ** Prompt a confirmation window then return the use choice,
 ** if the user quit before selecting a value the intial value will be returned
 */
 
-__attribute__((pure))
-int                curses_confirm(const char *message, const int initial)
+__attribute((pure))
+int                 curses_confirm(struct curses_window *win,
+    const char *message, const int initial)
 {
-    const size_t    len = ft_strlen(message);
-    int             ret = initial;
-    int             line_center;
-    int             key = 0;
+    struct curses_window    this;
+    int                     ret = initial;
 
-    line_center = (int)LINES >> 1;
-    do
-    {
-        curses_box(-1, -1, CONFIRM_DECOLEN, 6);
-        mvprintw(line_center - 1, (COLS >> 1) - (int)(len >> 1), "%s", message);
-        curses_confirm_button(
-            line_center + 1,
-            ((COLS >> 1) - (CONFIRM_DECOLEN >> 1)) + MARGIN,
-            "Yes", ret);
-        curses_confirm_button(
-            line_center + 1,
-            ((COLS >> 1) + (CONFIRM_DECOLEN >> 1)) - MARGIN,
-            "No", !ret);
-        refresh();
-        key = getch();
-        if (key == 'q')
-            return (initial);
-        if ((key == ARROW_LEFT) || (key == ARROW_RIGHT))
-            ret = !ret;
-    }
-    while (key != '\n');
-    return (ret);
+    this = (struct curses_window) {
+        .parent = win,
+        .x = win->x + (win->h >> 1) - (CONFIRM_HEIGHT >> 1),
+        .y = win->y + (win->w >> 1) - (CONFIRM_WIDTH >> 1),
+        .w = CONFIRM_WIDTH,
+        .h = CONFIRM_HEIGHT,
+        .title = message,
+        .input = &curses_confirm_input,
+        .draw = &curses_confirm_draw
+    };
+    return (curses_new_window(&this, &ret));
 }

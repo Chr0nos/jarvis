@@ -49,7 +49,9 @@ struct curses_window {
 };
 
 int	 	 		curses_run(struct node *root, const struct config *cfg);
-int             curses_confirm(const char *message, const int initial);
+int             curses_confirm(struct curses_window *win,
+    const char *message, const int initial);
+
 void  			curses_box(int x, int y, int w, int h);
 int             curses_new_window(struct curses_window *win, void *userdata);
 void            curses_window_info(struct curses_window *win);

@@ -29,19 +29,21 @@ int                 curses_new_window(struct curses_window *win, void *userdata)
         if (win->draw)
         {
             ret = win->draw(win, userdata);
-            if (ret)
+            if ((ret) || (win->flags & WIN_QUIT))
                 return (ret);
-            if (win->flags & WIN_QUIT)
-                return (0);
         }
         else
             refresh();
         move(LINES - 1, COLS - 1);
         key = getch();
         if (win->input)
-            win->input(win, userdata, key);
+        {
+            ret = win->input(win, userdata, key);
+            if (win->flags & WIN_QUIT)
+                return (ret);
+        }
         if ((win->flags & WIN_CONFIRM_CLOSE) && (key == 'q') &&
-                (!curses_confirm("Quit ?", false)))
+                (!curses_confirm(win, "Quit ?", false)))
             key = 0;
     }
     while ((key != 'q') || (win->flags & WIN_NOQ));
