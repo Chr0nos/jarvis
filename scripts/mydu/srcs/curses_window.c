@@ -36,6 +36,7 @@ int                 curses_new_window(struct curses_window *win, void *userdata)
         }
         else
             refresh();
+        move(LINES - 1, COLS - 1);
         key = getch();
         if (win->input)
             win->input(win, userdata, key);
@@ -68,6 +69,8 @@ static int          curses_window_info_input(struct curses_window *win,
         curses_window_info(win);
         curses_refresh_parents(win);
     }
+    if (key == 'r')
+        win->title = "renamed !";
     return (0);
 }
 
