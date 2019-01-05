@@ -1,6 +1,6 @@
 #include "mydu.h"
 
-void               curses_puts_center(struct curses_window *win, const int line,
+void                curses_puts_center(struct curses_window *win, const int line,
     const char *text, const size_t len)
 {
     mvprintw(
@@ -10,18 +10,22 @@ void               curses_puts_center(struct curses_window *win, const int line,
         text);
 }
 
-int                curses_new_window(struct curses_window *win, void *userdata)
+void                curses_window_decorate(struct curses_window *win)
+{
+    if (!(win->flags & WIN_NOBORDER))
+        curses_box(win->x, win->y, win->w, win->h);
+    if (win->title)
+        curses_puts_center(win, 1, win->title, ft_strlen(win->title));
+}
+
+int                 curses_new_window(struct curses_window *win, void *userdata)
 {
     int             ret;
     int             key;
-    const size_t    title_len = (win->title) ? ft_strlen(win->title) : 0;
 
     do
     {
-        if (!(win->flags & WIN_NOBORDER))
-            curses_box(win->x, win->y, win->w, win->h);
-        if (win->title)
-            curses_puts_center(win, 1, win->title, title_len);
+        curses_window_decorate(win);
         if (win->draw)
         {
             ret = win->draw(win, userdata);
@@ -50,6 +54,7 @@ void         curses_refresh_parents(struct curses_window *win)
 
     if (win->parent)
         curses_refresh_parents(win->parent);
+    curses_window_decorate(win);
     if (win->draw)
         win->draw(win, NULL);
 }
