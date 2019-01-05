@@ -17,7 +17,9 @@ void  curses_box(int x, int y, int w, int h)
 {
     int     line;
     int     col;
+	const int	pair = COLOR_PAIR(COLOR_WINBORDERS);
 
+	attron(pair);
     if (x < 0)
         x = (LINES >> 1) - (w >> 1);
     if (y < 0)
@@ -40,6 +42,7 @@ void  curses_box(int x, int y, int w, int h)
         mvprintw(line, x, "%c%-*s%c", CONFIRM_BORDER, w - 2, "", CONFIRM_BORDER);
         line--;
     }
+	attroff(pair);
 }
 
 static void         curses_confirm_button(const int y, const int x,

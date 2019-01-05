@@ -11,6 +11,7 @@
 
 # define COLOR_DEFAULT		0
 # define COLOR_SELECTED		1
+# define COLOR_WINBORDERS	2
 
 # define ARROW_UP      		65
 # define ARROW_DOWN      	66
