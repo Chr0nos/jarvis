@@ -22,8 +22,8 @@ static int  curses_files_draw(struct curses_window *win, void *userdata)
         ft_snprintf(path, PATH_MAX, "%s/%s", node->path, ent->d_name);
         if ((stat(path, &st) < 0) || (!(st.st_mode & S_IFREG)))
             continue ;
-        mvprintw(win->x + line, win->y + 2, "%s", ent->d_name);
-        mvprintw(win->x + line, win->y + win->w - 10, "%lu",
+        mvprintw(win->y + line, win->x + 2, "%s", ent->d_name);
+        mvprintw(win->y + line, win->x + win->w - 15, "%lu",
             (size_t)(st.st_blocks * BLK_SIZE));
         line++;
     }
@@ -39,8 +39,8 @@ void        curses_files_run(struct curses_window *win, struct node *node)
     ft_snprintf(buf, FILENAME_MAXLEN, "%s%s", "Content of ", node->name);
     files = (struct curses_window) {
         .parent = win,
-        .x = 5,
-        .y = COLS / 4,
+        .x = COLS / 4,
+        .y = 5,
         .w = COLS >> 1,
         .h = LINES - 15,
         .title = buf,
