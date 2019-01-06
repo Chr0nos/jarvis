@@ -3,6 +3,12 @@
 #include <unistd.h>
 #include "mydu.h"
 
+/*
+** this function walks into a unix path, calling "callback" in case of "stat"
+** calls success, and call "fails" in case of failure
+** please not that either "st" and "ent" can be sent as NULL.
+*/
+
 void		unix_walk(
 	const size_t mode,
 	const char *path,

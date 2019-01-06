@@ -18,14 +18,39 @@ Option          | Purpose
 | -l            | local stats only (does not take children in the stats)
 | -p            | displays the full path, not only the current node name
 | -i            | interactive mode (ncurses)
-| -f            | display files too
+| -f            | display files too (be carefull of memory consumtion !)
 | -a            | wakk into hiddens directories (be carefull with .git dirs...)
 | --max-level=x | x is the max amount of sub-directories to DISPLAY (not to scan), x must be a positive or 0
 
 # Interactive mode
-You can use the up/down arrow to select the target to go, then press enter,
-use backspace to go to the parent directory.
+You can use the up/down arrow to select the target to go, then press enter, use backspace to go to the parent directory.
 Press "q" to quit.
 
+## Keys
+Key                 | Purpose
+--------------------|:-----------------------------------------
+| f                 | open the current directory files list
+| d                 | delete the selected directory
+| p                 | open infomations about the current window (in progress...)
+| q                 | close the current window
+| up/down arrows    | move in the list of a window
+| left/right arrows | in the main window, enter/exit selection, used in selection to change the choice
+| enter             | validate a choice or enter a directory
+| backspace         | go to the parent directory
+
+# Symlinks
+This tool does not show symlinks because the main purpose is to find heavy objects 
+on the disk quickly, there is no benefit to to walk over symlinks in this context.
+
 # Build it
-Just type "make" and make sure to have "git" and "clang" installed
+Just type "make" and make sure to have "git", "clang" and "ncurses" installed
+
+# Supported operating systems
+i develop this tool on an Arch Linux 64 bits unstable and mac os high sierra
+- Linux
+- MacOs
+- Probably all bsd like
+
+# Contribute
+If you wan to contribute it will be a pleasure for me, feel free to open issues and ask
+for new things
