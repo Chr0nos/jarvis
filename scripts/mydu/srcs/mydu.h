@@ -93,5 +93,7 @@ void			unix_walk(const size_t mode, const char *path, void *userdata,
 	void (*callback)(const char *, struct stat *, struct dirent *, void *),
 	void (*fails)(const char *path, struct dirent *ent, void *userdata));
 
+void			unix_display(const char *path, struct stat *st,
+	struct dirent *ent, void *userdata);
 
 #endif

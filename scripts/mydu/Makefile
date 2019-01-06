@@ -44,4 +44,7 @@ re: fclean all
 install: $(NAME)
 	sudo cp -v $(NAME) /usr/bin
 
+test:
+	clang -I$(LIBFT_DIR)/include srcs/unix_walk.c srcs/test_unix.c -L$(LIBFT_DIR) $(LINKER) -o test
+
 .PHONY: clean fclean all re install

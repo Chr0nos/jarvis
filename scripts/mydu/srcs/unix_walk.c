@@ -15,6 +15,8 @@ void		unix_walk(
 	DIR				*dir;
 	struct dirent   *ent;
 
+	if (mode & PREFIX)
+		callback(path, (stat(path, &st) < 0) ? NULL : &st, NULL, userdata);
 	dir = opendir(path);
 	if (!dir)
 	{
@@ -33,17 +35,16 @@ void		unix_walk(
 				fails(fullpath, ent, userdata);
 			continue ;
 		}
-		if (mode & PREFIX)
+		if ((mode & PREFIX) && (!(st.st_mode & S_IFDIR)))
 			callback(fullpath, &st, ent, userdata);
 		unix_walk(mode, fullpath, userdata, callback, fails);
-		if (mode & SUFFIX)
+		if ((mode & SUFFIX) && (!(st.st_mode & S_IFDIR)))
 			callback(fullpath, &st, ent, userdata);
 	}
 	closedir(dir);
+	if (mode & SUFFIX)
+		callback(path, (stat(path, &st) < 0) ? NULL : &st, NULL, userdata);
 }
-
-void		unix_display(const char *path, struct stat *st,
-	struct dirent *ent, void *userdata);
 
 void		unix_display(const char *path,
 	__attribute((unused)) struct stat *st,
