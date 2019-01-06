@@ -122,12 +122,36 @@ int         main_window_draw(struct curses_window *win, void *userdata)
     return (0);
 }
 
+static void     main_window_delete(struct curses_window *win, struct node *node)
+{
+    struct node     *parent;
+    struct s_list   *lst;
+
+    if (!node)
+        return ;
+    parent = node->parent;
+    if ((!parent) || (!curses_delete(win, node)))
+        return ;
+    for (lst = parent->childs; lst; lst = lst->next)
+    {
+        if (lst->content == node)
+        {
+            ft_lstremove(&lst, &parent->childs, NULL);
+            break ;
+        }
+    }
+    if (win->curse->select_index > 0)
+        win->curse->select_index--;
+    lst = ft_lstat(parent->childs, (int)win->curse->select_index);
+    win->curse->select = (!lst) ? NULL : lst->content;
+}
+
 int   main_window_input(struct curses_window *win, void *userdata, int key)
 {
     struct curses_cfg   *curse = win->curse;
 
     (void)userdata;
-    if (((char)key == '\n') || (key == ARROW_RIGHT))
+    if ((key == '\n') || (key == ARROW_RIGHT))
     {
         if (curse->select == curse->node)
             curses_updir(curse);
@@ -150,5 +174,7 @@ int   main_window_input(struct curses_window *win, void *userdata, int key)
         curses_window_info(win);
     else if (key == 'f')
         curses_files_run(win, win->curse->node);
+    else if (key == 'd')
+        main_window_delete(win, win->curse->select);
     return (0);
 }

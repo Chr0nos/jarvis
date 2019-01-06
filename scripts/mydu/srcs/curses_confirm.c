@@ -94,12 +94,17 @@ int                 curses_confirm(struct curses_window *win,
 {
     struct curses_window    this;
     int                     ret = initial;
+    const size_t            title_len = ft_strlen(message);
+    size_t                  width;
 
+    width = title_len + MARGIN;
+    if (width < CONFIRM_WIDTH)
+        width = CONFIRM_WIDTH;
     this = (struct curses_window) {
         .parent = win,
-        .x = win->x + (win->w >> 1) - (CONFIRM_WIDTH >> 1),
+        .x = win->x + (win->w >> 1) - (int)(width >> 1),
         .y = win->y + (win->h >> 1) - (CONFIRM_HEIGHT >> 1),
-        .w = CONFIRM_WIDTH,
+        .w = (int)width,
         .h = CONFIRM_HEIGHT,
         .title = message,
         .input = &curses_confirm_input,

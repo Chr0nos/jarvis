@@ -2,6 +2,8 @@
 # define MYDU_H
 # include <string.h>
 # include <limits.h>
+# include <sys/dir.h>
+# include <sys/stat.h>
 # include "libft.h"
 # include "curses.h"
 
@@ -86,5 +88,10 @@ enum e_iter_job	node_iter(const size_t mode, struct node *node, void *userdata,
 int				parser(int ac, char **av, struct config *cfg);
 int     		lst_cmp(t_list *a, t_list *b);
 int				lst_revcmp(t_list *a, t_list *b);
+
+void			unix_walk(const size_t mode, const char *path, void *userdata,
+	void (*callback)(const char *, struct stat *, struct dirent *, void *),
+	void (*fails)(const char *path, struct dirent *ent, void *userdata));
+
 
 #endif
