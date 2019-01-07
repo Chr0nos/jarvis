@@ -51,7 +51,7 @@ class Database():
 		self.c[table].drop()
 
 	def remove(self, table, item):
-		self.c[table].remove_one(item)
+		self.c[table].delete_one(item)
 
 
 class WebToons():
@@ -307,6 +307,10 @@ def redl(db, params):
 	w = WebToons(db.connect('webtoons'))
 	w.force_ep(params[0])
 
+def remove(db, params):
+	db.connect('webtoons')
+	db.remove('subs', {'name': params[0]})
+
 def commands(cmd, params):
 	cmds = {
 		'test': (0, test),
@@ -320,7 +324,8 @@ def commands(cmd, params):
 		'-h': (0, help),
 		'pullall': (0, leechall),
 		'export': (0, export),
-		'redl': (1, redl)
+		'redl': (1, redl),
+		'del': (1, remove)
 	}
 	db = Database()
 	if cmd not in cmds:
