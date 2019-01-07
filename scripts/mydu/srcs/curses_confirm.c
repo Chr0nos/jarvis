@@ -68,6 +68,11 @@ static int          curses_confirm_input(struct curses_window *win,
         win->flags |= WIN_QUIT;
         return (*ret);
     }
+    else if ((key == 'y') || (key == 'n'))
+    {
+        win->flags |= WIN_QUIT;
+        return (key == 'y');
+    }
     return (EXIT_SUCCESS);
 }
 
