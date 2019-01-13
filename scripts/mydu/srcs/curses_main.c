@@ -122,6 +122,17 @@ int         main_window_draw(struct curses_window *win, void *userdata)
     return (0);
 }
 
+static t_list	*lst_search_content(struct s_list *lst, const void *content)
+{
+	while (lst)
+	{
+		if (lst->content == content)
+			return (lst);
+		lst = lst->next;
+	}
+	return (NULL);
+}
+
 static void     main_window_delete(struct curses_window *win, struct node *node)
 {
     struct node     *parent;
@@ -132,14 +143,8 @@ static void     main_window_delete(struct curses_window *win, struct node *node)
     parent = node->parent;
     if ((!parent) || (!curses_delete(win, node)))
         return ;
-    for (lst = parent->childs; lst; lst = lst->next)
-    {
-        if (lst->content == node)
-        {
-            ft_lstremove(&lst, &parent->childs, NULL);
-            break ;
-        }
-    }
+	lst = lst_search_content(parent->childs, node);
+	ft_lstremove(&lst, &parent->childs, NULL);
     if (win->curse->select_index > 0)
         win->curse->select_index--;
     lst = ft_lstat(parent->childs, (int)win->curse->select_index);
