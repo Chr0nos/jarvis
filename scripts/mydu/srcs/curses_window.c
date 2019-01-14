@@ -14,7 +14,8 @@ void                curses_puts_center(
     mvprintw(
         win->y + line,
         win->x + 1 + (win->w / 2) - ((int)len / 2),
-        "%s",
+        "%.*s",
+        len,
         text);
 }
 
