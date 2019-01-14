@@ -87,7 +87,6 @@ void                curses_window_info(struct curses_window *win)
         .w = 80,
         .h = 10,
         .title = "Window information",
-        .curse = win->curse,
         .input = curses_window_info_input
     };
     curses_new_window(&info, NULL);

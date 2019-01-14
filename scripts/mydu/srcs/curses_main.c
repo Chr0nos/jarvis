@@ -10,7 +10,7 @@
 static enum e_iter_job   curses_display_iter(size_t level, struct node *node,
     void *userdata)
 {
-    struct curses_cfg       *cfg = userdata;
+    struct main_window      *cfg = userdata;
     char                    wsize[20];
     int                     pair;
     int                     diff;
@@ -60,7 +60,7 @@ static int            lst_indexof(struct s_list *lst, const struct node *node)
     return (-1);
 }
 
-static void         curses_select(struct curses_cfg *curse, int index)
+static void         curses_select(struct main_window *curse, int index)
 {
     struct s_list       *item;
 
@@ -86,7 +86,7 @@ static void         curses_select(struct curses_cfg *curse, int index)
 ** if no parent is available then does nothing
 */
 
-static void         curses_updir(struct curses_cfg *curse)
+static void         curses_updir(struct main_window *curse)
 {
     int         idx;
     struct node *last;
@@ -113,11 +113,13 @@ static inline void  curses_error_key(const int key)
 
 int         main_window_draw(struct curses_window *win, void *userdata)
 {
-    (void)userdata;
+    struct main_window      *curse = userdata;
+
+    (void)win;
     clear();
-    node_iter(PREFIX, win->curse->node, win->curse, 0, &curses_display_iter);
-    win->curse->line = 0;
-    win->curse->display_index = 0;
+    node_iter(PREFIX, curse->node, curse, 0, &curses_display_iter);
+    curse->line = 0;
+    curse->display_index = 0;
     refresh();
     return (0);
 }
@@ -133,7 +135,8 @@ static t_list	*lst_search_content(struct s_list *lst, const void *content)
 	return (NULL);
 }
 
-static void     main_window_delete(struct curses_window *win, struct node *node)
+static void     main_window_delete(struct curses_window *win, struct node *node,
+    struct main_window *curse)
 {
     struct node     *parent;
     struct s_list   *lst;
@@ -145,17 +148,16 @@ static void     main_window_delete(struct curses_window *win, struct node *node)
         return ;
 	lst = lst_search_content(parent->childs, node);
 	ft_lstremove(&lst, &parent->childs, NULL);
-    if (win->curse->select_index > 0)
-        win->curse->select_index--;
-    lst = ft_lstat(parent->childs, (int)win->curse->select_index);
-    win->curse->select = (!lst) ? NULL : lst->content;
+    if (curse->select_index > 0)
+        curse->select_index--;
+    lst = ft_lstat(parent->childs, (int)curse->select_index);
+    curse->select = (!lst) ? NULL : lst->content;
 }
 
 int   main_window_input(struct curses_window *win, void *userdata, int key)
 {
-    struct curses_cfg   *curse = win->curse;
+    struct main_window   *curse = userdata;
 
-    (void)userdata;
     if ((key == '\n') || (key == ARROW_RIGHT))
     {
         if (curse->select == curse->node)
@@ -178,8 +180,8 @@ int   main_window_input(struct curses_window *win, void *userdata, int key)
     else if (key == 'p')
         curses_window_info(win);
     else if (key == 'f')
-        curses_files_run(win, win->curse->node);
+        curses_files_run(win, curse->node);
     else if (key == 'd')
-        main_window_delete(win, win->curse->select);
+        main_window_delete(win, curse->select, curse);
     return (0);
 }

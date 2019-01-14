@@ -3,9 +3,9 @@
 #include "mydu.h"
 
 static void         curses_init(const struct config *cfg,
-    struct curses_cfg *cufg, struct node *root)
+    struct main_window *cufg, struct node *root)
 {
-    *cufg = (struct curses_cfg) {
+    *cufg = (struct main_window) {
         .root = root,
         .node = root,
         .select = (root->childs) ? root->childs->content : root,
@@ -17,7 +17,7 @@ static void         curses_init(const struct config *cfg,
 int                 curses_run(struct node *root, const struct config *cfg)
 {
     struct curses_window    main;
-    struct curses_cfg       curse;
+    struct main_window      curse;
 
     curses_init(cfg, &curse, root);
     curse.win = initscr();
@@ -36,11 +36,10 @@ int                 curses_run(struct node *root, const struct config *cfg)
         .w = COLS,
         .h = LINES,
         .flags = WIN_NOBORDER | WIN_CONFIRM_CLOSE,
-        .curse = &curse,
         .draw = &main_window_draw,
         .input = &main_window_input
     };
-    curses_new_window(&main, NULL);
+    curses_new_window(&main, &curse);
     endwin();
 	node_iter(SUFFIX, root, NULL, 0, node_iter_clean);
     return (EXIT_SUCCESS);

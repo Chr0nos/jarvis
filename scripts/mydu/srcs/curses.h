@@ -24,7 +24,7 @@
 ** display_index: used to know wich entry we are actualy displaying (pagination purpose)
 */
 
-struct curses_cfg {
+struct main_window {
 	const struct config	    *cfg;
 	struct node		        *root;
 	struct node		        *node;
@@ -46,7 +46,6 @@ struct curses_window {
 	int						(*draw)(struct curses_window *, void *);
 	int						(*input)(struct curses_window *, void *, int);
 	size_t					flags;
-	struct curses_cfg		*curse;
 };
 
 int	 	 		curses_run(struct node *root, const struct config *cfg);
