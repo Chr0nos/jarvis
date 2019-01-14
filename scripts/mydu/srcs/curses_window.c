@@ -54,7 +54,6 @@ void         curses_refresh_parents(struct curses_window *win)
 {
     if (!win)
         return ;
-
     if (win->parent)
         curses_refresh_parents(win->parent);
     curses_window_decorate(win);
