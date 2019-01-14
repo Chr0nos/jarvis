@@ -56,10 +56,9 @@ static void         curses_confirm_button(const int y, const int x,
     attroff(pair);
 }
 
-static int          curses_confirm_input(struct curses_window *win,
-    void *userdata, int key)
+static int          curses_confirm_input(struct curses_window *win, int key)
 {
-    int         *ret = userdata;
+    int         *ret = win->userdata;
 
     if ((key == ARROW_LEFT) || (key == ARROW_RIGHT))
         *ret = !*ret;
@@ -76,10 +75,9 @@ static int          curses_confirm_input(struct curses_window *win,
     return (EXIT_SUCCESS);
 }
 
-static int          curses_confirm_draw(struct curses_window *win,
-    void *userdata)
+static int          curses_confirm_draw(struct curses_window *win)
 {
-    const int ret = *((int *)userdata);
+    const int ret = *((int *)win->userdata);
     const int line = win->y + (win->h >> 1);
     const int col = win->x + (win->w >> 1);
 
@@ -113,7 +111,8 @@ int                 curses_confirm(struct curses_window *win,
         .h = CONFIRM_HEIGHT,
         .title = message,
         .input = &curses_confirm_input,
-        .draw = &curses_confirm_draw
+        .draw = &curses_confirm_draw,
+        .userdata = &ret
     };
-    return (curses_new_window(&this, &ret));
+    return (curses_new_window(&this));
 }

@@ -1,7 +1,15 @@
 #include "mydu.h"
 
-void                curses_puts_center(struct curses_window *win, const int line,
-    const char *text, const size_t len)
+/*
+** put a string in the center of a window at the specified "line"
+** len : the string lenght to put
+*/
+
+void                curses_puts_center(
+    struct curses_window *win,
+    const int line,
+    const char *text,
+    const size_t len)
 {
     mvprintw(
         win->y + line,
@@ -18,7 +26,15 @@ void                curses_window_decorate(struct curses_window *win)
         curses_puts_center(win, 1, win->title, ft_strlen(win->title));
 }
 
-int                 curses_new_window(struct curses_window *win, void *userdata)
+/*
+** This is a main loop for window system, util the window is not exited this
+** function will not return.
+** to close the window the caller has to set a flag WIN_QUIT then the loop
+** will return the same data as the user specified.
+** to return pointers add a field in your structure provided by userdata
+*/
+
+int                 curses_new_window(struct curses_window *win)
 {
     int             ret;
     int             key;
@@ -28,7 +44,7 @@ int                 curses_new_window(struct curses_window *win, void *userdata)
         curses_window_decorate(win);
         if (win->draw)
         {
-            ret = win->draw(win, userdata);
+            ret = win->draw(win);
             if ((ret) || (win->flags & WIN_QUIT))
                 return (ret);
         }
@@ -38,7 +54,7 @@ int                 curses_new_window(struct curses_window *win, void *userdata)
         key = getch();
         if (win->input)
         {
-            ret = win->input(win, userdata, key);
+            ret = win->input(win, key);
             if (win->flags & WIN_QUIT)
                 return (ret);
         }
@@ -58,11 +74,10 @@ void         curses_refresh_parents(struct curses_window *win)
         curses_refresh_parents(win->parent);
     curses_window_decorate(win);
     if (win->draw)
-        win->draw(win, NULL);
+        win->draw(win);
 }
 
-static int          curses_window_info_input(struct curses_window *win,
-    __attribute((unused)) void *userdata, int key)
+static int          curses_window_info_input(struct curses_window *win, int key)
 {
     if (key == 'p')
     {
@@ -85,7 +100,7 @@ void                curses_window_info(struct curses_window *win)
         .w = 80,
         .h = 10,
         .title = "Window information",
-        .input = curses_window_info_input
+        .input = curses_window_info_input,
     };
-    curses_new_window(&info, NULL);
+    curses_new_window(&info);
 }

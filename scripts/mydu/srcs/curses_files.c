@@ -3,9 +3,9 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
-static int  curses_files_draw(struct curses_window *win, void *userdata)
+static int  curses_files_draw(struct curses_window *win)
 {
-    struct node     *node = userdata;
+    struct node     *node = win->userdata;
     DIR             *dir;
     struct dirent   *ent;
     struct stat     st;
@@ -44,7 +44,8 @@ void        curses_files_run(struct curses_window *win, struct node *node)
         .w = COLS >> 1,
         .h = LINES - 15,
         .title = buf,
-        .draw = &curses_files_draw
+        .draw = &curses_files_draw,
+        .userdata = node
     };
-    curses_new_window(&files, node);
+    curses_new_window(&files);
 }

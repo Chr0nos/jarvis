@@ -37,9 +37,10 @@ int                 curses_run(struct node *root, const struct config *cfg)
         .h = LINES,
         .flags = WIN_NOBORDER | WIN_CONFIRM_CLOSE,
         .draw = &main_window_draw,
-        .input = &main_window_input
+        .input = &main_window_input,
+        .userdata = &curse
     };
-    curses_new_window(&main, &curse);
+    curses_new_window(&main);
     endwin();
 	node_iter(SUFFIX, root, NULL, 0, node_iter_clean);
     return (EXIT_SUCCESS);

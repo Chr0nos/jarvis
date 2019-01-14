@@ -43,9 +43,10 @@ struct curses_window {
 	int						y;
 	int						w;
 	int						h;
-	int						(*draw)(struct curses_window *, void *);
-	int						(*input)(struct curses_window *, void *, int);
+	int						(*draw)(struct curses_window *);
+	int						(*input)(struct curses_window *, int);
 	size_t					flags;
+	void					*userdata;
 };
 
 int	 	 		curses_run(struct node *root, const struct config *cfg);
@@ -53,15 +54,15 @@ int             curses_confirm(struct curses_window *win,
     const char *message, const int initial);
 
 void  			curses_box(int x, int y, int w, int h);
-int             curses_new_window(struct curses_window *win, void *userdata);
+int             curses_new_window(struct curses_window *win);
 void            curses_window_info(struct curses_window *win);
 void            curses_window_decorate(struct curses_window *win);
 void         	curses_refresh_parents(struct curses_window *win);
 void            curses_puts_center(struct curses_window *win, const int line,
     const char *text, const size_t len);
 
-int         	main_window_draw(struct curses_window *win, void *userdata);
-int   			main_window_input(struct curses_window *win, void *userdata, int key);
+int         	main_window_draw(struct curses_window *win);
+int   			main_window_input(struct curses_window *win, int key);
 
 void 	       	curses_files_run(struct curses_window *win, struct node *node);
 size_t			curses_delete(struct curses_window *win, struct node *node);

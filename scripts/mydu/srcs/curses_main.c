@@ -111,11 +111,10 @@ static inline void  curses_error_key(const int key)
     getch();
 }
 
-int         main_window_draw(struct curses_window *win, void *userdata)
+int         main_window_draw(struct curses_window *win)
 {
-    struct main_window      *curse = userdata;
+    struct main_window      *curse = win->userdata;
 
-    (void)win;
     clear();
     node_iter(PREFIX, curse->node, curse, 0, &curses_display_iter);
     curse->line = 0;
@@ -154,9 +153,9 @@ static void     main_window_delete(struct curses_window *win, struct node *node,
     curse->select = (!lst) ? NULL : lst->content;
 }
 
-int   main_window_input(struct curses_window *win, void *userdata, int key)
+int   main_window_input(struct curses_window *win, int key)
 {
-    struct main_window   *curse = userdata;
+    struct main_window   *curse = win->userdata;
 
     if ((key == '\n') || (key == ARROW_RIGHT))
     {
