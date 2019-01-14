@@ -63,9 +63,8 @@ void         curses_refresh_parents(struct curses_window *win)
 }
 
 static int          curses_window_info_input(struct curses_window *win,
-    void *userdata, int key)
+    __attribute((unused)) void *userdata, int key)
 {
-    (void)userdata;
     if (key == 'p')
     {
         curses_window_info(win);
