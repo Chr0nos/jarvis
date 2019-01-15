@@ -28,7 +28,8 @@ int                 curses_run(struct node *root, const struct config *cfg)
     }
     setlocale(LC_ALL, "");
     start_color();
-    init_pair(COLOR_DEFAULT, COLOR_WHITE, COLOR_GREEN);
+	noecho();
+	init_pair(COLOR_DEFAULT, COLOR_WHITE, COLOR_GREEN);
     init_pair(COLOR_SELECTED, COLOR_CYAN, COLOR_BLACK);
 	init_pair(COLOR_WINBORDERS, COLOR_MAGENTA, COLOR_BLACK);
 	curs_set(0);
