@@ -40,6 +40,8 @@ int                 curses_new_window(struct curses_window *win)
     int             ret;
     int             key;
 
+	if (!win->object)
+		win->object = newwin(win->h, win->w, win->y, win->x);
     do
     {
         curses_window_decorate(win);
@@ -101,7 +103,7 @@ void                curses_window_info(struct curses_window *win)
         .w = 80,
         .h = 10,
         .title = "Window information",
-        .input = curses_window_info_input,
+        .input = curses_window_info_input
     };
     curses_new_window(&info);
 }
