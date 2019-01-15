@@ -66,6 +66,7 @@ int                 curses_new_window(struct curses_window *win)
             key = 0;
     }
     while ((key != 'q') || (win->flags & WIN_NOQ));
+	delwin(win->object);
     return (0);
 }
 
