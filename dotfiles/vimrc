@@ -79,4 +79,5 @@ set mouse=a
 set softtabstop=0 noexpandtab
 set shiftwidth=4
 set number
+set wildmenu
 syntax on
