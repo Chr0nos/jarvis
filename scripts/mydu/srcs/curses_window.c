@@ -93,6 +93,23 @@ static int          curses_window_info_input(struct curses_window *win, int key)
     return (0);
 }
 
+static int			curses_window_info_draw(struct curses_window *win)
+{
+	const int 	col = win->x + (win->w >> 1) - 4;
+	int			line;
+
+	if (!win->parent)
+		return (-1);
+	line = win->y + 3;
+	mvprintw(line++, col, "x: %2d", win->parent->x);
+	mvprintw(line++, col, "y: %2d", win->parent->y);
+	mvprintw(line++, col, "w: %2d", win->parent->w);
+	mvprintw(line++, col, "h: %2d", win->parent->h);
+	mvprintw(line++, col, "u: %p", win->parent->userdata);
+	wrefresh(win->object);
+	return (0);
+}
+
 void                curses_window_info(struct curses_window *win)
 {
     struct curses_window    info;
@@ -104,7 +121,8 @@ void                curses_window_info(struct curses_window *win)
         .w = 80,
         .h = 10,
         .title = "Window information",
-        .input = curses_window_info_input
-    };
+        .input = curses_window_info_input,
+		.draw = curses_window_info_draw
+	};
     curses_new_window(&info);
 }
