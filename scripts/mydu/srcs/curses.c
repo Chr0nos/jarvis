@@ -20,8 +20,8 @@ int                 curses_run(struct node *root, const struct config *cfg)
     struct main_window      curse;
 
     curses_init(cfg, &curse, root);
-    curse.win = initscr();
-    if (!curse.win)
+    main.object = initscr();
+    if (!main.object)
     {
         ft_dprintf(STDERR_FILENO, "%s", "Error: failed to create window.\n");
         return (EXIT_FAILURE);
@@ -38,7 +38,8 @@ int                 curses_run(struct node *root, const struct config *cfg)
         .flags = WIN_NOBORDER | WIN_CONFIRM_CLOSE,
         .draw = &main_window_draw,
         .input = &main_window_input,
-        .userdata = &curse
+        .userdata = &curse,
+		.object = main.object
     };
     curses_new_window(&main);
     endwin();

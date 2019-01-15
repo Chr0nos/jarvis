@@ -30,7 +30,6 @@ struct main_window {
 	struct node		        *node;
 	struct node		        *select;
 	size_t			        select_index;
-	WINDOW                  *win;
 	int				        line;
 	int						padding;
 	size_t			        display_index;
@@ -46,6 +45,7 @@ struct curses_window {
 	int						(*draw)(struct curses_window *);
 	int						(*input)(struct curses_window *, int);
 	size_t					flags;
+	WINDOW					*object;
 	void					*userdata;
 };
 
