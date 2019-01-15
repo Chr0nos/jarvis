@@ -5,12 +5,13 @@
 
 static int  curses_files_draw(struct curses_window *win)
 {
-    struct node     *node = win->userdata;
-    DIR             *dir;
-    struct dirent   *ent;
-    struct stat     st;
-    char            path[PATH_MAX];
-    int             line = 2;
+    struct files_window *files = win->userdata;
+    struct node         *node = files->node;
+    DIR                 *dir;
+    struct dirent       *ent;
+    struct stat         st;
+    char                path[PATH_MAX];
+    int                 line = 2;
 
     if (!node)
         return (EXIT_FAILURE);
@@ -33,19 +34,20 @@ static int  curses_files_draw(struct curses_window *win)
 
 void        curses_files_run(struct curses_window *win, struct node *node)
 {
-    struct curses_window        files;
-    char                        buf[FILENAME_MAXLEN];
+    struct curses_window        this;
+    struct files_window         files;
 
-    ft_snprintf(buf, FILENAME_MAXLEN, "%s%s", "Content of ", node->name);
-    files = (struct curses_window) {
+    files.node = node;
+    ft_snprintf(files.title, PATH_MAX, "%s%s", "Content of ", node->name);
+    this = (struct curses_window) {
         .parent = win,
         .x = COLS / 4,
         .y = 5,
         .w = COLS >> 1,
         .h = LINES - 15,
-        .title = buf,
+        .title = files.title,
         .draw = &curses_files_draw,
-        .userdata = node
+        .userdata = &files
     };
-    curses_new_window(&files);
+    curses_new_window(&this);
 }

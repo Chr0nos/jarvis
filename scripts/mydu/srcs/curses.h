@@ -38,6 +38,12 @@ struct main_window {
 	struct curses_window	*win;
 };
 
+struct files_window {
+	WINDOW					 *pad;
+	struct node				*node;
+	char					title[PATH_MAX];
+};
+
 struct curses_window {
 	struct curses_window	*parent;
 	const char				*title;
