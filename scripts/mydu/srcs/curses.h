@@ -18,6 +18,8 @@
 # define ARROW_RIGHT     	67
 # define ARROW_LEFT     	68
 
+struct curses_window;
+
 /*
 ** node  : the current active node
 ** select : current selected node on the screen
@@ -33,6 +35,7 @@ struct main_window {
 	int				        line;
 	int						padding;
 	size_t			        display_index;
+	struct curses_window	*win;
 };
 
 struct curses_window {

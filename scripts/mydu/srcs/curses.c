@@ -33,6 +33,7 @@ int                 curses_run(struct node *root, const struct config *cfg)
     init_pair(COLOR_SELECTED, COLOR_CYAN, COLOR_BLACK);
 	init_pair(COLOR_WINBORDERS, COLOR_MAGENTA, COLOR_BLACK);
 	curs_set(0);
+	curse.win = &main;
     main = (struct curses_window) {
         .w = COLS,
         .h = LINES,

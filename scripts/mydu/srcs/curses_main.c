@@ -35,7 +35,7 @@ static enum e_iter_job   curses_display_iter(size_t level, struct node *node,
     attroff(pair);
     cfg->line++;
     if (node == cfg->node)
-        mvprintw(cfg->line++, 0, "--------------------\n");
+		mvwhline(cfg->win->object, cfg->line++, 0, '-', 104);
     if (cfg->line > LINES)
         return (STOP_TREE);
     return (level == 0 ? CONTINUE : STOP_NODE);
