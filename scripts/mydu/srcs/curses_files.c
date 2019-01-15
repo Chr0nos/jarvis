@@ -2,25 +2,25 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <stdlib.h>
 
 static int  curses_files_draw(struct curses_window *win)
 {
     struct files_window *files = win->userdata;
-    struct node         *node = files->node;
     DIR                 *dir;
     struct dirent       *ent;
     struct stat         st;
     char                path[PATH_MAX];
     int                 line = 2;
 
-    if (!node)
+    if (!files->node)
         return (EXIT_FAILURE);
-    dir = opendir(node->path);
+    dir = opendir(files->node->path);
     if (!dir)
         return (EXIT_FAILURE);
     while ((ent = readdir(dir)) != NULL)
     {
-        ft_snprintf(path, PATH_MAX, "%s/%s", node->path, ent->d_name);
+        ft_snprintf(path, PATH_MAX, "%s/%s", files->node->path, ent->d_name);
         if ((stat(path, &st) < 0) || (!(st.st_mode & S_IFREG)))
             continue ;
         mvprintw(win->y + line, win->x + 2, "%s", ent->d_name);

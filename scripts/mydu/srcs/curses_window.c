@@ -48,7 +48,7 @@ int                 curses_new_window(struct curses_window *win)
         if (win->draw)
         {
             ret = win->draw(win);
-            if ((ret) || (win->flags & WIN_QUIT))
+            if (win->flags & WIN_QUIT)
                 return (ret);
         }
         else
