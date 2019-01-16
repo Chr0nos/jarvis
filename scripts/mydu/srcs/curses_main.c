@@ -137,10 +137,10 @@ static void     main_window_delete(struct curses_window *win, struct node *node,
     if (!node)
         return ;
     parent = node->parent;
-    delta_size = node->space.total;
-    delta_files = node->files.total;
     if ((!parent) || (!curses_delete(win, node)))
         return ;
+    delta_size = node->space.total;
+    delta_files = node->files.total;
 	lst = lst_search_content(parent->childs, node);
 	ft_lstremove(&lst, &parent->childs, NULL);
     if (curse->select_index > 0)
