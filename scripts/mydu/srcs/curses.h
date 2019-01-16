@@ -39,7 +39,7 @@ struct main_window {
 };
 
 struct files_window {
-	WINDOW					 *pad;
+	WINDOW					*pad;
 	struct node				*node;
 	char					title[PATH_MAX];
 };
