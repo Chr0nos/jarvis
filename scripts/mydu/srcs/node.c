@@ -134,7 +134,7 @@ struct node  *node_walk(const char *path, struct node *parent,
 	if (node_init(node = malloc(sizeof(struct node)), parent) != EXIT_SUCCESS)
 		return (NULL);
 	if (!parent)
-		ft_strcpy(node->name, &path[1]);
+		ft_strcpy(node->name, &path[(node->name[0] == '/') ? 1 : 0]);
 	dir = opendir(path);
 	if (!dir)
 	{
