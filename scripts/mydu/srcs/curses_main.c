@@ -103,14 +103,6 @@ static void         curses_updir(struct main_window *curse)
         curse->select_index = 0;
 }
 
-static inline void  curses_error_key(const int key)
-{
-    clear();
-    mvprintw(LINES >> 1, COLS >> 1, "unknow key: %c (%d)\n", (char)key, key);
-    refresh();
-    getch();
-}
-
 int         main_window_draw(struct curses_window *win)
 {
     struct main_window      *curse = win->userdata;
@@ -180,8 +172,6 @@ int   main_window_input(struct curses_window *win, int key)
     else if ((key == ARROW_DOWN) || (key == ARROW_UP))
         curses_select(curse,
             (int)curse->select_index + ((key == ARROW_UP) ? -1 : 1));
-    else if (curse->cfg->flags & FLAG_VERBOSE)
-        curses_error_key(key);
     else if (key == 'p')
         curses_window_info(win);
     else if (key == 'f')
