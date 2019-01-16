@@ -44,6 +44,7 @@ int                 curses_new_window(struct curses_window *win)
 		win->object = newwin(win->h, win->w, win->y, win->x);
     do
     {
+        key = 0;
         curses_window_decorate(win);
         if (win->draw)
         {
@@ -54,18 +55,23 @@ int                 curses_new_window(struct curses_window *win)
         else
             refresh();
         move(LINES - 1, COLS - 1);
-        key = getch();
-        if (win->input)
+        if (!(win->flags & WIN_NOINPUT))
         {
-            ret = win->input(win, key);
-            if (win->flags & WIN_QUIT)
-                return (ret);
+            key = getch();
+            if (win->input)
+            {
+                ret = win->input(win, key);
+                if (win->flags & WIN_QUIT)
+                    return (ret);
+            }
+            if ((win->flags & WIN_CONFIRM_CLOSE) && (key == 'q') &&
+                    (!curses_confirm(win, "Quit ?", false)))
+                key = 0;
         }
-        if ((win->flags & WIN_CONFIRM_CLOSE) && (key == 'q') &&
-                (!curses_confirm(win, "Quit ?", false)))
-            key = 0;
+        else
+            usleep(100);
     }
-    while ((key != 'q') || (win->flags & WIN_NOQ));
+    while (((key != 'q') || (win->flags & WIN_NOQ)) && (!(win->flags & WIN_QUIT)));
 	delwin(win->object);
     return (0);
 }

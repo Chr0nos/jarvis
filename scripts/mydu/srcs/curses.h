@@ -6,6 +6,7 @@
 # define WIN_QUIT			(1u << 1)
 # define WIN_NOQ			(1u << 2)
 # define WIN_CONFIRM_CLOSE	(1u << 3)
+# define WIN_NOINPUT		(1u << 4)
 
 # define BACKSPACE       	127
 
@@ -42,6 +43,11 @@ struct files_window {
 	WINDOW					*pad;
 	struct node				*node;
 	char					title[PATH_MAX];
+};
+
+struct deletion_task {
+	struct node				*node;
+	size_t					deleted_items;
 };
 
 struct curses_window {
