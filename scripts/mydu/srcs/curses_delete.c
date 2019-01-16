@@ -37,6 +37,13 @@ static void				*spawn_window(void *userdata)
 
 /*
 ** return the number of deleted files.
+** this function works on 2 threads:
+** - one for the deletion
+** - one for the waiting information window
+** once the deletions are done, the window is commanded via flags to exit
+** properly, the wait window cannot be exited by the user.
+** since the flag is set, the thread wait to quit properly
+** the parent window will be set as unquitable window to avoid crap
 */
 
 size_t					curses_delete(struct curses_window *win, struct node *node)
