@@ -81,7 +81,7 @@ static const struct parser_entry g_parsing_table[PARSER_ENTRIES] = {
 
 struct node		*node_walk(const char *path, struct node *parent,
 	const struct config *cfg);
-enum e_iter_job	node_iter_clean(size_t level, struct node *node, void *unused);
+enum e_iter_job	node_iter_clean(size_t level, struct node *node, void *userdata);
 enum e_iter_job	node_iter(const size_t mode, struct node *node, void *userdata,
 	size_t level, enum e_iter_job (*f)(size_t, struct node *, void *));
 

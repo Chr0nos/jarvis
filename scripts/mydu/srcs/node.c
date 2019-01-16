@@ -30,10 +30,11 @@ enum e_iter_job	node_iter(const size_t mode,
 	return (CONTINUE);
 }
 
-enum e_iter_job	node_iter_clean(size_t level, struct node *node, void *unused)
+enum e_iter_job	node_iter_clean(size_t level, struct node *node, void *userdata)
 {
 	(void)level;
-	(void)unused;
+	if (userdata)
+		*(size_t *)userdata += node->space.local;
 	if (node->childs)
 		ft_lstdel(&node->childs, NULL);
 	free(node);

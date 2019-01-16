@@ -139,10 +139,12 @@ static void     main_window_delete(struct curses_window *win, struct node *node,
 {
     struct node     *parent;
     struct s_list   *lst;
+    size_t          delta;
 
     if (!node)
         return ;
     parent = node->parent;
+    delta = node->space.total;
     if ((!parent) || (!curses_delete(win, node)))
         return ;
 	lst = lst_search_content(parent->childs, node);
@@ -151,6 +153,7 @@ static void     main_window_delete(struct curses_window *win, struct node *node,
         curse->select_index--;
     lst = ft_lstat(parent->childs, (int)curse->select_index);
     curse->select = (!lst) ? NULL : lst->content;
+    parent->space.total -= delta;
 }
 
 int   main_window_input(struct curses_window *win, int key)
