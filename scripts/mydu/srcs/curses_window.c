@@ -54,7 +54,6 @@ int                 curses_new_window(struct curses_window *win)
         }
         else
             refresh();
-        move(LINES - 1, COLS - 1);
         if (!(win->flags & WIN_NOINPUT))
         {
             key = getch();
