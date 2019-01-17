@@ -1,6 +1,8 @@
 #include "mydu.h"
 #include <unistd.h>
 #include <pthread.h>
+#define WAIT_WINDOW_WIDTH	60
+#define WAIT_WINDOW_HEIGH	8
 
 static void				curses_delete_files(
 	const char *path,
@@ -62,10 +64,10 @@ size_t					curses_delete(struct curses_window *win, struct node *node)
 		return (0);
 	wait_window = (struct curses_window) {
 		.parent = win,
-		.x = (win->w >> 1),
-		.y = (win->h >> 1),
-		.w = 60,
-		.h = 8,
+		.x = (win->w >> 1) - (WAIT_WINDOW_WIDTH >> 1),
+		.y = (win->h >> 1) - (WAIT_WINDOW_HEIGH >> 1),
+		.w = WAIT_WINDOW_WIDTH,
+		.h = WAIT_WINDOW_HEIGH,
 		.flags = WIN_NOQ | WIN_NOINPUT,
 		.title = "Please wait during deletions...",
 	};

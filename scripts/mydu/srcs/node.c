@@ -30,6 +30,11 @@ enum e_iter_job	node_iter(const size_t mode,
 	return (CONTINUE);
 }
 
+/*
+** this function MUST be called in SUFFIX mode because childs have to be
+** cleaned first.
+*/
+
 enum e_iter_job	node_iter_clean(size_t level, struct node *node, void *userdata)
 {
 	(void)level;
@@ -121,6 +126,11 @@ static inline void	node_walk_loop(struct node *node,
 			node_walk_file(node, cfg, ent, st);
 	}
 }
+
+/*
+** TODO : use unix_walk to iterate over the filesystem to reduce the size of
+** this function.
+*/
 
 __attribute((pure))
 struct node  *node_walk(const char *path, struct node *parent,
