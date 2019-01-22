@@ -123,19 +123,19 @@ static void         curses_updir(struct main_window *curse)
 
 static void main_window_refresh_fsi(struct main_window *curse, const bool stat)
 {
-    struct vfsinfo          *fsi = &curse->fs_info;
+    struct fsinfo          *fsi = &curse->fs_info;
 
     if (stat)
     {
-        if (statvfs(curse->node->path, &curse->vfs_stats) < 0)
+        if (statfs(curse->node->path, &curse->fs_stats) < 0)
         {
             ft_bzero(fsi, sizeof(*fsi));
             return ;
         }
     }
-    *fsi = (struct vfsinfo) {
-        .space_disk = curse->vfs_stats.f_bsize * curse->vfs_stats.f_blocks,
-        .space_left = curse->vfs_stats.f_bsize * curse->vfs_stats.f_bfree,
+    *fsi = (struct fsinfo) {
+        .space_disk = curse->fs_stats.f_bsize * curse->fs_stats.f_blocks,
+        .space_left = curse->fs_stats.f_bsize * curse->fs_stats.f_bfree,
     };
     fsi->space_used = fsi->space_disk - fsi->space_left;
 }
@@ -149,7 +149,8 @@ int         main_window_draw(struct curses_window *win)
     node_iter(PREFIX, curse->node, curse, 0, &curses_display_iter);
     curse->line = 0;
     curse->display_index = 0;
-    // mvprintw(LINES - 5, COLS - 10, "%lu", curse->fs_info.space_used);
+	if (COLS > ALIGN_FILES + 6)
+		mvprintw(0, COLS - 10, "%s", curse->fs_stats.f_fstypename);
     refresh();
     return (0);
 }

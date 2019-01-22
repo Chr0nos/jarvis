@@ -1,7 +1,8 @@
 #ifndef CURSES_H
 # define CURSES_H
 # include <ncurses.h>
-# include <sys/statvfs.h>
+# include <sys/param.h>
+# include <sys/mount.h>
 # include "mydu.h"
 # define WIN_NOBORDER		(1u << 0)
 # define WIN_QUIT			(1u << 1)
@@ -28,7 +29,7 @@ struct curses_window;
 ** display_index: used to know wich entry we are actualy displaying (pagination purpose)
 */
 
-struct vfsinfo {
+struct fsinfo {
 	size_t					space_disk;
 	size_t					space_left;
 	size_t					space_used;
@@ -45,8 +46,8 @@ struct main_window {
 	int				        line;
 	unsigned int			flags;
 	size_t			        display_index;
-	struct statvfs			vfs_stats;
-	struct vfsinfo			fs_info;
+	struct statfs			fs_stats;
+	struct fsinfo			fs_info;
 	struct curses_window	*win;
 };
 
