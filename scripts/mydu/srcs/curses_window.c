@@ -3,14 +3,19 @@
 /*
 ** put a string in the center of a window at the specified "line"
 ** len : the string lenght to put
+** note: the line has to fit into the window otherwise it will be truncated.
 */
 
 void                curses_puts_center(
     struct curses_window *win,
     const int line,
     const char *text,
-    const size_t len)
+    size_t len)
 {
+    if (win->w < 2)
+        return ;
+    if (len > (size_t)win->w - 2)
+        len = (size_t)win->w - 2;
     mvprintw(
         win->y + line,
         win->x + 1 + (win->w / 2) - ((int)len / 2),

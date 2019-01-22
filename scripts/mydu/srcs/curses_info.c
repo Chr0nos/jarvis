@@ -25,6 +25,7 @@ static int			curses_window_info_draw(struct curses_window *win)
 	mvprintw(line++, col, "w: %2d", win->parent->w);
 	mvprintw(line++, col, "h: %2d", win->parent->h);
 	mvprintw(line++, col, "u: %p", win->parent->userdata);
+    mvprintw(line++, col, "flags: %#lx", win->parent->flags);
 	wrefresh(win->object);
 	return (0);
 }
@@ -32,16 +33,20 @@ static int			curses_window_info_draw(struct curses_window *win)
 void                curses_window_info(struct curses_window *win)
 {
     struct curses_window    info;
+    char                    *title;
 
+    ft_asprintf(&title, "%s '%s'", "Information about", win->title);
     info = (struct curses_window){
         .parent = win,
         .x = (int)((win->x == 0) ? 10 : win->x + 3),
         .y = (int)((win->y == 0) ? 3 : win->y + 3),
         .w = 80,
         .h = 10,
-        .title = "Window information",
+        .title = title,
         .input = curses_window_info_input,
 		.draw = curses_window_info_draw
 	};
     curses_new_window(&info);
+    if (title)
+        free(title);
 }

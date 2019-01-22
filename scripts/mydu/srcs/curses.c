@@ -30,6 +30,7 @@ int                 curses_run(struct node *root, const struct config *cfg)
         .w = COLS,
         .h = LINES,
         .flags = WIN_NOBORDER | WIN_CONFIRM_CLOSE,
+        .title = "Mydu Main",
         .init = &main_window_init,
         .draw = &main_window_draw,
         .input = &main_window_input,

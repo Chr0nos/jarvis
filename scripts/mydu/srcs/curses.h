@@ -91,7 +91,7 @@ void            curses_window_info(struct curses_window *win);
 void            curses_window_decorate(struct curses_window *win);
 void         	curses_refresh_parents(struct curses_window *win);
 void            curses_puts_center(struct curses_window *win, const int line,
-    const char *text, const size_t len);
+    const char *text, size_t len);
 
 int				main_window_init(struct curses_window *win);
 int         	main_window_draw(struct curses_window *win);
