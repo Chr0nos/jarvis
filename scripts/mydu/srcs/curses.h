@@ -13,6 +13,8 @@
 # define WIN_CONFIRM_CLOSE	(1u << 3)
 # define WIN_NOINPUT		(1u << 4)
 
+# define WSIZE_LEN			8
+
 # define BACKSPACE       	127
 
 # define COLOR_DEFAULT		0
@@ -54,9 +56,17 @@ struct main_window {
 	struct curses_window	*win;
 };
 
+struct file_entry {
+	char					name[FILENAME_MAX];
+	char					wsize[WSIZE_LEN];
+	struct stat				st;
+};
+
 struct files_window {
 	WINDOW					*pad;
 	struct node				*node;
+	struct s_list			*content;
+	struct statfs			fs;
 	char					title[PATH_MAX];
 };
 
