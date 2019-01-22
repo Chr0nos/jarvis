@@ -72,7 +72,8 @@ static int  curses_files_init(struct curses_window *win)
     while ((ent = (readdir(dir))) != NULL)
     {
         ft_snprintf(path, PATH_MAX, "%s/%s", files->node->path, ent->d_name);
-        entry = curses_files_mkentry(path, ent->d_name, files->fs.f_bsize >> 3);
+        entry = curses_files_mkentry(path, ent->d_name,
+            (size_t)(files->fs.f_bsize >> 3));
         if (entry)
             ft_lstpush_sort(&files->content,
                 ft_lstnewlink(entry, 0), &curses_files_cmp);
