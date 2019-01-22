@@ -41,7 +41,6 @@ static struct file_entry *curses_files_mkentry(const char *path, const char *nam
 {
     struct file_entry   *entry;
 
-    blksize = BLK_SIZE;
     entry = ft_memalloc(sizeof(struct file_entry));
     if (!entry)
         return (NULL);
@@ -73,7 +72,7 @@ static int  curses_files_init(struct curses_window *win)
     while ((ent = (readdir(dir))) != NULL)
     {
         ft_snprintf(path, PATH_MAX, "%s/%s", files->node->path, ent->d_name);
-        entry = curses_files_mkentry(path, ent->d_name, files->fs.f_bsize);
+        entry = curses_files_mkentry(path, ent->d_name, files->fs.f_bsize >> 3);
         if (entry)
             ft_lstpush_sort(&files->content,
                 ft_lstnewlink(entry, 0), &curses_files_cmp);
