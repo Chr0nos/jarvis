@@ -104,10 +104,18 @@ static void         curses_updir(struct main_window *curse)
         curse->select_index = 0;
 }
 
-static void main_window_refresh_fsi(struct main_window *curse)
+static void main_window_refresh_fsi(struct main_window *curse, const bool stat)
 {
     struct vfsinfo          *fsi = &curse->fs_info;
 
+    if (stat)
+    {
+        if (statvfs(curse->node->path, &curse->vfs_stats) < 0)
+        {
+            ft_bzero(fsi, sizeof(*fsi));
+            return ;
+        }
+    }
     *fsi = (struct vfsinfo) {
         .space_disk = curse->vfs_stats.f_bsize * curse->vfs_stats.f_blocks,
         .space_left = curse->vfs_stats.f_bsize * curse->vfs_stats.f_bfree,
@@ -119,7 +127,7 @@ int         main_window_draw(struct curses_window *win)
 {
     struct main_window      *curse = win->userdata;
 
-    main_window_refresh_fsi(curse);
+    main_window_refresh_fsi(curse, false);
     clear();
     node_iter(PREFIX, curse->node, curse, 0, &curses_display_iter);
     curse->line = 0;
@@ -180,7 +188,7 @@ int   main_window_input(struct curses_window *win, int key)
             curse->select = (curse->node->childs) ?
                 curse->node->childs->content : curse->node;
         }
-        statvfs(curse->node->path, &curse->vfs_stats);
+        main_window_refresh_fsi(curse, true);
     }
     else if ((key == BACKSPACE) || (key == ARROW_LEFT))
         curses_updir(curse);
@@ -207,7 +215,6 @@ int     main_window_init(struct curses_window *win)
     init_pair(COLOR_SELECTED, COLOR_CYAN, COLOR_BLACK);
 	init_pair(COLOR_WINBORDERS, COLOR_MAGENTA, COLOR_BLACK);
 	curs_set(0);
-    main_window_refresh_fsi(curse);
-    statvfs(curse->node->path, &curse->vfs_stats);
+    main_window_refresh_fsi(curse, true);
     return (0);
 }
