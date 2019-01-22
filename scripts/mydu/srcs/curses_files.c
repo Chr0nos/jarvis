@@ -41,6 +41,7 @@ static struct file_entry *curses_files_mkentry(const char *path, const char *nam
 {
     struct file_entry   *entry;
 
+    blksize = BLK_SIZE;
     entry = ft_memalloc(sizeof(struct file_entry));
     if (!entry)
         return (NULL);
