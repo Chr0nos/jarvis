@@ -3,6 +3,9 @@
 # include <ncurses.h>
 # include <sys/param.h>
 # include <sys/mount.h>
+# ifdef linux
+#  include <sys/statfs.h>
+# endif
 # include "mydu.h"
 # define WIN_NOBORDER		(1u << 0)
 # define WIN_QUIT			(1u << 1)

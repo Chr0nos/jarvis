@@ -134,8 +134,8 @@ static void main_window_refresh_fsi(struct main_window *curse, const bool stat)
         }
     }
     *fsi = (struct fsinfo) {
-        .space_disk = curse->fs_stats.f_bsize * curse->fs_stats.f_blocks,
-        .space_left = curse->fs_stats.f_bsize * curse->fs_stats.f_bfree,
+        .space_disk = (size_t)curse->fs_stats.f_bsize * curse->fs_stats.f_blocks,
+        .space_left = (size_t)curse->fs_stats.f_bsize * curse->fs_stats.f_bfree,
     };
     fsi->space_used = fsi->space_disk - fsi->space_left;
 }
@@ -149,9 +149,11 @@ int         main_window_draw(struct curses_window *win)
     node_iter(PREFIX, curse->node, curse, 0, &curses_display_iter);
     curse->line = 0;
     curse->display_index = 0;
+#ifndef linux
 	if (COLS > ALIGN_FILES + 6)
 		mvprintw(0, COLS - 10, "%s", curse->fs_stats.f_fstypename);
-    refresh();
+#endif
+	refresh();
     return (0);
 }
 
