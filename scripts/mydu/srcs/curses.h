@@ -13,7 +13,7 @@
 # define WIN_CONFIRM_CLOSE	(1u << 3)
 # define WIN_NOINPUT		(1u << 4)
 
-# define WSIZE_LEN			8
+# define WSIZE_LEN			16
 
 # define BACKSPACE       	127
 
