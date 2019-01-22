@@ -28,17 +28,18 @@
 
 struct curses_window;
 
-/*
-** node  : the current active node
-** select : current selected node on the screen
-** display_index: used to know wich entry we are actualy displaying (pagination purpose)
-*/
-
 struct fsinfo {
 	size_t					space_disk;
 	size_t					space_left;
 	size_t					space_used;
 };
+
+
+/*
+** node  : the current active node
+** select : current selected node on the screen
+** display_index: used to know wich entry we are actualy displaying (pagination purpose)
+*/
 
 # define MWF_TOTALPC		(1u)
 
