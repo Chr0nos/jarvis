@@ -24,21 +24,20 @@ static int  curses_files_draw(struct curses_window *win)
 
     line = 3;
     lst = ((struct files_window *)win->userdata)->content;
-    while (lst)
+    while ((lst) && (line < win->h))
     {
         file = lst->content;
         lst = lst->next;
         if (file->st.st_mode & S_IFDIR)
             continue ;
-        mvprintw(win->y + line, win->x + 2, "%s%s", file->name,
-            (file->st.st_mode & S_IFDIR) ? "/" : "");
-        mvprintw(win->y + line, win->x + win->w - 8, "%s", file->wsize);
+        mvprintw(win->y + line, win->x + 2, "%s", file->name);
+        mvprintw(win->y + line, win->x + win->w - 9, "%s", file->wsize);
         line++;
     }
     return (EXIT_SUCCESS);
 }
 
-static struct file_entry *curses_files_mkentry(const char *path, const char *name)
+static struct file_entry *curses_files_mkentry(const char *path, const char *name, size_t blksize)
 {
     struct file_entry   *entry;
 
@@ -47,7 +46,7 @@ static struct file_entry *curses_files_mkentry(const char *path, const char *nam
         return (NULL);
     ft_strcpy(entry->name, name);
     if (stat(path, &entry->st) >= 0)
-        ft_wsize(WSIZE_LEN, entry->wsize, (size_t)(entry->st.st_blocks * BLK_SIZE));
+        ft_wsize((size_t)entry->st.st_blocks * blksize, entry->wsize, WSIZE_LEN);
     else
         ft_strcpy(entry->wsize, "???");
     return (entry);
@@ -73,7 +72,7 @@ static int  curses_files_init(struct curses_window *win)
     while ((ent = (readdir(dir))) != NULL)
     {
         ft_snprintf(path, PATH_MAX, "%s/%s", files->node->path, ent->d_name);
-        entry = curses_files_mkentry(path, ent->d_name);
+        entry = curses_files_mkentry(path, ent->d_name, files->fs.f_bsize);
         if (entry)
             ft_lstpush_sort(&files->content,
                 ft_lstnewlink(entry, 0), &curses_files_cmp);
