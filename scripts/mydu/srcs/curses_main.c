@@ -4,6 +4,25 @@
 #define ALIGN_PC        90
 #define ALIGN_FILES     102
 
+static void             curses_display_percentages(struct main_window *curse,
+    const struct node *node)
+{
+    double      coef;
+
+    if (curse->flags & MWF_TOTALPC)
+    {
+        if (!node->space.total)
+            coef = 0;
+        else
+            coef = (double)node->space.total / (double)curse->fs_info.space_disk;
+    }
+    else if (!node->parent)
+        coef = 1;
+    else
+        coef = (double)node->space.total / (double)node->parent->space.total;
+    mvprintw(curse->line, ALIGN_PC, "%4.2f%%", coef * 100.0);
+}
+
 /*
 ** diff : number of lines under the display
 */
@@ -27,12 +46,10 @@ static enum e_iter_job   curses_display_iter(size_t level, struct node *node,
     attron(pair);
     ft_wsize(node->space.total, wsize, 20);
     mvprintw(cfg->line, ALIGN_WSIZE, "%s", wsize);
-    mvprintw(cfg->line, ALIGN_PC, "%4.2f%%", (node->parent) ?
-        (double)node->space.total / (double)node->parent->space.total * 100.0
-        : 100);
     mvprintw(cfg->line, ALIGN_FILES, "%lu", node->files.total);
     mvprintw(cfg->line, 0, "%3d %s", cfg->display_index,
         (node == cfg->node) ? node->path : node->name);
+    curses_display_percentages(cfg, node);
     attroff(pair);
     cfg->line++;
     if (node == cfg->node)
@@ -201,6 +218,8 @@ int   main_window_input(struct curses_window *win, int key)
         curses_files_run(win, curse->node);
     else if (key == 'd')
         main_window_delete(win, curse->select, curse);
+    else if (key == 't')
+        curse->flags ^= MWF_TOTALPC;
     return (0);
 }
 

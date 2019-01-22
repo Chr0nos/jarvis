@@ -34,6 +34,8 @@ struct vfsinfo {
 	size_t					space_used;
 };
 
+# define MWF_TOTALPC		(1u)
+
 struct main_window {
 	const struct config	    *cfg;
 	struct node		        *root;
