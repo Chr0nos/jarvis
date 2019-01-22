@@ -33,6 +33,7 @@ Key                 | Purpose
 | d                 | delete the selected directory
 | p                 | open infomations about the current window (in progress...)
 | q                 | close the current window
+| t                 | toggle the global disk space stats
 | up/down arrows    | move in the list of a window
 | left/right arrows | in the main window, enter/exit selection, used in selection to change the choice
 | enter             | validate a choice or enter a directory
