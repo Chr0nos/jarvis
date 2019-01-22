@@ -27,6 +27,14 @@ void                curses_window_decorate(struct curses_window *win)
         curses_puts_center(win, 1, win->title, ft_strlen(win->title));
 }
 
+#define CURSES_WINRET(win, ret, f) \
+    if (f != NULL) \
+    { \
+        ret = f(win); \
+        if (win->flags & WIN_QUIT) \
+            return ret; \
+    }
+
 /*
 ** This is a main loop for window system, util the window is not exited this
 ** function will not return.
@@ -42,17 +50,13 @@ int                 curses_new_window(struct curses_window *win)
 
 	if (!win->object)
 		win->object = newwin(win->h, win->w, win->y, win->x);
+    CURSES_WINRET(win, ret, win->init);
     do
     {
         key = 0;
         curses_window_decorate(win);
-        if (win->draw)
-        {
-            ret = win->draw(win);
-            if (win->flags & WIN_QUIT)
-                return (ret);
-        }
-        else
+        CURSES_WINRET(win, ret, win->draw);
+        if (!win->draw)
             refresh();
         if (!(win->flags & WIN_NOINPUT))
         {
@@ -72,6 +76,8 @@ int                 curses_new_window(struct curses_window *win)
     }
     while (((key != 'q') || (win->flags & WIN_NOQ)) && (!(win->flags & WIN_QUIT)));
 	delwin(win->object);
+    win->object = NULL;
+    CURSES_WINRET(win, ret, win->quit);
     return (0);
 }
 

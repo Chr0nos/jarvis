@@ -1,3 +1,4 @@
+#include <locale.h>
 #include "mydu.h"
 #define ALIGN_WSIZE     80
 #define ALIGN_PC        90
@@ -103,14 +104,27 @@ static void         curses_updir(struct main_window *curse)
         curse->select_index = 0;
 }
 
+static void main_window_refresh_fsi(struct main_window *curse)
+{
+    struct vfsinfo          *fsi = &curse->fs_info;
+
+    *fsi = (struct vfsinfo) {
+        .space_disk = curse->vfs_stats.f_bsize * curse->vfs_stats.f_blocks,
+        .space_left = curse->vfs_stats.f_bsize * curse->vfs_stats.f_bfree,
+    };
+    fsi->space_used = fsi->space_disk - fsi->space_left;
+}
+
 int         main_window_draw(struct curses_window *win)
 {
     struct main_window      *curse = win->userdata;
 
+    main_window_refresh_fsi(curse);
     clear();
     node_iter(PREFIX, curse->node, curse, 0, &curses_display_iter);
     curse->line = 0;
     curse->display_index = 0;
+    // mvprintw(LINES - 5, COLS - 10, "%lu", curse->fs_info.space_used);
     refresh();
     return (0);
 }
@@ -166,6 +180,7 @@ int   main_window_input(struct curses_window *win, int key)
             curse->select = (curse->node->childs) ?
                 curse->node->childs->content : curse->node;
         }
+        statvfs(curse->node->path, &curse->vfs_stats);
     }
     else if ((key == BACKSPACE) || (key == ARROW_LEFT))
         curses_updir(curse);
@@ -178,5 +193,21 @@ int   main_window_input(struct curses_window *win, int key)
         curses_files_run(win, curse->node);
     else if (key == 'd')
         main_window_delete(win, curse->select, curse);
+    return (0);
+}
+
+int     main_window_init(struct curses_window *win)
+{
+    struct main_window  *curse = win->userdata;
+
+    setlocale(LC_ALL, "");
+    start_color();
+	noecho();
+	init_pair(COLOR_DEFAULT, COLOR_WHITE, COLOR_GREEN);
+    init_pair(COLOR_SELECTED, COLOR_CYAN, COLOR_BLACK);
+	init_pair(COLOR_WINBORDERS, COLOR_MAGENTA, COLOR_BLACK);
+	curs_set(0);
+    main_window_refresh_fsi(curse);
+    statvfs(curse->node->path, &curse->vfs_stats);
     return (0);
 }

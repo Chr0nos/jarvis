@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <locale.h>
 #include "mydu.h"
 
 static void         curses_init(const struct config *cfg,
@@ -26,18 +25,12 @@ int                 curses_run(struct node *root, const struct config *cfg)
         ft_dprintf(STDERR_FILENO, "%s", "Error: failed to create window.\n");
         return (EXIT_FAILURE);
     }
-    setlocale(LC_ALL, "");
-    start_color();
-	noecho();
-	init_pair(COLOR_DEFAULT, COLOR_WHITE, COLOR_GREEN);
-    init_pair(COLOR_SELECTED, COLOR_CYAN, COLOR_BLACK);
-	init_pair(COLOR_WINBORDERS, COLOR_MAGENTA, COLOR_BLACK);
-	curs_set(0);
 	curse.win = &main;
     main = (struct curses_window) {
         .w = COLS,
         .h = LINES,
         .flags = WIN_NOBORDER | WIN_CONFIRM_CLOSE,
+        .init = &main_window_init,
         .draw = &main_window_draw,
         .input = &main_window_input,
         .userdata = &curse,

@@ -1,6 +1,7 @@
 #ifndef CURSES_H
 # define CURSES_H
 # include <ncurses.h>
+# include <sys/statvfs.h>
 # include "mydu.h"
 # define WIN_NOBORDER		(1u << 0)
 # define WIN_QUIT			(1u << 1)
@@ -27,6 +28,12 @@ struct curses_window;
 ** display_index: used to know wich entry we are actualy displaying (pagination purpose)
 */
 
+struct vfsinfo {
+	size_t					space_disk;
+	size_t					space_left;
+	size_t					space_used;
+};
+
 struct main_window {
 	const struct config	    *cfg;
 	struct node		        *root;
@@ -34,8 +41,10 @@ struct main_window {
 	struct node		        *select;
 	size_t			        select_index;
 	int				        line;
-	int						padding;
+	unsigned int			flags;
 	size_t			        display_index;
+	struct statvfs			vfs_stats;
+	struct vfsinfo			fs_info;
 	struct curses_window	*win;
 };
 
@@ -57,8 +66,10 @@ struct curses_window {
 	int						y;
 	int						w;
 	int						h;
+	int						(*init)(struct curses_window *);
 	int						(*draw)(struct curses_window *);
 	int						(*input)(struct curses_window *, int);
+	int						(*quit)(struct curses_window *);
 	size_t					flags;
 	WINDOW					*object;
 	void					*userdata;
@@ -76,6 +87,7 @@ void         	curses_refresh_parents(struct curses_window *win);
 void            curses_puts_center(struct curses_window *win, const int line,
     const char *text, const size_t len);
 
+int				main_window_init(struct curses_window *win);
 int         	main_window_draw(struct curses_window *win);
 int   			main_window_input(struct curses_window *win, int key);
 
