@@ -89,6 +89,13 @@ static int  curses_files_quit(struct curses_window *win)
     return (0);
 }
 
+static int  curses_files_input(struct curses_window *win, int key)
+{
+    if (key == 'p')
+        curses_window_info(win);
+    return (0);
+}
+
 void        curses_files_run(struct curses_window *win, struct node *node)
 {
     struct curses_window        this;
@@ -104,6 +111,7 @@ void        curses_files_run(struct curses_window *win, struct node *node)
         .h = LINES - 15,
         .title = files.title,
         .draw = &curses_files_draw,
+        .input = &curses_files_input,
         .init = &curses_files_init,
         .quit = &curses_files_quit,
         .userdata = &files
