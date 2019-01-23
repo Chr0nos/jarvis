@@ -64,11 +64,12 @@ struct file_entry {
 };
 
 struct files_window {
-	WINDOW					*pad;
 	struct node				*node;
 	struct s_list			*content;
 	struct statfs			fs;
 	char					title[PATH_MAX];
+	struct file_entry		*selected;
+	size_t					selected_index;
 };
 
 struct deletion_task {
