@@ -115,4 +115,6 @@ size_t			curses_delete(struct curses_window *win, struct node *node);
 struct curses_window    *curses_centerfrom_parent(struct curses_window *win,
     const int w, const int h);
 
+t_list	        *lst_search_content(struct s_list *lst, const void *content);
+
 #endif

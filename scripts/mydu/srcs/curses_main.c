@@ -157,7 +157,7 @@ int         main_window_draw(struct curses_window *win)
     return (0);
 }
 
-static t_list	*lst_search_content(struct s_list *lst, const void *content)
+t_list	        *lst_search_content(struct s_list *lst, const void *content)
 {
 	while (lst)
 	{

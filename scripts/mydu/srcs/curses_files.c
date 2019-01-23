@@ -51,7 +51,7 @@ static struct file_entry *curses_files_mkentry(const char *path,
     ft_strcpy(entry->name, name);
     if (stat(path, &entry->st) >= 0)
         ft_wsize((size_t)entry->st.st_blocks * blksize, entry->wsize, WSIZE_LEN);
-    else if (entry->st.st_mode & S_IFDIR)
+    else if ((entry->st.st_mode & S_IFDIR) || (!(entry->st.st_mode & S_IFREG)))
     {
         free(entry);
         return (NULL);
@@ -120,6 +120,23 @@ static void curses_files_select(struct files_window *files, const int direction)
     }
 }
 
+static void curses_files_delete(struct files_window *files, struct file_entry *file)
+{
+    struct s_list   *item;
+    char            path[PATH_MAX];
+
+    if (!file)
+        return ;
+    item = lst_search_content(files->content, files->selected);
+    if (!item)
+        return ;
+    ft_snprintf(path, PATH_MAX, "%s/%s", files->node->path, file->name);
+    if (unlink(path) < 0)
+        return ;
+    files->selected = (item->next) ? item->next->content : NULL;
+    ft_lstremove(&item, &files->content, NULL);
+}
+
 static int  curses_files_input(struct curses_window *win, int key)
 {
     struct files_window         *files = win->userdata;
@@ -130,6 +147,8 @@ static int  curses_files_input(struct curses_window *win, int key)
         curses_files_select(files, 1);
     else if (key == ARROW_UP)
         curses_files_select(files, -1);
+    else if ((key == 'd') && (curses_confirm(win, "Delete selected file ?", false)))
+        curses_files_delete(files, files->selected);
     return (0);
 }
 
@@ -143,10 +162,6 @@ void        curses_files_run(struct curses_window *win, struct node *node)
     ft_snprintf(files.title, PATH_MAX, "%s%s", "Content of ", node->name);
     this = (struct curses_window) {
         .parent = win,
-        .x = COLS / 4,
-        .y = 5,
-        .w = COLS >> 1,
-        .h = LINES - 15,
         .title = files.title,
         .draw = &curses_files_draw,
         .input = &curses_files_input,
@@ -154,5 +169,5 @@ void        curses_files_run(struct curses_window *win, struct node *node)
         .quit = &curses_files_quit,
         .userdata = &files
     };
-    curses_new_window(curses_centerfrom_parent(&this, COLS >> 1, LINES - 16));
+    curses_new_window(curses_centerfrom_parent(&this, 100, LINES - 16));
 }
