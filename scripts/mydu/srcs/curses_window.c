@@ -102,3 +102,20 @@ void         curses_refresh_parents(struct curses_window *win)
     if (win->draw)
         win->draw(win);
 }
+
+/*
+** center the given window from it's parent coordonates and return a pointer
+** to the window.
+*/
+
+struct curses_window    *curses_centerfrom_parent(struct curses_window *win,
+    const int w, const int h)
+{
+    if (!win->parent)
+        return (win);
+    win->x = win->parent->x + (win->parent->w >> 1) - (w >> 1);
+    win->y = win->parent->y + (win->parent->h >> 1) - (h >> 1);
+    win->w = w;
+    win->h = h;
+    return (win);
+}

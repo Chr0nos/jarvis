@@ -112,4 +112,7 @@ int   			main_window_input(struct curses_window *win, int key);
 void 	       	curses_files_run(struct curses_window *win, struct node *node);
 size_t			curses_delete(struct curses_window *win, struct node *node);
 
+struct curses_window    *curses_centerfrom_parent(struct curses_window *win,
+    const int w, const int h);
+
 #endif

@@ -105,14 +105,11 @@ int                 curses_confirm(struct curses_window *win,
         width = CONFIRM_WIDTH;
     this = (struct curses_window) {
         .parent = win,
-        .x = win->x + (win->w >> 1) - (int)(width >> 1),
-        .y = win->y + (win->h >> 1) - (CONFIRM_HEIGHT >> 1),
-        .w = (int)width,
-        .h = CONFIRM_HEIGHT,
         .title = message,
         .input = &curses_confirm_input,
         .draw = &curses_confirm_draw,
         .userdata = &ret
     };
+    curses_centerfrom_parent(&this, (int)width, CONFIRM_HEIGHT);
     return (curses_new_window(&this));
 }

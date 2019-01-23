@@ -154,5 +154,5 @@ void        curses_files_run(struct curses_window *win, struct node *node)
         .quit = &curses_files_quit,
         .userdata = &files
     };
-    curses_new_window(&this);
+    curses_new_window(curses_centerfrom_parent(&this, COLS >> 1, LINES - 16));
 }
