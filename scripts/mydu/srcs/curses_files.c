@@ -82,6 +82,8 @@ static int  curses_files_init(struct curses_window *win)
     {
         if ((!ft_strcmp(ent->d_name, ".")) || (!ft_strcmp(ent->d_name, "..")))
             continue ;
+        if (ent->d_type & DT_DIR)
+            continue ;
         ft_snprintf(path, PATH_MAX, "%s/%s", files->node->path, ent->d_name);
         entry = curses_files_mkentry(path, ent->d_name,
             (size_t)(files->fs.f_bsize >> 3));
