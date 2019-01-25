@@ -22,9 +22,11 @@ static  int curses_fileinfo_draw(struct curses_window *win)
     mvprintw(win->y + line++, win->x + 2, "%-10s %d", "uid:", file->st.st_uid);
     mvprintw(win->y + line++, win->x + 2, "%-10s %d", "gid:", file->st.st_gid);
     mvprintw(win->y + line++, win->x + 2, "%-10s %lu", "size:", file->st.st_size);
+#ifndef linux
     mvprintw(win->y + line++, win->x + 2, "%-10s %lu", "atime:", file->st.st_atimespec.tv_nsec);
     mvprintw(win->y + line++, win->x + 2, "%-10s %lu", "mtime:", file->st.st_mtimespec.tv_nsec);
     mvprintw(win->y + line++, win->x + 2, "%-10s %lu", "ctime:", file->st.st_ctimespec.tv_nsec);
+#endif
     curses_puts(win, 5, line, "%s %d", "hello world", 42);
     return (0);
 }
