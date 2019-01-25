@@ -6,7 +6,8 @@ LINKER=-lft -lpthread
 LIBFT_DIR=./libft
 LIBFT=$(LIBFT_DIR)/libft.a
 SRCS=mydu.c parser.c node.c curses.c curses_confirm.c curses_main.c \
-	curses_window.c curses_files.c curses_delete.c unix_walk.c curses_info.c
+	curses_window.c curses_files.c curses_delete.c unix_walk.c curses_info.c \
+	curses_fileinfo.c
 BUILD_DIR=./build
 OBJS=$(SRCS:%.c=$(BUILD_DIR)/%.o)
 

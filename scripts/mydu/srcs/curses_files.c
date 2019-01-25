@@ -102,7 +102,7 @@ static int  curses_files_quit(struct curses_window *win)
     struct files_window     *files = win->userdata;
 
     ft_lstdel(&files->content, &ft_lstpulverisator);
-    return (0);
+	return (0);
 }
 
 static void curses_files_select(struct files_window *files, const int direction)
@@ -151,6 +151,11 @@ static int  curses_files_input(struct curses_window *win, int key)
         curses_files_select(files, -1);
     else if ((key == 'd') && (curses_confirm(win, "Delete selected file ?", false)))
         curses_files_delete(files, files->selected);
+    else if ((key == 'i') && (files->selected))
+	{
+        curses_filefinfo(win, files->selected);
+		win->parent->draw(win->parent);
+	}
     return (0);
 }
 
