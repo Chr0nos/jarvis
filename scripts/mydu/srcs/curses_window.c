@@ -66,6 +66,8 @@ int                 curses_new_window(struct curses_window *win)
         if (!(win->flags & WIN_NOINPUT))
         {
             key = getch();
+            if (key == 'p')
+                curses_window_info(win);
             if (win->input)
             {
                 ret = win->input(win, key);
@@ -83,6 +85,8 @@ int                 curses_new_window(struct curses_window *win)
 	delwin(win->object);
     win->object = NULL;
     CURSES_WINRET(win, ret, win->quit);
+    if ((win->parent) && (!(win->flags & NO_REFRESHPARENT)))
+        curses_refresh_parents(win->parent);
     return (0);
 }
 

@@ -2,11 +2,6 @@
 
 static int          curses_window_info_input(struct curses_window *win, int key)
 {
-    if (key == 'p')
-    {
-        curses_window_info(win);
-        curses_refresh_parents(win);
-    }
     if (key == 'r')
         win->title = "renamed !";
     return (0);

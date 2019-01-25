@@ -215,8 +215,6 @@ int   main_window_input(struct curses_window *win, int key)
     else if ((key == ARROW_DOWN) || (key == ARROW_UP))
         curses_select(curse,
             (int)curse->select_index + ((key == ARROW_UP) ? -1 : 1));
-    else if (key == 'p')
-        curses_window_info(win);
     else if (key == 'f')
         curses_files_run(win, curse->node);
     else if (key == 'd')

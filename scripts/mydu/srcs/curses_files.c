@@ -143,9 +143,7 @@ static int  curses_files_input(struct curses_window *win, int key)
 {
     struct files_window         *files = win->userdata;
 
-    if (key == 'p')
-        curses_window_info(win);
-    else if (key == ARROW_DOWN)
+    if (key == ARROW_DOWN)
         curses_files_select(files, 1);
     else if (key == ARROW_UP)
         curses_files_select(files, -1);
