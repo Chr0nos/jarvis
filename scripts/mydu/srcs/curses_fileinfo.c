@@ -16,8 +16,7 @@ static  int curses_fileinfo_draw(struct curses_window *win)
     const struct file_entry     *file = win->userdata;
     int                         line = 3;
 
-    mvprintw(win->y + line, win->x + 2, "%s %lu",
-        "inode:", file->st.st_ino);
+    mvprintw(win->y + line, win->x + 2, "%s %lu", "inode:", file->st.st_ino);
     // mvprintw(win->y + line++, win->x + 2, "%-10s %s", "name:", file->name);
     mvprintw(win->y + line++, win->x + 2, "%-10s %03o", "perms:", file->st.st_mode & 0x777);
     mvprintw(win->y + line++, win->x + 2, "%-10s %d", "uid:", file->st.st_uid);

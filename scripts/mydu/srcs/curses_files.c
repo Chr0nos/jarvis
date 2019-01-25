@@ -154,6 +154,11 @@ static int  curses_files_input(struct curses_window *win, int key)
         curses_filefinfo(win, files->selected);
 		win->parent->draw(win->parent);
 	}
+    else if (key == 'u')
+    {
+        win->quit(win);
+        win->init(win);
+    }
     return (0);
 }
 
