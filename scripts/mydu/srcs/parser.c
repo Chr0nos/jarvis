@@ -20,6 +20,18 @@ static int		parser_loop(const char *input, struct config *cfg)
 	return (EXIT_FAILURE);
 }
 
+static int	parser_loadcwd(struct config *cfg)
+{
+	char		*cwd;
+
+	cwd = malloc(sizeof(char) * PATH_MAX);
+	if (!cwd)
+		return (EXIT_FAILURE);
+	cfg->flags |= FLAG_FREEROOT;
+	cfg->root = getcwd(cwd, PATH_MAX);
+	return (EXIT_SUCCESS);
+}
+
 int		parser(int ac, char **av, struct config *cfg)
 {
 	int		idx;
@@ -48,6 +60,6 @@ int		parser(int ac, char **av, struct config *cfg)
 	if (cfg->flags & FLAG_REVERSE)
 		cfg->sorter = &lst_revcmp;
 	if (!cfg->root)
-		return (EXIT_FAILURE);
+		return (parser_loadcwd(cfg));
 	return (EXIT_SUCCESS);
 }

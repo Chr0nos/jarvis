@@ -100,6 +100,8 @@ static int		display(struct node *node, struct config *cfg)
 	node_iter(dorder, node, cfg, 0,
 		(cfg->flags & FLAG_ASCSV) ? node_iter_csv : node_iter_show);
 	node_iter(SUFFIX, node, NULL, 0, node_iter_clean);
+	if (cfg->flags & FLAG_FREEROOT)
+		free((char*)(size_t)cfg->root);
 	return (EXIT_SUCCESS);
 }
 
