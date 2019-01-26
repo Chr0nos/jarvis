@@ -76,6 +76,7 @@ struct files_window {
 struct deletion_task {
 	struct node				*node;
 	size_t					deleted_items;
+	size_t					*wait_flags;
 };
 
 struct curses_window {

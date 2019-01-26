@@ -16,6 +16,7 @@
 # define FLAG_CURSES			(1u << 6)
 # define FLAG_FILES				(1u << 7)
 # define FLAG_HIDENS			(1u << 8)
+# define FLAG_FREEROOT			(1u << 9)
 # define BLK_SIZE				512
 # define FILENAME_MAXLEN		256
 
