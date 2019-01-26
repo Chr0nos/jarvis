@@ -20,6 +20,10 @@ static int		parser_loop(const char *input, struct config *cfg)
 	return (EXIT_FAILURE);
 }
 
+/*
+** load the current dir into cfg->root and set a flag in config for future clean
+*/
+
 static int	parser_loadcwd(struct config *cfg)
 {
 	char		*cwd;
@@ -37,11 +41,6 @@ int		parser(int ac, char **av, struct config *cfg)
 	int		idx;
 
 	ft_bzero(cfg, sizeof(*cfg));
-	if (ac < 2)
-	{
-		ft_printf("usage: %s <path>\n", av[0]);
-		return (EXIT_FAILURE);
-	}
 	cfg->path_len_align = 42;
 	cfg->maxlen = 170;
 	cfg->maxlevel = (size_t)-1;

@@ -40,5 +40,7 @@ int                 curses_run(struct node *root, const struct config *cfg)
     curses_new_window(&main);
     endwin();
 	node_iter(SUFFIX, root, NULL, 0, node_iter_clean);
+	if (cfg->flags & FLAG_FREEROOT)
+		free((char*)(size_t)cfg->root);
     return (EXIT_SUCCESS);
 }
