@@ -146,7 +146,8 @@ int         main_window_draw(struct curses_window *win)
 
     main_window_refresh_fsi(curse, false);
     clear();
-    node_iter(PREFIX, curse->node, curse, 0, &curses_display_iter);
+    if (curse->node)
+        node_iter(PREFIX, curse->node, curse, 0, &curses_display_iter);
     curse->line = 0;
     curse->display_index = 0;
 #ifndef linux

@@ -28,8 +28,15 @@ static void				*delete_task(void *userdata)
 	unix_walk(SUFFIX, task->node->path, &task->deleted_items,
 		&curses_delete_files, NULL);
 	node_iter(SUFFIX, task->node, NULL, 0, &node_iter_clean);
-	*task->wait_flags |= WIN_QUIT;
 	return (NULL);
+}
+
+static int				wait_win_draw(struct curses_window *win)
+{
+	refresh();
+	pthread_join(*(pthread_t*)win->userdata, NULL);
+	win->flags |= WIN_QUIT;
+	return (0);
 }
 
 /*
@@ -45,7 +52,7 @@ static void				*delete_task(void *userdata)
 
 size_t					curses_delete(struct curses_window *win, struct node *node)
 {
-	struct curses_window	wait_window;
+	struct curses_window	wait;
 	char					confirm_title[PATH_MAX];
 	pthread_t				deletion_thread;
 	struct deletion_task	task;
@@ -56,19 +63,19 @@ size_t					curses_delete(struct curses_window *win, struct node *node)
 		'"', node->path, '"');
 	if (!curses_confirm(win, confirm_title, false))
 		return (0);
-	wait_window = (struct curses_window) {
+	wait = (struct curses_window) {
 		.parent = win,
-		.flags = WIN_NOQ | WIN_NOINPUT,
-		.title = "Please wait during deletions..."
+		.flags = WIN_NOINPUT,
+		.title = "Please wait during deletions...",
+		.draw = &wait_win_draw,
+		.userdata = &deletion_thread
 	};
 	task = (struct deletion_task) {
 		.node = node,
-		.deleted_items = 0,
-		.wait_flags = &wait_window.flags
+		.deleted_items = 0
 	};
-	win->flags |= WIN_NOQ;
 	pthread_create(&deletion_thread, NULL, &delete_task, &task);
-	curses_new_window(curses_centerfrom_parent(&wait_window, WAIT_WINDOW_HEIGH, WAIT_WINDOW_WIDTH));
-	win->flags &= ~WIN_NOQ;
+	curses_centerfrom_parent(&wait, WAIT_WINDOW_HEIGH, WAIT_WINDOW_WIDTH);
+	curses_new_window(&wait);
 	return (task.deleted_items);
 }
