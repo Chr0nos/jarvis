@@ -48,4 +48,7 @@ install: $(NAME)
 test:
 	clang -I$(LIBFT_DIR)/include srcs/unix_walk.c srcs/test_unix.c -L$(LIBFT_DIR) $(LINKER) -o test
 
+mrproper: fclean
+	make -C $(LIBFT_DIR) fclean
+
 .PHONY: clean fclean all re install
