@@ -1,4 +1,5 @@
 #include "mydu.h"
+#define MAX_WIN_LEVEL   15
 
 /*
 ** put a string in the center of a window at the specified "line"
@@ -66,7 +67,7 @@ int                 curses_new_window(struct curses_window *win)
         if (!(win->flags & WIN_NOINPUT))
         {
             key = getch();
-            if (key == 'p')
+            if ((key == 'p') && (curses_window_level(win) < MAX_WIN_LEVEL))
                 curses_window_info(win);
             if (win->input)
             {
@@ -122,4 +123,21 @@ struct curses_window    *curses_centerfrom_parent(struct curses_window *win,
     win->w = w;
     win->h = h;
     return (win);
+}
+
+/*
+** return the amount of parents of "win"
+*/
+
+size_t			curses_window_level(const struct curses_window *win)
+{
+    size_t      level;
+
+    level = 0;
+    while (win)
+    {
+        level++;
+        win = win->parent;
+    }
+    return (level);
 }

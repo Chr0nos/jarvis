@@ -79,6 +79,7 @@ struct files_window {
 struct deletion_task {
 	struct node				*node;
 	size_t					deleted_items;
+	size_t					deleted_size;
 };
 
 struct curses_window {
@@ -105,6 +106,7 @@ void  			curses_box(int x, int y, int w, int h);
 int             curses_new_window(struct curses_window *win);
 void            curses_window_info(struct curses_window *win);
 void            curses_window_decorate(struct curses_window *win);
+size_t			curses_window_level(const struct curses_window *win);
 void         	curses_refresh_parents(struct curses_window *win);
 void            curses_puts_center(struct curses_window *win, const int line,
     const char *text, size_t len);
