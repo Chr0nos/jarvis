@@ -24,6 +24,7 @@
 # define SUFFIX					2
 
 struct config {
+	char			**env;
 	const char		*root;
 	size_t			flags;
 	size_t			path_len_align;
@@ -85,7 +86,7 @@ enum e_iter_job	node_iter_clean(size_t level, struct node *node, void *userdata)
 enum e_iter_job	node_iter(const size_t mode, struct node *node, void *userdata,
 	size_t level, enum e_iter_job (*f)(size_t, struct node *, void *));
 
-int				parser(int ac, char **av, struct config *cfg);
+int				parser(int ac, char **av, char **env, struct config *cfg);
 int     		lst_cmp(t_list *a, t_list *b);
 int				lst_revcmp(t_list *a, t_list *b);
 

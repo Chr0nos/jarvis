@@ -105,12 +105,12 @@ static int		display(struct node *node, struct config *cfg)
 	return (EXIT_SUCCESS);
 }
 
-int     main(int ac, char **av)
+int     main(int ac, char **av, char **env)
 {
 	struct config	cfg;
 	struct node     *node;
 
-	if (parser(ac, av, &cfg) != EXIT_SUCCESS)
+	if (parser(ac, av, env, &cfg) != EXIT_SUCCESS)
 		return (EXIT_FAILURE);
 	node = node_walk(cfg.root, NULL, &cfg);
 	if (!node)

@@ -3,6 +3,9 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 static int  curses_files_cmp(struct s_list *a, struct s_list *b)
 {
@@ -61,6 +64,53 @@ static struct file_entry *curses_files_mkentry(const char *path,
     return (entry);
 }
 
+static bool curses_files_exists(const char *filepath)
+{
+    struct stat     st;
+
+    if (stat(filepath, &st) < 0)
+    {
+        if (errno == ENOENT)
+            return (false);
+    }
+    return (true);
+}
+
+/*
+** in this function the main idead is to fork mydu, then call execve in the
+** child process (wich will be replaced by execve) and wait for the child
+** process terminaison on the main program.
+** we call xdg-open wich is the default select application on "modern" systems.
+** in case of xdg-open is not available (no xorg ?) this function does nothing
+** and return 0 (EXIT_SUCCESS) since it's not realy an error.
+*/
+
+static int curses_files_open(const struct file_entry *file,
+    const struct files_window *files)
+{
+    pid_t           pid;
+    int             status;
+    char            *argv[3];
+
+    if (!files->xdg_open)
+        return (EXIT_SUCCESS);
+    pid = fork();
+    if (pid < 0)
+        return (-errno);
+    if (pid == 0)
+    {
+        argv[0] = "/usr/bin/xdg-open";
+        ft_asprintf(&argv[1], "%s/%s", files->node->path, file->name);
+        if (!argv[1])
+            return (-ENOMEM);
+        argv[2] = NULL;
+        execve(argv[0], argv, files->environement);
+    }
+    else
+        waitpid(pid, &status, 0);
+    return (EXIT_SUCCESS);
+}
+
 static int  curses_files_init(struct curses_window *win)
 {
     struct files_window         *files = win->userdata;
@@ -70,6 +120,7 @@ static int  curses_files_init(struct curses_window *win)
     char                        path[PATH_MAX];
 
     files->content = NULL;
+    files->xdg_open = curses_files_exists("/usr/bin/xdg-open");
     dir = opendir(files->node->path);
     if (!dir)
     {
@@ -159,6 +210,10 @@ static int  curses_files_input(struct curses_window *win, int key)
         win->quit(win);
         win->init(win);
     }
+    else if (key == '\n')
+        curses_files_open(files->selected, files);
+    else if (key == ARROW_LEFT)
+        win->flags |= WIN_QUIT;
     return (0);
 }
 
@@ -169,6 +224,7 @@ void        curses_files_run(struct curses_window *win, struct node *node)
 
     ft_bzero(&files, sizeof(struct files_window));
     files.node = node;
+    files.environement = ((struct main_window *)win->userdata)->cfg->env;
     ft_snprintf(files.title, PATH_MAX, "%s%s", "Content of ", node->name);
     this = (struct curses_window) {
         .parent = win,

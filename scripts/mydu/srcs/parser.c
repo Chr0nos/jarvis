@@ -36,11 +36,12 @@ static int	parser_loadcwd(struct config *cfg)
 	return (EXIT_SUCCESS);
 }
 
-int		parser(int ac, char **av, struct config *cfg)
+int		parser(int ac, char **av, char **env, struct config *cfg)
 {
 	int		idx;
 
 	ft_bzero(cfg, sizeof(*cfg));
+	cfg->env = env;
 	cfg->path_len_align = 42;
 	cfg->maxlen = 170;
 	cfg->maxlevel = (size_t)-1;

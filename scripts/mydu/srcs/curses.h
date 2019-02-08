@@ -71,6 +71,9 @@ struct files_window {
 	char					title[PATH_MAX];
 	struct file_entry		*selected;
 	size_t					selected_index;
+	char					**environement;
+	bool					xdg_open;
+	bool					padding[7];
 };
 
 struct deletion_task {
