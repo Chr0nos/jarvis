@@ -180,9 +180,11 @@ static void curses_files_delete(struct files_window *files, struct file_entry *f
 {
     struct s_list   *item;
     char            path[PATH_MAX];
+    size_t          delta_size;
 
     if (!file)
         return ;
+    delta_size = (size_t)file->st.st_blocks * BLK_SIZE;
     item = lst_search_content(files->content, files->selected);
     if (!item)
         return ;
@@ -191,6 +193,7 @@ static void curses_files_delete(struct files_window *files, struct file_entry *f
         return ;
     files->selected = (item->next) ? item->next->content : NULL;
     ft_lstremove(&item, &files->content, NULL);
+    node_update_tree(files->node, 1, delta_size);
 }
 
 static int  curses_files_input(struct curses_window *win, int key)

@@ -194,3 +194,18 @@ size_t	node_path(const struct node *node, char *buffer, size_t n)
 	len = (size_t)ft_snprintf(buffer, n, "%s/%s", buffer, node->name);
 	return (len);
 }
+
+/*
+** substract deltas to all parents of a node, node included.
+*/
+
+void	node_update_tree(struct node *node,
+	const size_t delta_files, const size_t delta_size)
+{
+	while (node)
+	{
+		node->files.total -= delta_files;
+		node->space.total -= delta_size;
+		node = node->parent;
+	}
+}
