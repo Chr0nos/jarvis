@@ -91,6 +91,7 @@ static int curses_files_open(const struct file_entry *file,
     pid_t           pid;
     int             status;
     char            *argv[3];
+    char            path[PATH_MAX];
 
     if (!files->xdg_open)
         return (EXIT_SUCCESS);
@@ -100,7 +101,8 @@ static int curses_files_open(const struct file_entry *file,
     if (pid == 0)
     {
         argv[0] = "/usr/bin/xdg-open";
-        ft_asprintf(&argv[1], "%s/%s", files->node->path, file->name);
+        node_path(files->node, path, PATH_MAX);
+        ft_asprintf(&argv[1], "%s/%s", path, file->name);
         if (!argv[1])
             return (-ENOMEM);
         argv[2] = NULL;
@@ -121,14 +123,15 @@ static int  curses_files_init(struct curses_window *win)
 
     files->content = NULL;
     files->xdg_open = curses_files_exists("/usr/bin/xdg-open");
-    dir = opendir(files->node->path);
+    node_path(files->node, path, PATH_MAX);
+    dir = opendir(path);
     if (!dir)
     {
         // TODO : display error window here
         win->flags |= WIN_QUIT;
         return (-1);
     }
-    statfs(files->node->path, &files->fs);
+    statfs(path, &files->fs);
     while ((ent = (readdir(dir))) != NULL)
     {
         if ((!ft_strcmp(ent->d_name, ".")) || (!ft_strcmp(ent->d_name, "..")))
