@@ -85,6 +85,7 @@ struct node		*node_walk(const char *path, struct node *parent,
 enum e_iter_job	node_iter_clean(size_t level, struct node *node, void *userdata);
 enum e_iter_job	node_iter(const size_t mode, struct node *node, void *userdata,
 	size_t level, enum e_iter_job (*f)(size_t, struct node *, void *));
+size_t			node_path(const struct node *node, char *buffer, size_t n);
 
 int				parser(int ac, char **av, char **env, struct config *cfg);
 int     		lst_cmp(t_list *a, t_list *b);

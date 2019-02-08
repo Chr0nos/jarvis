@@ -1,20 +1,10 @@
 #include "mydu.h"
 
-static void curses_puts(struct curses_window *win, int x, int y, const char *format, ...)
-{
-    va_list     ap;
-    va_list     cpy;
-
-    va_start(ap, format);
-    va_copy(cpy, ap);
-    mvprintw(win->y + y, win->x + x, format, &cpy);
-    va_end(ap);
-}
-
 static  int curses_fileinfo_draw(struct curses_window *win)
 {
     const struct file_entry     *file = win->userdata;
     int                         line = 3;
+    // char                        path[PATH_MAX];
 
     mvprintw(win->y + line, win->x + 2, "%s %lu", "inode:", file->st.st_ino);
     // mvprintw(win->y + line++, win->x + 2, "%-10s %s", "name:", file->name);
@@ -27,7 +17,8 @@ static  int curses_fileinfo_draw(struct curses_window *win)
     mvprintw(win->y + line++, win->x + 2, "%-10s %lu", "mtime:", file->st.st_mtimespec.tv_nsec);
     mvprintw(win->y + line++, win->x + 2, "%-10s %lu", "ctime:", file->st.st_ctimespec.tv_nsec);
 #endif
-    curses_puts(win, 5, line, "%s %d", "hello world", 42);
+    // node_path(((struct files_window *)win->parent->userdata)->node, path, PATH_MAX);
+    // mvprintw(win->y + line++, win->x + 2, "%-10s %s", "path", path);
     return (0);
 }
 

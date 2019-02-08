@@ -169,3 +169,28 @@ struct node  *node_walk(const char *path, struct node *parent,
 	ft_strcpy(node->path, path);
 	return node;
 }
+
+/*
+** puts the full path of "node" into "buffer" at max size of "n"
+** return the ammount of chars wrote into buffer.
+*/
+
+size_t	node_path(const struct node *node, char *buffer, size_t n)
+{
+	size_t	len;
+
+	if ((!n) || (!buffer) || (!node))
+		return (0);
+	if (!node->parent)
+		ft_bzero(buffer, n);
+	else
+	{
+		len = node_path(node->parent, buffer, n);
+		if (len > n)
+			n = 0;
+		else
+			n -= len;
+	}
+	len = (size_t)ft_snprintf(buffer, n, "%s/%s", buffer, node->name);
+	return (len);
+}
