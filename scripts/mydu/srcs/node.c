@@ -166,7 +166,7 @@ struct node  *node_walk(const char *path, struct node *parent,
 	closedir(dir);
 	node_update_parent(node);
 	node->path_len = ft_strlen(path);
-	ft_strcpy(node->path, path);
+	ft_memcpy(node->path, path, node->path_len + 1);
 	return node;
 }
 
