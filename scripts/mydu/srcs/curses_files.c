@@ -212,7 +212,7 @@ static int  curses_files_input(struct curses_window *win, int key)
     }
     else if (key == '\n')
         curses_files_open(files->selected, files);
-    else if (key == ARROW_LEFT)
+    else if ((key == ARROW_LEFT) || (key == BACKSPACE))
         win->flags |= WIN_QUIT;
     return (0);
 }
