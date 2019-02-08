@@ -192,6 +192,8 @@ static void     main_window_delete(struct curses_window *win, struct node *node,
     curse->select = (!lst) ? NULL : lst->content;
     parent->space.total -= delta_size;
     parent->files.total -= delta_files;
+    if (curse->node == node)
+        curse->node = parent;
 }
 
 int   main_window_input(struct curses_window *win, int key)

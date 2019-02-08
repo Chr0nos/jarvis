@@ -42,6 +42,7 @@ enum e_iter_job	node_iter_clean(size_t level, struct node *node, void *userdata)
 		*(size_t *)userdata += node->space.local;
 	if (node->childs)
 		ft_lstdel(&node->childs, NULL);
+	ft_bzero(node, sizeof(*node));
 	free(node);
 	return (CONTINUE);
 }

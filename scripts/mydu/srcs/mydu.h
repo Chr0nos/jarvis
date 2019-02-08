@@ -60,7 +60,6 @@ struct parser_entry {
 	const char		*name;
 	const size_t	flags;
 	const size_t	mask;
-
 };
 
 #pragma pack(pop)
