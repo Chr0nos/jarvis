@@ -28,7 +28,7 @@ void        curses_filefinfo(struct curses_window *win, struct file_entry *file)
 
     this = (struct curses_window) {
         .parent = win,
-        .title = "File infomations",
+        .title = "File informations",
         .draw = &curses_fileinfo_draw,
         .userdata = file
     };
