@@ -1,12 +1,5 @@
 #include "mydu.h"
 
-static int          curses_window_info_input(struct curses_window *win, int key)
-{
-    if (key == 'r')
-        win->title = "renamed !";
-    return (0);
-}
-
 static int			curses_window_info_draw(struct curses_window *win)
 {
 	const int 	col = win->x + (win->w >> 1) - 4;
@@ -38,7 +31,6 @@ void                curses_window_info(struct curses_window *win)
         .w = 80,
         .h = 10,
         .title = title,
-        .input = curses_window_info_input,
 		.draw = curses_window_info_draw
 	};
     curses_new_window(&info);
