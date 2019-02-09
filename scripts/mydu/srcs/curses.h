@@ -98,30 +98,40 @@ struct curses_window {
 	void					*userdata;
 };
 
-int	 	 		curses_run(struct node *root, const struct config *cfg);
-int             curses_confirm(struct curses_window *win,
-    const char *message, const int initial);
+/*
+** Future curse lib functions
+*/
 
-void  			curses_box(int x, int y, int w, int h);
-int             curses_new_window(struct curses_window *win);
-void            curses_window_info(struct curses_window *win);
-void            curses_window_decorate(struct curses_window *win);
-size_t			curses_window_level(const struct curses_window *win);
-void         	curses_refresh_parents(struct curses_window *win);
-void            curses_puts_center(struct curses_window *win, const int line,
-    const char *text, size_t len);
+int             		curses_confirm(struct curses_window *win,
+    const char *message, const int initial);
+int             		curses_new_window(struct curses_window *win);
+void            		curses_window_info(struct curses_window *win);
+void            		curses_window_decorate(struct curses_window *win);
+size_t					curses_window_level(const struct curses_window *win);
+struct curses_window	*curses_centerfrom_parent(struct curses_window *win,
+    const int w, const int h);
+void            		curses_puts_center(struct curses_window *win,
+	const int line, const char *text, size_t len);
+void  					curses_box(int x, int y, int w, int h);
+void         			curses_refresh_parents(struct curses_window *win);
+
+/*
+** mydu ncurses mode specific functions
+*/
+
+int	 	 		curses_run(struct node *root, const struct config *cfg);
+void 	       	curses_files_run(struct curses_window *win, struct node *node);
+size_t			curses_delete(struct curses_window *win, struct node *node);
+void        	curses_filefinfo(struct curses_window *win, struct file_entry *file);
+
+
+/*
+** function about the main window
+*/
 
 int				main_window_init(struct curses_window *win);
 int         	main_window_draw(struct curses_window *win);
 int   			main_window_input(struct curses_window *win, int key);
-
-void 	       	curses_files_run(struct curses_window *win, struct node *node);
-size_t			curses_delete(struct curses_window *win, struct node *node);
-
-void        curses_filefinfo(struct curses_window *win, struct file_entry *file);
-
-struct curses_window    *curses_centerfrom_parent(struct curses_window *win,
-    const int w, const int h);
 
 t_list	        *lst_search_content(struct s_list *lst, const void *content);
 
