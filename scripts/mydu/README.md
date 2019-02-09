@@ -55,3 +55,20 @@ i develop this tool on an Arch Linux 64 bits unstable and mac os high sierra
 # Contribute
 If you wan to contribute it will be a pleasure for me, feel free to open issues and ask
 for new things
+
+# Debug curses mode ?
+Because the curses mode use stdout/stderr it may be difficult to debug it.
+The solution is to run mydu in gdbserver and connect to it from an other terminal.
+
+### On terminal 1
+```
+make CFLAGS="-g3" re
+gdbserver gdbserver 127.0.0.1:2345 ./mydu -i
+```
+
+### On terminal 2
+```
+gdb
+target remote 127.0.0.1:2345
+c
+```
