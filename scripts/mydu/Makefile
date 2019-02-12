@@ -36,7 +36,7 @@ $(BUILD_DIR):
 	mkdir -pv $(BUILD_DIR)
 
 $(LIBFT_DIR):
-	git clone https://github.com/Chr0nos/libft
+	git clone https://github.com/Chr0nos/libft $(LIBFT_DIR)
 
 $(LIBFT): $(LIBFT_DIR)
 	make -C $(LIBFT_DIR) -j
@@ -45,7 +45,7 @@ $(LIBCURSED): $(LIBCURSED_DIR)
 	make -C $(LIBCURSED_DIR) -j
 
 $(LIBCURSED_DIR):
-	git clone https://github.com/Chr0nos/libcursed.git
+	git clone https://github.com/Chr0nos/libcursed.git $(LIBCURSED_DIR)
 
 clean:
 	$(RM) -r $(BUILD_DIR)
