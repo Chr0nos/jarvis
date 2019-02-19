@@ -1,0 +1,15 @@
+[Service]
+ExecStart=/usr/lib/notification-daemon-1.0/notification-daemon
+Restart=on-failure
+Type=simple
+User=adamaru
+Group=adamaru
+Environment="DISPLAY=:0.0"
+Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
+
+[Unit]
+After=display-manager.service
+Description=Notification daemon
+
+[Install]
+WantedBy=default.target
