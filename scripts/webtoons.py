@@ -113,8 +113,6 @@ class WebToons():
 
 	"""
 	return a tupple with (name, toon)
-	name: str
-	toon: dict (the thing in the database)
 	"""
 	def getToonObject(self, item):
 		if type(item) == str:
@@ -172,7 +170,7 @@ class WebToons():
 		i = 0
 		for img in soup.find_all('img', class_="_images"):
 			url = img['data-url']
-			if 'jpg' not in url:
+			if 'jpg' not in url and 'png' not in url:
 				continue
 			lst.append(url)
 		next_page = soup.find_all("a", class_='pg_next')
