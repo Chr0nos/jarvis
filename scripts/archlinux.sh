@@ -48,7 +48,7 @@ pacstrap $TARGET base base-devel ${FIRMWARE} ${BOOT}  ${VIDEO} \
 	ttf-ubuntu-font-family ttf-dejavu \
 	ttf-freefont otf-font-awesome gnome-keyring smartmontools hdparm \
 	idle3-tools iw fail2ban pavucontrol gparted ntfs-3g exfat-utils \
-	sshfs ffmpegthumbnailer ${BROWSER} ${EXTRA} ${XORG}
+	sshfs ffmpegthumbnailer ${BROWSER} ${EXTRA} ${XORG} ${DESKTOP}
 
 # check for installation success
 if [ $? == 0 ]; then
