@@ -45,7 +45,7 @@ pacstrap $TARGET base base-devel ${FIRMWARE} ${BOOT}  ${VIDEO} \
 	${DEVELOPPER} networkmanager htop vim net-tools pulseaudio lightdm \
 	lightdm-gtk-greeter mpv gpm zsh terminator fish openssh openssl \
 	networkmanager-openvpn network-manager-applet ttf-liberation \
-	ttf-ubuntu-font-family ttf-dejavu \
+	ttf-ubuntu-font-family ttf-dejavu extra/pulseaudio-alsa \
 	ttf-freefont otf-font-awesome gnome-keyring smartmontools hdparm \
 	idle3-tools iw fail2ban pavucontrol gparted ntfs-3g exfat-utils \
 	sshfs ffmpegthumbnailer ${BROWSER} ${EXTRA} ${XORG} ${DESKTOP}
@@ -60,6 +60,8 @@ if [ $? == 0 ]; then
 	arch-chroot $TARGET systemctl enable gpm
 	arch-chroot $TARGET systemctl enable fail2ban
 	arch-chroot $TARGET systemctl enable smartd
+	arch-chroot $TARGET localectl set-locale LC_CTYPE=fr_FR.UTF-8
+	arch-chroot $TARGET localectl set-locale LANG=fr_FR.UTF-8
 	arch-chroot $TARGET locale-gen
 	if [ $BOOT == "grub" ]; then
 		arch-chroot ${TARGET} grub-mkconfig -o /boot/grub/grub.cfg
