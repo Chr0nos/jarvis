@@ -5,8 +5,11 @@ import os
 import argparse
 from subprocess import call
 
-def run_or_except(cmd):
+def run_or_except(cmd, file_to_remove=None):
     if call(cmd) != 0:
+        if file_to_remove:
+            print('removing', file_to_remove)
+            os.unlink(file_to_remove)
         raise Exception(cmd)
 
 
@@ -22,27 +25,49 @@ class AudioPreset():
 
 
 class VideoPreset():
-    def __init__(self, crf=14, vcodec='h264_nvenc', preset='fast', aspect='16:9'):
+    def __init__(self, vcodec='nvenc_h264', preset='fast', aspect='16:9'):
         self.cmd = [
             '-vcodec', vcodec,
-            '-crf', str(crf),
             '-preset', preset,
             '-y',
             '-aspect', aspect,
-            '-threads', str(12)
+            '-threads', str(12),
+            # '-hwaccel', 'vaapi',
+            # '-vaapi_device', '/dev/dri/renderD128'
         ]
 
     def getCmd(self):
         return self.cmd
 
+    def __str__(self):
+        return ' '.join(self.cmd)
+
+
+class VideoH264(VideoPreset):
+    def __init__(self, quality=25):
+        super().__init__(vcodec='h264_nvenc')
+        self.cmd.extend([
+            '-vf', 'format=yuv444p',
+            '-qp', str(quality),
+            '-gpu', 'any',
+        ])
+
 
 class VideoHevc(VideoPreset):
-    def __init__(self, crf=14, vcodec='hevc_nvenc', preset='fast', aspect='16:9'):
-        super().__init__(crf, vcodec, preset, aspect)
+    def __init__(self, quality=22, vcodec='hevc_nvenc', preset='fast', aspect='16:9'):
+        super().__init__(vcodec, preset, aspect)
         self.cmd.extend([
             "-rc", "vbr_hq",
             "-rc-lookahead", "32",
+            '-qp', str(quality),
+            '-gpu', 'any',
         ])
+
+
+class VideoXvid(VideoPreset):
+    def __init__(self):
+        super().__init__(vcodec='libxvid')
+
 
 def encode_file(vp, ap, source, dest):
     cmd = [
@@ -50,9 +75,10 @@ def encode_file(vp, ap, source, dest):
         '-i', source
     ] + ap.getCmd() + vp.getCmd() + [
         '-map', '0',
+        # '-loglevel', 'debug',
         dest
     ]
-    run_or_except(cmd)
+    run_or_except(cmd, dest)
 
 
 class PathIterator():
@@ -93,14 +119,17 @@ class PathIterator():
                 callback(False, relative_path, fullpath, fulldst, userdata)
 
 
-def encode_dir(isDir, relative_path, fullSrc, fullDst, userdata):
-    print(f'{isDir} : {fullSrc} -> {fullDst}')
+def encode_dir(isDir, relative, fullSrc, fullDst, userdata):
+    # print(f'{isDir} : {fullSrc} -> {fullDst}')
     if isDir and not os.path.exists(fullDst):
         print(f'Making dir {fullDst}')
         os.mkdir(fullDst)
         return
     else:
-        print(f'Encoding {relative_path}')
+        if os.path.exists(fullDst) and not userdata.get('overwrite'):
+            print(f'destination {relative} already exists')
+            return
+        print(f'Encoding {relative}')
         encode_file(
             vp=userdata['video'],
             ap=userdata['audio'],
@@ -112,14 +141,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', '-s', help='source dir')
     parser.add_argument('--dest', '-d', help='destination dir')
+    parser.add_argument('--overwrite', '-y', help='overwrite existing files.')
     args = parser.parse_args()
     if not args.source or not args.dest:
         parser.print_help()
         sys.exit(1)
 
     config = {
-        'video': VideoPreset(),
-        'audio': AudioPreset()
+        'video': VideoH264(),
+        'audio': AudioPreset(),
+        'overwrite': False
     }
     try:
         if not os.path.exists(args.dest):
