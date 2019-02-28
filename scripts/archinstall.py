@@ -21,6 +21,11 @@ XORG = [
     'xorg-fonts-100dpi',
     'xorg-xrandr xorg-xinit',
     'extra/nvidia-dkms', 'extra/nvidia-settings',
+    #'extra/xf86-video-vesa',
+    #'extra/xf86-video-intel',
+    #'extra/xf86-video-ati',
+    #'extra/xf86-video-amdgpu',
+    #'extra/xf86-video-vmware',
 ]
 
 EXTRA = [
@@ -32,6 +37,19 @@ EXTRA = [
 MATE = [
     'mate', 'mate-extra', 'mate-media', 'mate-power-manager', 'mate-menu',
     'system-config-printer'
+]
+
+XFCE = ['xfce4']
+KDE = ['extra/plasma']
+I3 = ['i3-gaps', 'community/i3status', 'i3blocks', 'i3lock']
+GNOME = ['gnome']
+CINNAMON = ['community/cinnamon']
+
+PRINTER = [
+    'extra/cups',
+    'extra/cups-pdf',
+    'extra/gutenprint',
+    'extra/foomatic-db-gutenprint-ppds',
 ]
 
 DEFAULT = BASE + XORG + MATE
@@ -90,6 +108,7 @@ class ArchInstall():
                 self.run_in(['passwd', username])
                 return
             except KeyboardInterrupt:
+                print(f'setup of user {username} skipped: no password set')
                 return
             except CommandFail:
                 pass
