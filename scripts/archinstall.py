@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import subprocess
 import argparse
+import os
 
 
 BASE = [
@@ -65,6 +66,7 @@ class ArchInstall():
                self.run_in(['systemctl', 'enable', service])
 
         services_enable(['NetworkManager', 'gpm', 'fail2ban', 'smartd'])
+        self.run(['sh', '-c', 'genfstab', self.mnt, '>', self.mnt + '/etc/fstab'])
         commands = (
             ['localctl', 'set-locale', f'LC_CTYPE={self.lang}'],
             ['localctl', 'set-locale', f'LANG={self.lang}'],
@@ -72,7 +74,8 @@ class ArchInstall():
             ['chmod', '751', '/home'],
             ['ln', '-s', '/usr/share/zoneinfo/Europe/Paris', '/etc/localtime'],
             ['mkdir', '-pv', '/etc/polkit-1/rules.d/'],
-            ['passwd']
+            ['passwd'],
+            ['mkinitcpio', '-p', 'linux'],
         )
         for cmd in commands:
             self.run_in(cmd)
@@ -96,6 +99,9 @@ class ArchInstall():
 
     def install_refind(self, device):
         self.run_in(['refind-install', '--alldrivers', device])
+
+    def mount(self, partition, mount_moint):
+        self.run(['mount', partition, mount_moint])
 
 
 if __name__ == "__main__":
