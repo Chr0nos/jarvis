@@ -138,6 +138,8 @@ class ArchInstall():
             ['cd', f'/home/{username}/trizen', '&&', 'makepkg', '-si'],
             ['trizen', '-Sy']
         )
+        for command in cmds:
+            self.run_as(username, command)
 
 if __name__ == "__main__":
     arch = ArchInstall('localhost', username='adamaru')
