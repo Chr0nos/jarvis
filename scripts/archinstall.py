@@ -65,6 +65,9 @@ class ArchInstall():
         self.lang = lang
         self.username = username
 
+    def __str__(self):
+        print(f'Archlinux Installer: {self.mnt} lang: {self.lang} host: {self.hostname}')
+
     def run(command):
         print('running', ' '.join(command))
         ret = subprocess.call(command)
@@ -122,9 +125,22 @@ class ArchInstall():
     def mount(self, partition, mount_moint):
         self.run(['mount', partition, mount_moint])
 
+    def run_as(self, username, command):
+        """
+        run the command 'command' into the chroot as username
+        """
+        self.run_in(['su', username, '-c', ' '.join(command)])
+
+    def install_trizen(self, username):
+        cmds = (
+            ['git', 'clone', 'https://aur.archlinux.org/trizen.git',
+             f'/home/{username}/trizen'],
+            ['cd', f'/home/{username}/trizen', '&&', 'makepkg', '-si'],
+            ['trizen', '-Sy']
+        )
 
 if __name__ == "__main__":
     arch = ArchInstall('localhost', username='adamaru')
     arch.install(DEFAULT)
     arch.install_refind('/dev/sda')
-
+    arch.install_trizen(username='adamaru')
