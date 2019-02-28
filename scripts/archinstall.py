@@ -65,17 +65,19 @@ class ArchInstall():
                self.run_in(['systemctl', 'enable', service])
 
         services_enable(['NetworkManager', 'gpm', 'fail2ban', 'smartd'])
-        self.run_in(['localctl', 'set-locale', f'LC_CTYPE={self.lang}'])
-        self.run_in(['localctl', 'set-locale', f'LANG={self.lang}'])
-        self.run_in(['locale-gen'])
-        self.run_in(['chmod', '751', '/home'])
-        self.run_in(['ln', '-s', '/usr/share/zoneinfo/Europe/Paris',
-                     '/etc/localtime'])
-        self.run_in(['mkdir', '-pv', '/etc/polkit-1/rules.d/'])
+        commands = (
+            ['localctl', 'set-locale', f'LC_CTYPE={self.lang}'],
+            ['localctl', 'set-locale', f'LANG={self.lang}'],
+            ['locale-gen'],
+            ['chmod', '751', '/home'],
+            ['ln', '-s', '/usr/share/zoneinfo/Europe/Paris', '/etc/localtime'],
+            ['mkdir', '-pv', '/etc/polkit-1/rules.d/'],
+            ['passwd']
+        )
+        for cmd in commands:
+            self.run_in(cmd)
         if self.username:
             self.setup_user(self.username)
-        self.run_in(['passwd'])
-
 
     def setup_user(self, username, shell='/bin/zsh', groups=['audio', 'video', 'input', 'scanner', 'lp', 'render', 'games']):
         self.run_in(['useradd', '-s', shell, '-m', username])
