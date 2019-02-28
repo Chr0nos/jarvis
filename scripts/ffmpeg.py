@@ -101,7 +101,7 @@ class PathIterator():
             else:
                 callback(fullpath)
 
-    def mirror(self, callback, target, subdir='', userdata=None):
+    def mirror(self, callback, target, subdir, userdata):
         """
         callback prototype must be:
         def callback(isDir, relativePath, fullSource, fullDest, userdata)
@@ -114,7 +114,7 @@ class PathIterator():
             relative_path = self.join(subdir, item)
             if os.path.isdir(fullpath):
                 callback(True, relative_path, fullpath, fulldst, userdata)
-                self.mirror(callback, target, relative_path)
+                self.mirror(callback, target, relative_path, userdata)
             else:
                 callback(False, relative_path, fullpath, fulldst, userdata)
 
@@ -141,22 +141,30 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--source', '-s', help='source dir')
     parser.add_argument('--dest', '-d', help='destination dir')
-    parser.add_argument('--overwrite', '-y', help='overwrite existing files.')
+    parser.add_argument('--overwrite', '-y', help='overwrite existing files.', action='store_true', default=False)
+    parser.add_argument('--preset', '-p', help='video preset to use', choices=('freebox', 'hevc', 'xvid', 'x264'), default='hevc')
     args = parser.parse_args()
     if not args.source or not args.dest:
         parser.print_help()
         sys.exit(1)
 
-    config = {
-        'video': VideoH264(),
-        'audio': AudioPreset(),
-        'overwrite': False
+    presets = {
+        'freebox': VideoH264,
+        'h264': VideoH264,
+        'hevc': VideoHevc,
+        'xvid': VideoXvid
     }
+    config = {
+        'video': presets[args.preset](),
+        'audio': AudioPreset(),
+        'overwrite': args.overwrite
+    }
+    print(config)
     try:
         if not os.path.exists(args.dest):
             os.mkdir(args.dest)
         walker = PathIterator(args.source)
-        walker.mirror(encode_dir, args.dest, userdata=config)
+        walker.mirror(encode_dir, args.dest, '', config)
 
     except ValueError:
         print("wrong dir as target specified.")
