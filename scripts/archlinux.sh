@@ -8,7 +8,7 @@ USER=tomtom
 BOOT=refind-efi
 
 #DESKTOP="extra/plasma-meta"
-DESKTOP="mate mate-extra"
+DESKTOP="mate mate-extra mate-media mate-power-manager system-config-printer mate-menu"
 #DESKTOP="xfce4"
 #DESKTOP="community/i3-wm"
 #DESKTOP="community/i3-gaps community/i3status i3blocks i3lock"
