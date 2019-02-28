@@ -105,6 +105,8 @@ class ArchInstall():
 
     def setup_user(self, username, shell='/bin/zsh', groups=['audio', 'video', 'input', 'scanner', 'lp', 'render', 'games']):
         self.run_in(['useradd', '-s', shell, '-m', username])
+        for group in groups:
+            self.run_in(['gpasswd', '-a', username, group])
         self.run_in(['chmod', '700', f'/home/{username}'])
         while True:
             try:
