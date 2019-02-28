@@ -117,9 +117,11 @@ class ArchInstall():
                 pass
 
     def install_grub(self):
+        self.run_in(['pacman', '-S', 'grub'])
         self.run_in(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
 
     def install_refind(self, device):
+        self.run_in(['pacman', '-S', 'refind'])
         self.run_in(['refind-install', '--alldrivers', device])
 
     def mount(self, partition, mount_moint):
