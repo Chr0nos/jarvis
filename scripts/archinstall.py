@@ -133,10 +133,19 @@ class ArchUser():
 
 class ArchInstall():
     def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8', pretend=True):
+        """
+        hostname: the machine hostname
+        mnt: on wich mount point will you install arch ? this mountpoint must exists
+        lang: a valid lang locale
+        pretent: Dont run or change anything, just show what will be done.
+        """
+        if not pretend and not os.path.exists(mnt):
+            raise ValueError('invalid mount point you morron: ' + mnt)
         self.mnt = mnt
         self.hostname = hostname
         self.lang = lang
         self.pretend = pretend
+        self.timezone = 'Europe/Paris'
 
     def __str__(self):
         print(f'Archlinux Installer: {self.mnt} lang: {self.lang} host: {self.hostname}')
@@ -189,7 +198,7 @@ class ArchInstall():
             ['localctl', 'set-locale', f'LANG={self.lang}'],
             ['locale-gen'],
             ['chmod', '751', '/home'],
-            ['ln', '-s', '/usr/share/zoneinfo/Europe/Paris', '/etc/localtime'],
+            ['ln', '-s', f'/usr/share/zoneinfo/{self.timezone}', '/etc/localtime'],
             ['mkdir', '-pv', '/etc/polkit-1/rules.d/'],
             ['passwd'],
             ['mkinitcpio', '-p', 'linux'],
