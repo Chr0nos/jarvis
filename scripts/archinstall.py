@@ -71,10 +71,8 @@ class ArchUser():
     def __hash__(self):
         return hash(str(self))
 
-    def run(self, ai, command):
-        if not isinstance(ai, ArchInstall):
-            raise ValueError(ai)
-        ai.run_as(self.user, command)
+    def run(self, command):
+        self.ai.run_as(self.username, command)
 
     def get_defaults_groups(self):
         return ['audio', 'video', 'render', 'lp', 'input', 'scanner', 'games']
@@ -109,6 +107,8 @@ class ArchUser():
         for command in cmds:
             self.ai.run_as(self.username, command)
 
+    def install(self, packages):
+        self.run(['trizen', '-S', '--noedit', '--noconfirm'] + packages)
 
 class ArchInstall():
     def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8', pretend=True):
@@ -136,6 +136,8 @@ class ArchInstall():
                self.run_in(['systemctl', 'enable', service])
 
     def file_put(self, filepath, content):
+        print('writing into', filepath + ':')
+        print(content)
         if self.pretend:
             return
         filepath = os.path.join(self.mnt, filepath)
@@ -187,3 +189,5 @@ if __name__ == "__main__":
     user.create()
     user.add_groups(user.get_defaults_groups() + ['wheel'])
     user.install_trizen()
+    user.install(['visual-studio-code-bin', 'spotify'])
+
