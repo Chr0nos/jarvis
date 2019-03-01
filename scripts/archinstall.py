@@ -76,6 +76,7 @@ class Service():
     ai = None
     users = []
     enable = True
+    desc = 'This service needs a description'
 
     def __init__(self, users=[], enable=None):
         self.users = users
@@ -117,63 +118,82 @@ class Service():
 class Mlocate(Service):
     packages = 'mlocate'
     service = 'updatedb.service'
+    desc = 'files indexer'
 
 
 class Cups(Service):
     packages = ['cups']
     service = 'org.cups.cupsd.service'
     groups = ['lp']
+    desc = 'Printer server'
 
 
 class NetworkManager(Service):
     packages = ['extra/networkmanager']
     service = 'NetworkManager'
+    dest = 'Network interface manager / dhcp client'
 
 
 class LightDm(Service):
     packages = ['extra/lightdm', 'extra/lightdm-gtk-greeter']
     service = 'lightdm.service'
     enabled = False
+    desc = 'A lightweight display manager'
+
 
 class Gpm(Service):
     packages = ['gpm']
     service = 'gpm.service'
+    desc = 'a mouse in the the terminal mode'
 
 
 class Fail2Ban(Service):
     packages = ['fail2ban']
     service = 'fail2ban.service'
+    desc = 'bruteforcers nightmare'
 
 
 class Smartd(Service):
     packages = ['smartmontools']
     service = 'smartd.service'
+    desc = 'disks errors reporter'
 
 
 class Sshd(Service):
     packages = ['openssh']
     service = 'sshd.service'
+    desc = 'remote controll service'
+
 
 class Docker(Service):
     packages = ['docker']
     service = 'docker.service'
+    desc = 'docker containers support'
+
 
 class Udisks2(Service):
     packages = ['extra/udisks2']
     service = 'udisks2.service'
+    desc = 'drive managements'
+
 
 class Nginx(Service):
     packages = ['nginx']
     service = ['nginx.service']
     groups = ['www-data']
+    desc = 'web server'
+
 
 class Acpid(Service):
     packages = ['community/acpid']
     service = 'acpid.service'
+    desc = 'power management'
+
 
 class Iptables(Service):
     packages = ['core/iptables']
     service = 'iptables.service'
+    desc = 'firewall'
 
 
 class ArchUser():
@@ -256,6 +276,10 @@ class ArchInstall():
         self.lang = lang
         self.pretend = pretend
         self.timezone = 'Europe/Paris'
+
+    def __del__(self):
+        # be sure that the disk commit all the cash for real after the script call..
+        self.run(['sync'])
 
     def __str__(self):
         print(f'Archlinux Installer: {self.mnt} lang: {self.lang} host: {self.hostname}')
