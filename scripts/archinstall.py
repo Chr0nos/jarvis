@@ -116,7 +116,7 @@ class Service():
 
 
 class Mlocate(Service):
-    packages = 'mlocate'
+    packages = ['mlocate']
     service = 'updatedb.service'
     desc = 'files indexer'
 
