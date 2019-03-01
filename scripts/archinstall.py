@@ -12,7 +12,7 @@ BASE = [
     'ttf-dejavu', 'extra/pulseaudio-alsa', 'ttf-freefont', 'otf-font-awesome',
     'gnome-keyring', 'smartmontools', 'hdparm', 'idle3-tools', 'iw', 'fail2ban',
     'pavucontrol', 'gparted', 'ntfs-3g', 'exfat-utils', 'sshfs',
-    'ffmpegthumbnailer'
+    'ffmpegthumbnailer', 'mdadm'
 ]
 
 XORG = [
