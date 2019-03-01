@@ -10,9 +10,9 @@ BASE = [
     'terminator', 'fish', 'openssh', 'openssl', 'networkmanager-openvpn',
     'network-manager-applet', 'ttf-liberation', 'ttf-ubuntu-font-family',
     'ttf-dejavu', 'extra/pulseaudio-alsa', 'ttf-freefont', 'otf-font-awesome',
-    'gnome-keyring', 'smartmontools', 'hdparm', 'idle3-tools', 'iw', 'fail2ban',
+    'gnome-keyring', 'hdparm', 'idle3-tools', 'iw',
     'pavucontrol', 'gparted', 'ntfs-3g', 'exfat-utils', 'sshfs',
-    'ffmpegthumbnailer', 'mdadm'
+    'ffmpegthumbnailer', 'mdadm', 'wget'
 ]
 
 XORG = [
@@ -65,6 +65,88 @@ DEFAULT = BASE + XORG + MATE + PYTHON
 class CommandFail(Exception):
     pass
 
+class ConfigError(Exception):
+    pass
+
+
+class Service():
+    packages = []
+    groups = []
+    service = None
+    ai = None
+    enable = True
+    users = []
+
+    def __init__(self, users=[]):
+        self.users = users
+
+    def __hash__(self):
+        return hash(self.service)
+
+    def check(self):
+        """
+        """
+        if not self.ai:
+            raise ConfigError('you must set self.ai before using this service')
+
+    def install(self):
+        if not self.packages:
+            return
+        self.ai.pkg_install(self.packages)
+
+    def add_users(self):
+        """
+        user must be a list of ArchUser
+        """
+        if not self.groups or not self.users:
+            return
+        for user in self.users:
+            user.add_groups(self.groups)
+
+    def set_enabled(self, state=True):
+        if not self.service:
+            return
+        self.ai.run_in(['systemctl', ('disable', 'enable')[state], self.service])
+
+    def start(self):
+        raise ValueError('You are trying to run a service in a chroot... morron !')
+
+
+class Cups(Service):
+    packages = ['cups']
+    service = 'org.cups.cupsd.service'
+    groups = ['lp']
+
+
+class NetworkManager(Service):
+    packages = ['extra/networkmanager']
+    service = 'NetworkManager'
+
+
+class LightDm(Service):
+    packages = ['extra/lightdm', 'extra/lightdm-gtk-greeter']
+    enable = False
+
+
+class Gpm(Service):
+    packages = ['gpm']
+    service = 'gpm.service'
+
+
+class Fail2Ban(Service):
+    packages = ['fail2ban']
+    service = 'fail2ban.service'
+
+
+class Smartd(Service):
+    packages = ['smartmontools']
+    service = 'smartd.service'
+
+
+class Sshd(Service):
+    packages = ['openssh']
+    service = 'sshd.service'
+
 
 class ArchUser():
     def __init__(self, ai, username):
@@ -83,7 +165,7 @@ class ArchUser():
         self.ai.run_in(command, user=self.username)
 
     def get_defaults_groups(self):
-        return ['audio', 'video', 'render', 'lp', 'input', 'scanner', 'games']
+        return ['audio', 'video', 'render', 'input', 'scanner', 'games']
 
     def add_groups(self, groups):
         for group in groups:
@@ -171,12 +253,11 @@ class ArchInstall():
             self.run(['arch-chroot', '-u', user, self.mnt] + command)
             #self.run(['su', user, '-c', ' '.join(command)])
 
+    def pkg_install(self, packages):
+        self.run_in(['pacman', '-S', '--noconfirm'] + packages)
+
     def edit(self, filepath):
         self.run_in(['vim', filepath])
-
-    def services_enable(self, services):
-           for service in services:
-               self.run_in(['systemctl', 'enable', service])
 
     def file_put(self, filepath, content):
         print('writing into', filepath + ':')
@@ -190,7 +271,6 @@ class ArchInstall():
     def install(self, packages):
         self.run(['pacstrap', self.mnt] + packages)
         self.file_put('/etc/hostname', self.hostname + '\n')
-        self.services_enable(['NetworkManager', 'gpm', 'fail2ban', 'smartd'])
         self.file_put('/etc/fstab', self.run(['genfstab', self.mnt], True))
         # self.run(['sh', '-c', 'genfstab', self.mnt, '>', self.mnt + '/etc/fstab'])
         commands = (
@@ -217,12 +297,20 @@ class ArchInstall():
     def mount(self, partition, mount_moint):
         self.run(['mount', partition, mount_moint])
 
+    def install_services(self, services):
+        for service in services:
+            if not isinstance(service, Service):
+                raise ValueError(service)
+            service.ai = self
+            service.install()
+            service.set_enabled(service.enable)
+            service.add_users()
+
 
 if __name__ == "__main__":
     arch = ArchInstall(hostname='localhost')
     arch.install(DEFAULT)
     arch.install_refind('/dev/sda')
-    # arch.services_enable(['lightdm'])
 
     user = ArchUser(arch, username='adamaru')
     user.create()
@@ -233,3 +321,13 @@ if __name__ == "__main__":
     user.install(['visual-studio-code-bin', 'spotify'])
     user.install_oh_myzsh()
 
+    services = [
+        NetworkManager(),
+        Cups(users=[user]),
+        LightDm(),
+        Fail2Ban(),
+        Sshd(),
+        Smartd(),
+        Gpm()
+    ]
+    arch.install_services(services)
