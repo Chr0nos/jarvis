@@ -112,6 +112,11 @@ class Service():
         raise ValueError('You are trying to run a service in a chroot... morron !')
 
 
+class Mlocate(Service):
+    packages = 'mlocate'
+    service = 'updatedb.service'
+
+
 class Cups(Service):
     packages = ['cups']
     service = 'org.cups.cupsd.service'
@@ -282,6 +287,7 @@ class ArchInstall():
         self.file_put('/etc/fstab', self.run(['genfstab', self.mnt], True))
         # self.run(['sh', '-c', 'genfstab', self.mnt, '>', self.mnt + '/etc/fstab'])
         commands = (
+            ['timedatectl', 'set-ntp', 'true'],
             ['localctl', 'set-locale', f'LC_CTYPE={self.lang}'],
             ['localctl', 'set-locale', f'LANG={self.lang}'],
             ['locale-gen'],
