@@ -74,11 +74,13 @@ class Service():
     groups = []
     service = None
     ai = None
-    enable = True
     users = []
+    enable = True
 
-    def __init__(self, users=[]):
+    def __init__(self, users=[], enable=None):
         self.users = users
+        if enable != None:
+            self.enable = enable
 
     def __hash__(self):
         return hash(self.service)
@@ -130,8 +132,8 @@ class NetworkManager(Service):
 
 class LightDm(Service):
     packages = ['extra/lightdm', 'extra/lightdm-gtk-greeter']
-    enable = False
-
+    service = 'lightdm.service'
+    enabled = False
 
 class Gpm(Service):
     packages = ['gpm']
@@ -159,6 +161,19 @@ class Docker(Service):
 class Udisks2(Service):
     packages = ['extra/udisks2']
     service = 'udisks2.service'
+
+class Nginx(Service):
+    packages = ['nginx']
+    service = ['nginx.service']
+    groups = ['www-data']
+
+class Acpid(Service):
+    packages = ['community/acpid']
+    service = 'acpid.service'
+
+class Iptables(Service):
+    packages = ['core/iptables']
+    service = 'iptables.service'
 
 
 class ArchUser():
@@ -317,7 +332,8 @@ class ArchInstall():
                 raise ValueError(service)
             service.ai = self
             service.install()
-            service.set_enabled(service.enable)
+            if service.enable:
+                service.set_enabled(True)
             service.add_users()
 
 
@@ -338,11 +354,13 @@ if __name__ == "__main__":
     services = [
         NetworkManager(),
         Cups(users=[user]),
-        LightDm(),
+        LightDm(enable=False),
         Fail2Ban(),
         Sshd(),
         Smartd(),
         Gpm(),
-        Udisks2()
+        Udisks2(),
+        Acpid(),
+        Iptables(),
     ]
     arch.install_services(services)
