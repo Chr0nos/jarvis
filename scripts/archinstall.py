@@ -147,6 +147,14 @@ class Sshd(Service):
     packages = ['openssh']
     service = 'sshd.service'
 
+class Docker(Service):
+    packages = ['docker']
+    service = 'docker.service'
+
+class Udisks2(Service):
+    packages = ['extra/udisks2']
+    service = 'udisks2.service'
+
 
 class ArchUser():
     def __init__(self, ai, username):
@@ -328,6 +336,7 @@ if __name__ == "__main__":
         Fail2Ban(),
         Sshd(),
         Smartd(),
-        Gpm()
+        Gpm(),
+        Udisks2()
     ]
     arch.install_services(services)
