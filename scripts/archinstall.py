@@ -58,18 +58,72 @@ class CommandFail(Exception):
     pass
 
 
+class ArchUser():
+    def __init__(self, ai, username):
+        if not isinstance(ai, ArchInstall):
+            raise ValueError(ai)
+        self.username = username
+        self.ai = ai
+
+    def __str__(self):
+        return f'ArchUser {self.username}'
+
+    def __hash__(self):
+        return hash(str(self))
+
+    def run(self, ai, command):
+        if not isinstance(ai, ArchInstall):
+            raise ValueError(ai)
+        ai.run_as(self.user, command)
+
+    def get_defaults_groups(self):
+        return ['audio', 'video', 'render', 'lp', 'input', 'scanner', 'games']
+
+    def add_groups(self, groups):
+        for group in groups:
+            self.ai.run_in(['gpasswd', '-a', self.username, group])
+
+    def create(self, shell='/bin/zsh'):
+        self.ai.run_in(['useradd', '-m', '-s', shell, self.username])
+        self.ai.run_in(['chown', f'{self.username}:{self.username}', f'/home/{self.username}'])
+        self.ai.run_in(['chmod', '700', f'/home/{self.username}'])
+
+    def set_pass(self):
+        while True:
+            try:
+                self.ai.run_in(['passwd', self.username])
+                return
+            except KeyboardInterrupt:
+                print(f'setup of user {self.username} skipped: no password set')
+                return
+            except CommandFail:
+                pass
+
+    def install_trizen(self):
+        cmds = (
+            ['git', 'clone', 'https://aur.archlinux.org/trizen.git',
+             f'/home/{username}/trizen'],
+            ['cd', f'/home/{username}/trizen', '&&', 'makepkg', '-si'],
+            ['trizen', '-Sy']
+        )
+        for command in cmds:
+            self.ai.run_as(self.username, command)
+
+
 class ArchInstall():
-    def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8', username=None):
+    def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8', pretend=True):
         self.mnt = mnt
         self.hostname = hostname
         self.lang = lang
-        self.username = username
+        self.pretend = pretend
 
     def __str__(self):
         print(f'Archlinux Installer: {self.mnt} lang: {self.lang} host: {self.hostname}')
 
     def run(command):
         print('running', ' '.join(command))
+        if self.pretend:
+            return
         ret = subprocess.call(command)
         if ret != 0:
             raise CommandFail(command)
@@ -78,15 +132,14 @@ class ArchInstall():
         print('running in', ' '.join(command))
         self.run(['arch-chroot', self.mnt] + command)
 
-    def install(self, packages):
-       self.run(['pacstrap', mnt] + packages)
-       self.run_in(['echo', self.hostname, '>', '/etc/hostname'])
-       
-       def services_enable(services):
+    def services_enable(self, services):
            for service in services:
                self.run_in(['systemctl', 'enable', service])
 
-        services_enable(['NetworkManager', 'gpm', 'fail2ban', 'smartd'])
+    def install(self, packages):
+        self.run(['pacstrap', self.mnt] + packages)
+        self.run_in(['echo', self.hostname, '>', '/etc/hostname'])
+        self.services_enable(['NetworkManager', 'gpm', 'fail2ban', 'smartd'])
         self.run(['sh', '-c', 'genfstab', self.mnt, '>', self.mnt + '/etc/fstab'])
         commands = (
             ['localctl', 'set-locale', f'LC_CTYPE={self.lang}'],
@@ -100,23 +153,6 @@ class ArchInstall():
         )
         for cmd in commands:
             self.run_in(cmd)
-        if self.username:
-            self.setup_user(self.username)
-
-    def setup_user(self, username, shell='/bin/zsh', groups=['audio', 'video', 'input', 'scanner', 'lp', 'render', 'games']):
-        self.run_in(['useradd', '-s', shell, '-m', username])
-        for group in groups:
-            self.run_in(['gpasswd', '-a', username, group])
-        self.run_in(['chmod', '700', f'/home/{username}'])
-        while True:
-            try:
-                self.run_in(['passwd', username])
-                return
-            except KeyboardInterrupt:
-                print(f'setup of user {username} skipped: no password set')
-                return
-            except CommandFail:
-                pass
 
     def install_grub(self):
         self.run_in(['pacman', '-S', 'grub'])
@@ -135,18 +171,13 @@ class ArchInstall():
         """
         self.run_in(['su', username, '-c', ' '.join(command)])
 
-    def install_trizen(self, username):
-        cmds = (
-            ['git', 'clone', 'https://aur.archlinux.org/trizen.git',
-             f'/home/{username}/trizen'],
-            ['cd', f'/home/{username}/trizen', '&&', 'makepkg', '-si'],
-            ['trizen', '-Sy']
-        )
-        for command in cmds:
-            self.run_as(username, command)
 
 if __name__ == "__main__":
-    arch = ArchInstall('localhost', username='adamaru')
+    arch = ArchInstall(hostname='localhost')
     arch.install(DEFAULT)
     arch.install_refind('/dev/sda')
-    arch.install_trizen(username='adamaru')
+
+    user = ArchUser(ai, username='adamaru')
+    user.create()
+    user.add_groups(user.get_defaults_groups() + ['wheel'])
+    user.install_trizen()
