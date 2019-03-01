@@ -191,7 +191,7 @@ class ArchInstall():
         self.run(['pacstrap', self.mnt] + packages)
         self.file_put('/etc/hostname', self.hostname + '\n')
         self.services_enable(['NetworkManager', 'gpm', 'fail2ban', 'smartd'])
-        self.file_put('/etc/fstab', self.run(['genfstab', self.mnt]))
+        self.file_put('/etc/fstab', self.run(['genfstab', self.mnt], True))
         # self.run(['sh', '-c', 'genfstab', self.mnt, '>', self.mnt + '/etc/fstab'])
         commands = (
             ['localctl', 'set-locale', f'LC_CTYPE={self.lang}'],
