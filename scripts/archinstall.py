@@ -102,8 +102,8 @@ class ArchUser():
     def install_trizen(self):
         cmds = (
             ['git', 'clone', 'https://aur.archlinux.org/trizen.git',
-             f'/home/{username}/trizen'],
-            ['cd', f'/home/{username}/trizen', '&&', 'makepkg', '-si'],
+             f'/home/{self.username}/trizen'],
+            ['cd', f'/home/{self.username}/trizen', '&&', 'makepkg', '-si'],
             ['trizen', '-Sy']
         )
         for command in cmds:
@@ -120,7 +120,7 @@ class ArchInstall():
     def __str__(self):
         print(f'Archlinux Installer: {self.mnt} lang: {self.lang} host: {self.hostname}')
 
-    def run(command):
+    def run(self, command):
         print('running', ' '.join(command))
         if self.pretend:
             return
@@ -128,17 +128,23 @@ class ArchInstall():
         if ret != 0:
             raise CommandFail(command)
 
-    def run_in(command):
-        print('running in', ' '.join(command))
+    def run_in(self, command):
         self.run(['arch-chroot', self.mnt] + command)
 
     def services_enable(self, services):
            for service in services:
                self.run_in(['systemctl', 'enable', service])
 
+    def file_put(self, filepath, content):
+        if self.pretend:
+            return
+        filepath = os.path.join(self.mnt, filepath)
+        with open(filepath, 'w+') as fd:
+            fd.write(content)
+
     def install(self, packages):
         self.run(['pacstrap', self.mnt] + packages)
-        self.run_in(['echo', self.hostname, '>', '/etc/hostname'])
+        self.file_put('/etc/hostname', self.hostname + '\n')
         self.services_enable(['NetworkManager', 'gpm', 'fail2ban', 'smartd'])
         self.run(['sh', '-c', 'genfstab', self.mnt, '>', self.mnt + '/etc/fstab'])
         commands = (
@@ -177,7 +183,7 @@ if __name__ == "__main__":
     arch.install(DEFAULT)
     arch.install_refind('/dev/sda')
 
-    user = ArchUser(ai, username='adamaru')
+    user = ArchUser(arch, username='adamaru')
     user.create()
     user.add_groups(user.get_defaults_groups() + ['wheel'])
     user.install_trizen()
