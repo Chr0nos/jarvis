@@ -26,6 +26,8 @@ XORG = [
     #'extra/xf86-video-ati',
     #'extra/xf86-video-amdgpu',
     #'extra/xf86-video-vmware',
+    'extra/lightdm',
+    'extra/lightdm-gtk-greeter'
 ]
 
 EXTRA = [
@@ -52,7 +54,13 @@ PRINTER = [
     'extra/foomatic-db-gutenprint-ppds',
 ]
 
-DEFAULT = BASE + XORG + MATE
+PYTHON = [
+    'extra/python',
+    'extra/python-pip',
+    'community/ipython'
+]
+
+DEFAULT = BASE + XORG + MATE + PYTHON
 
 class CommandFail(Exception):
     pass
@@ -72,7 +80,7 @@ class ArchUser():
         return hash(str(self))
 
     def run(self, command):
-        self.ai.run_as(self.username, command)
+        self.ai.run_in(command, user=self.username)
 
     def get_defaults_groups(self):
         return ['audio', 'video', 'render', 'lp', 'input', 'scanner', 'games']
@@ -86,7 +94,13 @@ class ArchUser():
         self.ai.run_in(['chown', f'{self.username}:{self.username}', f'/home/{self.username}'])
         self.ai.run_in(['chmod', '700', f'/home/{self.username}'])
 
-    def set_pass(self):
+    def delete(self, delete_home=False):
+        if delete_home:
+            self.ai.run_in(['userdel', '-f', self.username])
+        else:
+            self.ai.run_in(['userdel', self.username])
+
+    def set_password(self):
         while True:
             try:
                 self.ai.run_in(['passwd', self.username])
@@ -105,10 +119,17 @@ class ArchUser():
             ['trizen', '-Sy']
         )
         for command in cmds:
-            self.ai.run_as(self.username, command)
+            self.run(command)
 
     def install(self, packages):
         self.run(['trizen', '-S', '--noedit', '--noconfirm'] + packages)
+
+    def install_oh_myzsh(self):
+        self.run(['wget',
+                 'https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh',
+                 '-O', '/tmp/ohmyzsh.sh'])
+        self.run(['sh', '/tmp/ohmyzsh.sh'])
+
 
 class ArchInstall():
     def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8', pretend=True):
@@ -120,16 +141,29 @@ class ArchInstall():
     def __str__(self):
         print(f'Archlinux Installer: {self.mnt} lang: {self.lang} host: {self.hostname}')
 
-    def run(self, command):
+    def __hash__(self):
+        # the class is unique by it's mount point: one install per mount_point
+        return hash(self.mnt)
+
+    def run(self, command, capture=False):
         print('running', ' '.join(command))
         if self.pretend:
             return
+        if capture:
+            return subprocess.check_output(command)
         ret = subprocess.call(command)
         if ret != 0:
             raise CommandFail(command)
 
-    def run_in(self, command):
-        self.run(['arch-chroot', self.mnt] + command)
+    def run_in(self, command, user='root'):
+        if user == 'root':
+            self.run(['arch-chroot', self.mnt] + command)
+        else:
+            self.run(['arch-chroot', '-u', user, self.mnt] + command)
+            #self.run(['su', user, '-c', ' '.join(command)])
+
+    def edit(self, filepath):
+        self.run_in(['vim', filepath])
 
     def services_enable(self, services):
            for service in services:
@@ -148,7 +182,8 @@ class ArchInstall():
         self.run(['pacstrap', self.mnt] + packages)
         self.file_put('/etc/hostname', self.hostname + '\n')
         self.services_enable(['NetworkManager', 'gpm', 'fail2ban', 'smartd'])
-        self.run(['sh', '-c', 'genfstab', self.mnt, '>', self.mnt + '/etc/fstab'])
+        self.file_put('/etc/fstab', self.run(['genfstab', self.mnt]))
+        # self.run(['sh', '-c', 'genfstab', self.mnt, '>', self.mnt + '/etc/fstab'])
         commands = (
             ['localctl', 'set-locale', f'LC_CTYPE={self.lang}'],
             ['localctl', 'set-locale', f'LANG={self.lang}'],
@@ -173,21 +208,19 @@ class ArchInstall():
     def mount(self, partition, mount_moint):
         self.run(['mount', partition, mount_moint])
 
-    def run_as(self, username, command):
-        """
-        run the command 'command' into the chroot as username
-        """
-        self.run_in(['su', username, '-c', ' '.join(command)])
-
 
 if __name__ == "__main__":
     arch = ArchInstall(hostname='localhost')
     arch.install(DEFAULT)
     arch.install_refind('/dev/sda')
+    # arch.services_enable(['lightdm'])
 
     user = ArchUser(arch, username='adamaru')
     user.create()
-    user.add_groups(user.get_defaults_groups() + ['wheel'])
+    user.set_password()
+    user.add_groups(user.get_defaults_groups())
+    user.add_groups(['wheel'])
     user.install_trizen()
     user.install(['visual-studio-code-bin', 'spotify'])
+    user.install_oh_myzsh()
 
