@@ -353,7 +353,8 @@ class ArchInstall():
         return file_content
 
     def install(self, packages):
-        self.run(['pacstrap', self.mnt] + packages)
+        if packages:
+            self.run(['pacstrap', self.mnt] + packages)
         self.file_put('/etc/hostname', self.hostname + '\n')
         self.file_put('/etc/fstab', self.run(['genfstab', self.mnt], True))
         self.file_put('/etc/locale.conf', f'LC_CTYPE={self.lang}\nLANG={self.lang}')
@@ -363,7 +364,7 @@ class ArchInstall():
             # ['timedatectl', 'set-ntp', 'true'],
             ['locale-gen'],
             ['chmod', '751', '/home'],
-            ['ln', '-s', f'/usr/share/zoneinfo/{self.timezone}', '/etc/localtime'],
+            ['ln', '-sf', f'/usr/share/zoneinfo/{self.timezone}', '/etc/localtime'],
             ['mkdir', '-pv', '/etc/polkit-1/rules.d/'],
             ['passwd'],
             ['mkinitcpio', '-p', 'linux'],
