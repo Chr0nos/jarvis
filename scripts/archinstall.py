@@ -258,13 +258,13 @@ class ArchUser():
     def install_trizen(self):
         trizen_path = os.path.join(self.home, 'trizen')
         cmds = (
-            ['git', 'clone', 'https://aur.archlinux.org/trizen.git', self.home],
+            ['git', 'clone', 'https://aur.archlinux.org/trizen.git', trizen_path],
             ['makepkg', '-si'],
             ['trizen', '-Sy']
         )
         for command in cmds:
             self.run(command)
-        self.run(['rm', '-rf', os.path.join(self.home, 'trizen')])
+        self.run(['rm', '-rf', trizen_path])
 
     def install(self, packages):
         self.run(['trizen', '-S', '--noedit', '--noconfirm'] + packages)
