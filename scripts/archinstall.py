@@ -460,7 +460,7 @@ if __name__ == "__main__":
     user.install_trizen()
     user.install(['visual-studio-code-bin', 'spotify'])
     user.install_oh_myzsh()
-    user.run(['pip3', 'install', '--user', 'requests', 'virtualenv'])
+    user.run(['/usr/bin/pip3', 'install', '--user', 'requests', 'virtualenv'])
 
     services = [
         NetworkManager(),
