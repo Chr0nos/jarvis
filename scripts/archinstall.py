@@ -339,9 +339,10 @@ class ArchInstall():
         self.file_put('/etc/fstab', self.run(['genfstab', self.mnt], True))
         # self.run(['sh', '-c', 'genfstab', self.mnt, '>', self.mnt + '/etc/fstab'])
         commands = (
-            ['timedatectl', 'set-ntp', 'true'],
-            ['localctl', 'set-locale', f'LC_CTYPE={self.lang}'],
-            ['localctl', 'set-locale', f'LANG={self.lang}'],
+            # System has not been booted with systemd as init (PID 1). Can't operate.
+            # ['timedatectl', 'set-ntp', 'true'],
+            ['localectl', 'set-locale', f'LC_CTYPE={self.lang}'],
+            ['localectl', 'set-locale', f'LANG={self.lang}'],
             ['locale-gen'],
             ['chmod', '751', '/home'],
             ['ln', '-s', f'/usr/share/zoneinfo/{self.timezone}', '/etc/localtime'],
