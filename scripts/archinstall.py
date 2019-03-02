@@ -372,13 +372,24 @@ class ArchInstall():
         for cmd in commands:
             self.run_in(cmd)
 
-    def install_grub(self):
+    def install_grub(self, device=None):
         self.run_in(['pacman', '-S', 'grub'])
         self.run_in(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
 
     def install_refind(self, device):
-        self.run_in(['pacman', '-S', 'extra/refind-efi'])
+        if not os.path.ismount('/boot/efi'):
+            raise(ConfigError('please create and mount /boot/efi (vfat)'))
+        # TODO : detect informations about device and mount point of /boot/efi
+        partition = 1
+        self.run_in(['pacman', '-S', '--noconfirm', 'extra/refind-efi'])
         self.run_in(['refind-install', '--alldrivers', device])
+        self.run_in([
+            'efibootmgr', '-c',
+            '-L', 'rEFInd',
+            '-l', '/EFI/refind/refind_x64.efi'
+            '-d', device,
+            '-p', str(partition),
+        ])
 
     def mount(self, partition, mount_moint):
         self.run(['mount', partition, mount_moint])
@@ -401,11 +412,15 @@ if __name__ == "__main__":
     parser.add_argument('--device', help='wich device to use (for bootloaders)', default='/dev/sda')
     parser.add_argument('--user', help='create a default user ?', required=True)
     parser.add_argument('--real', help='perform the real install', default=False, action='store_true')
+    parser.add_argument('--loader', help='which bootloader to use ?', choices=('grub', 'refind'))
     args = parser.parse_args()
 
     arch = ArchInstall(hostname=args.hostname, pretend=not args.real)
     arch.install(DEFAULT)
-    arch.install_refind(args.device)
+    if args.loader == 'refind':
+        arch.install_refind(args.device)
+    else:
+        arch.install_grub(args.device)
 
     user = ArchUser(arch, username=args.user)
     user.create()
