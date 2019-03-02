@@ -373,7 +373,7 @@ class ArchInstall():
             self.run_in(cmd)
 
     def install_grub(self, device=None):
-        self.run_in(['pacman', '-S', 'grub'])
+        self.pkg_install(['grub'])
         self.run_in(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
 
     def install_refind(self, device):
@@ -381,12 +381,15 @@ class ArchInstall():
             raise(ConfigError('please create and mount /boot/efi (vfat)'))
         # TODO : detect informations about device and mount point of /boot/efi
         partition = 1
-        self.run_in(['pacman', '-S', '--noconfirm', 'extra/refind-efi'])
+        efi_path = '/EFI/refind/refind_x64.efi'
+        self.pkg_install(['extra/refind-efi'])
         self.run_in(['refind-install', '--alldrivers', device])
+        if not os.path.exists(os.path.join('/boot/efi', efi_path)):
+            raise ConfigError('unable to found the efi path on /boot/efi disk')
         self.run_in([
             'efibootmgr', '-c',
             '-L', 'rEFInd',
-            '-l', '/EFI/refind/refind_x64.efi'
+            '-l', efi_path,
             '-d', device,
             '-p', str(partition),
         ])
