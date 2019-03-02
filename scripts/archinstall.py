@@ -47,13 +47,6 @@ I3 = ['i3-gaps', 'community/i3status', 'i3blocks', 'i3lock']
 GNOME = ['gnome']
 CINNAMON = ['community/cinnamon']
 
-PRINTER = [
-    'extra/cups',
-    'extra/cups-pdf',
-    'extra/gutenprint',
-    'extra/foomatic-db-gutenprint-ppds',
-]
-
 PYTHON = [
     'extra/python',
     'extra/python-pip',
@@ -122,7 +115,12 @@ class Mlocate(Service):
 
 
 class Cups(Service):
-    packages = ['cups']
+    packages = [
+        'extra/cups',
+        'extra/cups-pdf',
+        'extra/gutenprint',
+        'extra/foomatic-db-gutenprint-ppds'
+    ]
     service = 'org.cups.cupsd.service'
     groups = ['lp']
     desc = 'Printer server'
