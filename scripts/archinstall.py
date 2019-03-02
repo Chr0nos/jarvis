@@ -255,7 +255,7 @@ class ArchUser():
                 pass
 
     def install_trizen(self):
-        with Cd(f'/home/{self.username}') as _:
+        with Cd(os.path.join(self.ai.mnt, 'home', self.username)) as _:
             cmds = (
                 ['git', 'clone', 'https://aur.archlinux.org/trizen.git'],
                 ['makepkg', '-si'],
