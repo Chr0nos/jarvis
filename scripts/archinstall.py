@@ -306,7 +306,7 @@ class ArchInstall():
         if self.pretend:
             return
         if capture:
-            return subprocess.check_output(command)
+            return subprocess.check_output(command).decode('utf-8')
         ret = subprocess.call(command)
         if ret != 0:
             raise CommandFail(command)
