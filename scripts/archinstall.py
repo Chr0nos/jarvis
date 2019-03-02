@@ -197,6 +197,21 @@ class Iptables(Service):
     desc = 'firewall'
 
 
+class Cd():
+    """
+    context manager to change dir and then goes back into the original dir.
+    """
+    def __init__(self, path):
+        self.path = path
+
+    def __enter__(self):
+        self.origin = os.getcwd()
+        os.chdir(self.path)
+
+    def __exit__(self, a, b, c):
+        os.chdir(self.origin)
+
+
 class ArchUser():
     def __init__(self, ai, username):
         if not isinstance(ai, ArchInstall):
@@ -243,14 +258,14 @@ class ArchUser():
                 pass
 
     def install_trizen(self):
-        cmds = (
-            ['git', 'clone', 'https://aur.archlinux.org/trizen.git',
-             f'/home/{self.username}/trizen'],
-            ['cd', f'/home/{self.username}/trizen', '&&', 'makepkg', '-si'],
-            ['trizen', '-Sy']
-        )
-        for command in cmds:
-            self.run(command)
+        with Cd(f'/home/{self.username}') as _:
+            cmds = (
+                ['git', 'clone', 'https://aur.archlinux.org/trizen.git'],
+                ['makepkg', '-si'],
+                ['trizen', '-Sy']
+            )
+            for command in cmds:
+                self.run(command)
 
     def install(self, packages):
         self.run(['trizen', '-S', '--noedit', '--noconfirm'] + packages)
