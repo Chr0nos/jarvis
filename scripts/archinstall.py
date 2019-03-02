@@ -418,25 +418,20 @@ class ArchInstall():
 
     @staticmethod
     def get_mounts():
-        mounts = {}
-        with open('/proc/mounts', 'r') as fd:
-            line = True
-            while line:
-                line = fd.readline().replace("\n", '')
+        lst = []
+        with open('/proc/mounts','r') as fd:
+            for line in f.readlines():
                 try:
-                    device, mount_point, fs, opts, dump, pas = line.split(' ')
-                except ValueError:
-                    print('->', line)
-                    continue
-                mounts[mount_point] = {
-                    'device': device,
-                    'mnt': mount_point,
-                    'fs': fs,
-                    'opts': opts,
-                    'dump': dump,
-                    'pass': pas
-                }
-        return mounts
+                    device, mount_point, fs, opts, dump, pas = line.split()
+                    lst.append({
+                        'device': device,
+                        'mnt': mount_point,
+                        'fs': fs,
+                        'opts': opts,
+                        'dump': dump,
+                        'pass': pas
+                    })
+        return lst
 
 
 if __name__ == "__main__":
