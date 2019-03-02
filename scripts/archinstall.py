@@ -289,6 +289,14 @@ class ArchInstall():
         self.lang = lang
         self.pretend = pretend
         self.timezone = 'Europe/Paris'
+        self.locales = [
+            ('fr_FR.UTF-8', 'UTF-8'),
+            ('fr_FR', 'ISO-8859-1'),
+            ('fr_FR@euro', 'ISO-8859-15'),
+            ('en_US.UTF-8', 'UTF-8'),
+            ('en_US', 'ISO-8859-1')
+        ]
+
 
     def __del__(self):
         # be sure that the disk commit all the cash for real after the script call..
@@ -333,16 +341,24 @@ class ArchInstall():
         with open(filepath, 'w+') as fd:
             fd.write(content)
 
+    def locale_genfile(self):
+        """
+        return the content of /etc/locale.gen file based on self.locales
+        """
+        file_content = ''
+        for locale, encoding in self.locales:
+            file_content += f'{locale} {encoding}\n'
+        return file_content
+
     def install(self, packages):
         self.run(['pacstrap', self.mnt] + packages)
         self.file_put('/etc/hostname', self.hostname + '\n')
         self.file_put('/etc/fstab', self.run(['genfstab', self.mnt], True))
-        # self.run(['sh', '-c', 'genfstab', self.mnt, '>', self.mnt + '/etc/fstab'])
+        self.file_put('/etc/locale.conf', f'LC_CTYPE={self.lang}\nLANG={self.lang}')
+        self.file_put('/etc/locale.gen', self.locale_genfile())
         commands = (
             # System has not been booted with systemd as init (PID 1). Can't operate.
             # ['timedatectl', 'set-ntp', 'true'],
-            ['localectl', 'set-locale', f'LC_CTYPE={self.lang}'],
-            ['localectl', 'set-locale', f'LANG={self.lang}'],
             ['locale-gen'],
             ['chmod', '751', '/home'],
             ['ln', '-s', f'/usr/share/zoneinfo/{self.timezone}', '/etc/localtime'],
