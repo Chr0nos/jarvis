@@ -263,6 +263,7 @@ class ArchUser():
             )
             for command in cmds:
                 self.run(command)
+        self.run(['rm', '-rf', f'/home/{self.username}/trizen'])
 
     def install(self, packages):
         self.run(['trizen', '-S', '--noedit', '--noconfirm'] + packages)
@@ -272,6 +273,7 @@ class ArchUser():
                  'https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh',
                  '-O', '/tmp/ohmyzsh.sh'])
         self.run(['sh', '/tmp/ohmyzsh.sh'])
+        self.run(['rm', '/tmp/ohmyzsh.sh'])
 
 
 class ArchInstall():
@@ -392,11 +394,19 @@ class ArchInstall():
 
 
 if __name__ == "__main__":
-    arch = ArchInstall(hostname='localhost')
-    arch.install(DEFAULT)
-    arch.install_refind('/dev/sda')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--hostname', help='the new machine hostname', default='localhost')
+    parser.add_argument('--root', help='the mount point to use (/mnt)', default='/mnt')
+    parser.add_argument('--device', help='wich device to use (for bootloaders)', default='/dev/sda')
+    parser.add_argument('--user', help='create a default user ?', required=True)
+    parser.add_argument('--real', help='perform the real install', default=False, action='store_true')
+    args = parser.parse_args()
 
-    user = ArchUser(arch, username='adamaru')
+    arch = ArchInstall(hostname=args.hostname, pretend=not args.real)
+    arch.install(DEFAULT)
+    arch.install_refind(args.device)
+
+    user = ArchUser(arch, username=args.user)
     user.create()
     user.set_password()
     user.add_groups(user.get_defaults_groups())
