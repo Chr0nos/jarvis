@@ -420,7 +420,7 @@ class ArchInstall():
     def get_mounts():
         lst = []
         with open('/proc/mounts','r') as fd:
-            for line in f.readlines():
+            for line in fd.readlines():
                 try:
                     device, mount_point, fs, opts, dump, pas = line.split()
                     lst.append({
