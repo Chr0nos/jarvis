@@ -431,6 +431,8 @@ class ArchInstall():
                         'dump': dump,
                         'pass': pas
                     })
+                except ValueError:
+                    pass
         return lst
 
 
