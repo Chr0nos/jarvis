@@ -382,6 +382,8 @@ class ArchInstall():
 
     def install_grub(self, device, target='i386-pc'):
         self.pkg_install(['grub'])
+        if not os.path.exists('/boot/grub'):
+            os.mkdir('/boot/grub')
         self.run_in(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
         self.run_in(['grub-install', '--target', target, device])
 
