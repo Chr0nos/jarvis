@@ -12,7 +12,7 @@ BASE = [
     'ttf-dejavu', 'extra/pulseaudio-alsa', 'ttf-freefont', 'otf-font-awesome',
     'gnome-keyring', 'hdparm', 'idle3-tools', 'iw',
     'pavucontrol', 'gparted', 'ntfs-3g', 'exfat-utils', 'sshfs',
-    'ffmpegthumbnailer', 'mdadm', 'wget'
+    'ffmpegthumbnailer', 'mdadm', 'wget', 'git'
 ]
 
 XORG = [
@@ -214,6 +214,7 @@ class ArchUser():
         if not isinstance(ai, ArchInstall):
             raise ValueError(ai)
         self.username = username
+        self.home = os.path.join('/home', username)
         self.ai = ai
 
     def __str__(self):
@@ -234,8 +235,8 @@ class ArchUser():
 
     def create(self, shell='/bin/zsh'):
         self.ai.run_in(['useradd', '-m', '-s', shell, self.username])
-        self.ai.run_in(['chown', f'{self.username}:{self.username}', f'/home/{self.username}'])
-        self.ai.run_in(['chmod', '700', f'/home/{self.username}'])
+        self.ai.run_in(['chown', f'{self.username}:{self.username}', self.home])
+        self.ai.run_in(['chmod', '700', self.home])
 
     def delete(self, delete_home=False):
         if delete_home:
@@ -255,15 +256,15 @@ class ArchUser():
                 pass
 
     def install_trizen(self):
-        with Cd(os.path.join(self.ai.mnt, 'home', self.username)) as _:
-            cmds = (
-                ['git', 'clone', 'https://aur.archlinux.org/trizen.git'],
-                ['makepkg', '-si'],
-                ['trizen', '-Sy']
-            )
-            for command in cmds:
-                self.run(command)
-        self.run(['rm', '-rf', f'/home/{self.username}/trizen'])
+        trizen_path = os.path.join(self.home, 'trizen')
+        cmds = (
+            ['git', 'clone', 'https://aur.archlinux.org/trizen.git', self.home],
+            ['makepkg', '-si'],
+            ['trizen', '-Sy']
+        )
+        for command in cmds:
+            self.run(command)
+        self.run(['rm', '-rf', os.path.join(self.home, 'trizen')])
 
     def install(self, packages):
         self.run(['trizen', '-S', '--noedit', '--noconfirm'] + packages)
@@ -322,11 +323,10 @@ class ArchInstall():
             raise CommandFail(command)
 
     def run_in(self, command, user='root'):
-        if user == 'root':
-            self.run(['arch-chroot', self.mnt] + command)
-        else:
-            self.run(['arch-chroot', '-u', user, self.mnt] + command)
-            #self.run(['su', user, '-c', ' '.join(command)])
+        cmd = ['arch-chroot', self.mnt]
+        if user != 'root':
+            cmd += ['-u', user]
+        self.run(cmd + command)
 
     def pkg_install(self, packages):
         self.run_in(['pacman', '-S', '--noconfirm'] + packages)
@@ -445,7 +445,7 @@ if __name__ == "__main__":
     parser.add_argument('--device', help='wich device to use (for bootloaders)', default='/dev/sda')
     parser.add_argument('--user', help='create a default user ?', required=True)
     parser.add_argument('--real', help='perform the real install', default=False, action='store_true')
-    parser.add_argument('--loader', help='which bootloader to use ?', choices=('grub', 'refind'))
+    parser.add_argument('--loader', help='which bootloader to use ?', choices=('grub', 'refind'), required=True)
     args = parser.parse_args()
 
     arch = ArchInstall(hostname=args.hostname, pretend=not args.real)
