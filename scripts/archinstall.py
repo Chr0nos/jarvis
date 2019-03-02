@@ -386,5 +386,6 @@ if __name__ == "__main__":
         Udisks2(),
         Acpid(),
         Iptables(),
+        Mlocate()
     ]
     arch.install_services(services)
