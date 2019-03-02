@@ -19,15 +19,14 @@ XORG = [
     'xorg-server',
     'xorg-fonts-75dpi',
     'xorg-fonts-100dpi',
-    'xorg-xrandr xorg-xinit',
+    'xorg-xrandr',
+    'xorg-xinit',
     'extra/nvidia-dkms', 'extra/nvidia-settings',
     #'extra/xf86-video-vesa',
     #'extra/xf86-video-intel',
     #'extra/xf86-video-ati',
     #'extra/xf86-video-amdgpu',
     #'extra/xf86-video-vmware',
-    'extra/lightdm',
-    'extra/lightdm-gtk-greeter'
 ]
 
 EXTRA = [
