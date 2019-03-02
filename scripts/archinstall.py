@@ -33,7 +33,8 @@ XORG = [
 EXTRA = [
     'extra/adwaita-icon-theme',
     'linux-headers',
-    'firefox', 'extra/firefox-i18n-fr', 'community/firefox-adblock-plus'
+    'firefox', 'extra/firefox-i18n-fr', 'community/firefox-adblock-plus',
+    'community/mtpfs'
 ]
 
 MATE = [
@@ -60,7 +61,7 @@ PYTHON = [
     'community/ipython'
 ]
 
-DEFAULT = BASE + XORG + MATE + PYTHON
+DEFAULT = BASE + XORG + MATE + EXTRA + PYTHON
 
 class CommandFail(Exception):
     pass
@@ -374,6 +375,7 @@ if __name__ == "__main__":
     user.install_trizen()
     user.install(['visual-studio-code-bin', 'spotify'])
     user.install_oh_myzsh()
+    user.run(['pip3', 'install', '--user', 'requests', 'virtualenv'])
 
     services = [
         NetworkManager(),
