@@ -372,9 +372,18 @@ class ArchInstall():
         for cmd in commands:
             self.run_in(cmd)
 
-    def install_grub(self, device=None):
+    def install_bootloader(self, name, device, **kwargs):
+        if name == 'refind':
+            self.install_refind(device)
+        elif name == 'grub':
+            self.install_grub(device, **kwargs)
+        else:
+            raise ValueError(name)
+
+    def install_grub(self, device, target='i386-pc'):
         self.pkg_install(['grub'])
         self.run_in(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
+        self.run_in(['grub-install', '--target', target, device])
 
     def install_refind(self, device):
         if not os.path.ismount('/boot/efi'):
@@ -420,10 +429,7 @@ if __name__ == "__main__":
 
     arch = ArchInstall(hostname=args.hostname, pretend=not args.real)
     arch.install(DEFAULT)
-    if args.loader == 'refind':
-        arch.install_refind(args.device)
-    else:
-        arch.install_grub(args.device)
+    arch.install_bootloader(args.loader, args.device)
 
     user = ArchUser(arch, username=args.user)
     user.create()
