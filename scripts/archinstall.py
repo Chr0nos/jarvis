@@ -416,6 +416,22 @@ class ArchInstall():
                 service.set_enabled(True)
             service.add_users()
 
+    @staticmethod
+    def get_mounts():
+        mounts = {}
+        with open('/proc/mounts', 'r') as fd:
+            for line in fd.readlines():
+                drive, mount_point, fs, opts, dump, pas = line.split()
+                mounts[mount_point] = {
+                    'drive': drive,
+                    'mnt': mount_point,
+                    'fs': fs,
+                    'opts': opts,
+                    'dump': dump,
+                    'pass': pas
+                }
+        return mounts
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
