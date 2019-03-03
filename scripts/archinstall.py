@@ -112,6 +112,7 @@ class Chroot():
     def __init__(self, path, unbind=False):
         self.real_root = os.open('/', os.O_RDONLY)
         self.path = path
+        self.unbind = unbind
         self.mounts = [
             MountPoint(f'{path}/proc', opts='nosuid,noexec,nodev', fs_type='proc'),
             MountPoint(f'{path}/dev/pts', opts='mode=1777,nosuid,nodev', fs_type='devpts'),
@@ -153,6 +154,7 @@ class Chroot():
                     func(*args, **kwargs)
             return wrapper
         return real_decorator
+
 
 class Service():
     packages = []
