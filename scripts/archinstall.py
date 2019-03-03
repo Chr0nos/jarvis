@@ -322,19 +322,9 @@ class ArchUser():
         return hash(str(self))
 
     def run(self, command):
-        assert self.exists() == True
-        def demote(uid, gid):
-            print('demoting privileges.')
-            def set_ids():
-                os.setuid(uid)
-                os.setgid(gid)
-            return set_ids
-
+        assert self.exists() == True, (self.uid, self.gid)
         with Chroot(self.ai.mnt) as _:
-            self.ai.run(
-                command,
-                capture=False,
-                preexec_fn=demote(self.uid, self.gid))
+            self.ai.run(command, capture=False, preexec_fn=self.demote())
 
     def get_defaults_groups(self):
         return ['audio', 'video', 'render', 'input', 'scanner', 'games']
@@ -402,6 +392,7 @@ class ArchUser():
     def demote(self):
         assert self.exists() == True
         def set_ids():
+            print('demoting privileges to ', self.username)
             os.setuid(self.uid)
             os.setgid(self.gid)
 
@@ -427,7 +418,7 @@ class ArchUser():
         return users
 
 class ArchInstall():
-    def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8', pretend=True):
+    def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8'):
         """
         hostname: the machine hostname
         mnt: on wich mount point will you install arch ? this mountpoint must exists
@@ -439,7 +430,6 @@ class ArchInstall():
         self.mnt = mnt
         self.hostname = hostname
         self.lang = lang
-        self.pretend = pretend
         self.timezone = 'Europe/Paris'
         self.locales = [
             ('fr_FR.UTF-8', 'UTF-8'),
@@ -448,8 +438,7 @@ class ArchInstall():
             ('en_US.UTF-8', 'UTF-8'),
             ('en_US', 'ISO-8859-1')
         ]
-        self.efi_capable = os.path.exists('/sys.firmware/efi')
-
+        self.efi_capable = os.path.exists('/sys/firmware/efi')
 
     def __del__(self):
         # be sure that the disk commit all the cash for real after the script call..
@@ -464,8 +453,6 @@ class ArchInstall():
 
     def run(self, command, capture=False, **kwargs):
         print('running', ' '.join(command))
-        if self.pretend:
-            return
         if capture:
             return subprocess.check_output(command, **kwargs).decode('utf-8')
         ret = subprocess.call(command, **kwargs)
@@ -602,7 +589,7 @@ if __name__ == "__main__":
     parser.add_argument('--loader', help='which bootloader to use ?', choices=('grub', 'refind'), required=True)
     args = parser.parse_args()
 
-    arch = ArchInstall(hostname=args.hostname, pretend=False)
+    arch = ArchInstall(hostname=args.hostname)
     user = ArchUser(arch, username=args.user)
 
     arch.install(DEFAULT)
