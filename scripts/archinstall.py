@@ -387,7 +387,7 @@ class ArchUser():
         self.run(['rm', '/tmp/ohmyzsh.sh'])
 
     def exists(self):
-        return self.uid and self.gid
+        return self.uid != None and self.gid != None
 
     def demote(self):
         assert self.exists() == True
@@ -425,7 +425,7 @@ class ArchInstall():
         lang: a valid lang locale
         pretent: Dont run or change anything, just show what will be done.
         """
-        if not pretend and not os.path.exists(mnt):
+        if not os.path.exists(mnt):
             raise ValueError('invalid mount point you morron: ' + mnt)
         self.mnt = mnt
         self.hostname = hostname
@@ -475,8 +475,6 @@ class ArchInstall():
     def file_put(self, filepath, content):
         print('writing into', filepath + ':')
         print(content)
-        if self.pretend:
-            return
         filepath = os.path.join(self.mnt, filepath)
         with open(filepath, 'w+') as fd:
             fd.write(content)
@@ -578,6 +576,7 @@ class ArchInstall():
                 except ValueError:
                     pass
         return lst
+
 
 
 if __name__ == "__main__":
