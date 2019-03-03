@@ -100,13 +100,13 @@ class MountPoint():
         if not os.path.isdir(self.dest):
             mktree(self.dest)
         ret = subprocess.run(self.get_cmd())
-        assert ret == 0, ret
+        assert ret.returncode == 0, ret.returncode
 
     def unmount(self):
         if not self.is_mount:
             return
         ret = subprocess.run(['umount', self.dest])
-        assert ret == 0, ret
+        assert ret.returncode == 0, ret
 
 class Chroot():
     def __init__(self, path, unbind=False):
@@ -459,10 +459,6 @@ class ArchInstall():
         ]
         self.efi_capable = os.path.exists('/sys/firmware/efi')
 
-    def __del__(self):
-        # be sure that the disk commit all the cash for real after the script call..
-        self.run(['sync'])
-
     def __str__(self):
         print(f'Archlinux Installer: {self.mnt} lang: {self.lang} host: {self.hostname}')
 
@@ -471,11 +467,13 @@ class ArchInstall():
         return hash(self.mnt)
 
     def run(self, command, capture=False, **kwargs):
-        print('running', ' '.join(command), kwargs)
+        if kwargs.get('debug_run'):
+            del(kwargs['debug_run'])
+            print('running', ' '.join(command), kwargs)
         if capture:
             return subprocess.check_output(command, **kwargs).decode('utf-8')
         ret = subprocess.run(command, **kwargs)
-        if ret != 0:
+        if ret.returncode != 0:
             raise CommandFail(command)
 
     def run_in(self, command, user=None, **kwargs):
@@ -596,7 +594,12 @@ class ArchInstall():
                     pass
         return lst
 
-
+# "
+# if __name__ == "__main__":
+#     arch = ArchInstall(hostname='StarK', mnt='/')
+#     user = ArchUser(arch, username='adamaru')
+#     user.uid, user.gid = (1000, 1000)
+#     user.run(['id'], debug_run=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
