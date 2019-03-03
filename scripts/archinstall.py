@@ -66,7 +66,6 @@ class ConfigError(Exception):
 # TODO : add device param
 class MountPoint():
     def __init__(self, dest, opts='defaults', fs_type=None):
-        assert os.path.isdir(dest) == True, dest
         self.dest = dest
         self.opts = opts
         self.fs_type = fs_type
