@@ -386,12 +386,14 @@ class ArchUser():
     def exists(self):
         return self.uid != None and self.gid != None
 
-    def demote(self):
-        assert self.exists() == True
+    @staticmethod
+    #this needs to be static because of a scop thing...
+    def demote(user):
+        assert user.exists() == True
         def set_ids():
-            print('demoting privileges to ', self.username)
-            os.setuid(self.uid)
-            os.setgid(self.gid)
+            print('demoting privileges to ', user.username)
+            os.setuid(user.uid)
+            os.setgid(user.gid)
         return set_ids
 
     @staticmethod
@@ -462,7 +464,7 @@ class ArchInstall():
             if not user:
                 return self.run(command, **kwargs)
             assert isinstance(user, ArchUser) == True
-            return self.run(command, preexec_fn=user.demote(), **kwargs)
+            return self.run(command, preexec_fn=ArchUser.demote(user), **kwargs)
 
     def pkg_install(self, packages):
         self.run_in(['pacman', '-S', '--noconfirm'] + packages)
