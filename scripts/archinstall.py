@@ -86,10 +86,12 @@ class MountPoint():
             cmd += ['-t', self.fs_type]
         if self.opts:
             cmd += ['-o', self.opts]
-        return cmd + [device, self.dest]
+        return cmd + [self.device, self.dest]
 
     def mount(self):
         print('mounting', self.dest)
+        if not os.path.isdir(self.dest):
+            os.mkdir(self.dest)
         ret = subprocess.call(self.get_cmd())
         assert ret == 0, ret
 
