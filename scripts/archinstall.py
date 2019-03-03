@@ -369,7 +369,7 @@ class ArchUser():
     def install_trizen(self):
         trizen_path = os.path.join(self.home, 'trizen')
         self.run(['git', 'clone', 'https://aur.archlinux.org/trizen.git', trizen_path])
-        self.run(['makepkg', '-si'] ,cwd=trizen_path)
+        self.run(['makepkg', '-si'], cwd=trizen_path)
         self.run(['trizen', '-Sy'])
         self.run(['rm', '-rf', trizen_path])
 
@@ -449,7 +449,7 @@ class ArchInstall():
         return hash(self.mnt)
 
     def run(self, command, capture=False, **kwargs):
-        print('running', ' '.join(command))
+        print('running', ' '.join(command), kwargs)
         if capture:
             return subprocess.check_output(command, **kwargs).decode('utf-8')
         ret = subprocess.call(command, **kwargs)
