@@ -33,7 +33,8 @@ EXTRA = [
     'extra/adwaita-icon-theme',
     'linux-headers',
     'firefox', 'extra/firefox-i18n-fr', 'community/firefox-adblock-plus',
-    'community/mtpfs'
+    'community/mtpfs',
+    'tree'
 ]
 
 MATE = [
@@ -110,14 +111,14 @@ class Chroot():
             MountPoint(f'{path}/sys/firmware/efi/efivars', 'nosuid,noexec,nodev', 'efivarfs')
         ]
 
-    def __enter__(self):
+    def start(self):
         for bind in self.mounts:
             if bind.is_mount():
                 continue
             bind.mount()
         os.chroot(self.path)
 
-    def __exit__(self, a, b, c):
+    def stop(self):
         os.chdir(self.real_root)
         os.chroot('.')
         os.close(self.real_root)
@@ -125,6 +126,20 @@ class Chroot():
             for bind in self.mounts:
                 bind.unmount()
 
+    def __enter__(self):
+        self.start()
+
+    def __exit__(self, a, b, c):
+        self.stop()
+
+    @staticmethod
+    def decorator(path):
+        def real_decorator(func):
+            def wrapper(*args, **kwargs):
+                with Chroot(path) as _:
+                    func(*args, **kwargs)
+            return wrapper
+        return real_decorator
 
 class Service():
     packages = []
@@ -290,9 +305,6 @@ class ArchUser():
         return hash(str(self))
 
     def run(self, command):
-        """
-        please, consider to use explicitly this function into a Chroot context
-        """
         assert self.exists() == True
         def demote(uid, gid):
             print('demoting privileges.')
@@ -301,7 +313,11 @@ class ArchUser():
                 os.setgid(gid)
             return set_ids
 
-        self.ai.run(command, capture=False, preexec_fn=demote(self.uid, self.gid))
+        with Chroot(self.ai.mnt) as _:
+            self.ai.run(
+                command,
+                capture=False,
+                preexec_fn=demote(self.uid, self.gid))
 
     def get_defaults_groups(self):
         return ['audio', 'video', 'render', 'input', 'scanner', 'games']
@@ -311,25 +327,27 @@ class ArchUser():
             self.ai.run_in(['gpasswd', '-a', self.username, group])
 
     def create(self, shell='/bin/zsh'):
-        self.ai.run_in(['useradd', '-m', '-s', shell, self.username])
-        self.ai.run_in(['chown', f'{self.username}:{self.username}', self.home])
-        self.ai.run_in(['chmod', '700', self.home])
         with Chroot(self.ai.mnt) as _:
-                me = ArchUser.list()[self.username]
-                self.gid = me['gid']
-                self.uid = me['uid']
+            self.ai.run(['useradd', '-m', '-s', shell, self.username])
+            self.ai.run(['chown', f'{self.username}:{self.username}', self.home])
+            self.ai.run(['chmod', '700', self.home])
+            me = ArchUser.list()[self.username]
+            self.gid = me['gid']
+            self.uid = me['uid']
 
     def delete(self, delete_home=False):
-        if delete_home:
-            self.ai.run_in(['userdel', '-f', self.username])
-        else:
-            self.ai.run_in(['userdel', self.username])
+        with Chroot(self.ai.mnt) as _:
+            if delete_home:
+                self.ai.run(['userdel', '-f', self.username])
+            else:
+                self.ai.run(['userdel', self.username])
         self.uid, self.gid = (None, None)
 
     def set_password(self):
         while True:
             try:
-                self.ai.run_in(['passwd', self.username])
+                with Chroot(self.ai.mnt) as _:
+                    self.ai.run(['passwd', self.username])
                 return
             except KeyboardInterrupt:
                 print(f'setup of user {self.username} skipped: no password set')
@@ -360,6 +378,12 @@ class ArchUser():
 
     def exists(self):
         return self.uid and self.gid
+
+    def demote(self):
+        assert self.exists() == True
+        def set_ids():
+            os.setuid(self.uid)
+            os.setgid(self.gid)
 
     @staticmethod
     def list():
@@ -427,11 +451,12 @@ class ArchInstall():
         if ret != 0:
             raise CommandFail(command)
 
-    def run_in(self, command, user='root'):
-        cmd = ['arch-chroot', self.mnt]
-        if user != 'root':
-            cmd += ['-u', user]
-        self.run(cmd + command)
+    def run_in(self, command, user='root', **kwargs):
+        with Chroot(self.mnt) as _:
+            if not user:
+                return self.run(command)
+            assert isinstance(user, ArchUser) == True
+            return self.run(command, preexec_fn=user.demote())
 
     def pkg_install(self, packages):
         self.run_in(['pacman', '-S', '--noconfirm'] + packages)
@@ -496,16 +521,17 @@ class ArchInstall():
         self.run(['grub-install', '--target', target, device])
 
     def install_refind(self, device):
-        if not os.path.ismount('/boot/efi'):
+        if not os.path.ismount(os.path.join(self.mnt, '/boot/efi')):
             raise(ConfigError('please create and mount /boot/efi (vfat)'))
         # TODO : detect informations about device and mount point of /boot/efi
         partition = 1
         efi_path = '/EFI/refind/refind_x64.efi'
-        self.pkg_install(['extra/refind-efi'])
-        self.run_in(['refind-install', '--alldrivers', device])
+        with Chroot(self.mnt) as _:
+            self.pkg_install(['extra/refind-efi'])
+            self.run(['refind-install', '--alldrivers', device])
         if not os.path.exists(os.path.join('/boot/efi', efi_path)):
             raise ConfigError('unable to found the efi path on /boot/efi disk')
-        self.run_in([
+        self.run([
             'efibootmgr', '-c',
             '-L', 'rEFInd',
             '-l', efi_path,
