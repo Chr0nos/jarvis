@@ -598,7 +598,7 @@ if __name__ == "__main__":
     parser.add_argument('--loader', help='which bootloader to use ?', choices=('grub', 'refind'), required=True)
     args = parser.parse_args()
 
-    arch = ArchInstall(hostname=args.hostname, pretend=not args.real)
+    arch = ArchInstall(hostname=args.hostname, pretend=False)
     user = ArchUser(arch, username=args.user)
 
     arch.install(DEFAULT)
