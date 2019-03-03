@@ -314,6 +314,17 @@ class ArchUser():
         self.ai = ai
         self.uid = None
         self.gid = None
+        # this a restricted env to lie to childs process.
+        self.env = {
+            'HOME', self.home,
+            'PWD': self.home,
+            'USER': self.username,
+            'LOGNAME': self.username,
+            'SHELL': '/bin/zsh',
+            'EDITOR': 'vim',
+            'OLDPWD': '/',
+            'TERM': 'linux'
+        }
 
     def __str__(self):
         return f'ArchUser {self.username}'
@@ -371,7 +382,7 @@ class ArchUser():
     def install_trizen(self):
         trizen_path = os.path.join(self.home, 'trizen')
         real_path = os.path.join(self.ai.mnt, trizen_path)
-        self.run(['id'], cwd=self.home)
+        self.run(['id'], cwd=self.home, env=self.env)
         # remove any previous get.
         if os.path.exists(real_path):
             self.ai.run(['rm', '-rf', real_path])
