@@ -132,6 +132,7 @@ class Chroot():
             if bind.is_mount() == False:
                 bind.mount()
         os.chroot(self.path)
+        os.chdir('/')
 
     def stop(self):
         os.chdir(self.real_root)
