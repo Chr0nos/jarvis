@@ -536,9 +536,7 @@ class ArchInstall():
             if not os.path.exists('/boot/grub'):
                 os.mkdir('/boot/grub')
             self.run(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
-
-        # we install grub from the main context, not the chroot !
-        self.run(['grub-install', '--target', target, device])
+            self.run(['grub-install', '--target', target, device])
 
     def install_refind(self, device):
         if not os.path.ismount(os.path.join(self.mnt, '/boot/efi')):
