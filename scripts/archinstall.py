@@ -65,10 +65,11 @@ class ConfigError(Exception):
 
 # TODO : add device param
 class MountPoint():
-    def __init__(self, dest, opts='defaults', fs_type=None):
+    def __init__(self, dest, device=None, opts='defaults', fs_type=None):
         self.dest = dest
         self.opts = opts
         self.fs_type = fs_type
+        self.device = device or fs_type
 
     def __str__(self):
         return self.dest
@@ -85,7 +86,7 @@ class MountPoint():
             cmd += ['-t', self.fs_type]
         if self.opts:
             cmd += ['-o', self.opts]
-        return cmd + [self.dest]
+        return cmd + [device, self.dest]
 
     def mount(self):
         print('mounting', self.dest)
