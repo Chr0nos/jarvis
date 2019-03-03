@@ -89,6 +89,7 @@ class MountPoint():
         return cmd + [self.dest]
 
     def mount(self):
+        print('mounting', self.dest)
         ret = subprocess.call(self.get_cmd)
         assert ret == 0, ret
 
