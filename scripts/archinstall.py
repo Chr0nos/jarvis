@@ -62,6 +62,7 @@ class ConfigError(Exception):
     pass
 
 
+# TODO : add device param
 class MountPoint():
     def __init__(self, dest, opts='defaults', fs_type=None):
         assert os.path.isdir(dest) == True, dest
@@ -91,13 +92,15 @@ class MountPoint():
         assert ret == 0, ret
 
     def unmount(self):
-        ret subprocess.call(['umount', self.dest])
+        if not self.is_mount:
+            return
+        ret = subprocess.call(['umount', self.dest])
         assert ret == 0, ret
 
 class Chroot():
-    def __init__(self, path, cwd=None):
+    def __init__(self, path, unbind=False):
+        self.real_root = os.open('/', os.O_RDONLY)
         self.path = path
-        self.cwd = cwd
         self.mounts = [
             MountPoint(f'{path}/proc', 'nosuid,noexec,nodev', 'proc'),
             MountPoint(f'{path}/dev/pts', 'mode=1777,nosuid,nodev', 'devpts'),
@@ -109,13 +112,19 @@ class Chroot():
 
     def __enter__(self):
         for bind in self.mounts:
-            if bind.is_mount:
-                print('passing', bind)
+            if bind.is_mount():
                 continue
             bind.mount()
+        os.chroot(self.path)
 
     def __exit__(self, a, b, c):
-        pass
+        os.chdir(self.real_root)
+        os.chroot('.')
+        os.close(self.real_root)
+        if self.unbind:
+            for bind in self.mounts:
+                bind.unmount()
+
 
 class Service():
     packages = []
@@ -258,6 +267,7 @@ class Cd():
     def __enter__(self):
         self.origin = os.getcwd()
         os.chdir(self.path)
+        return (self.origin, self.path)
 
     def __exit__(self, a, b, c):
         os.chdir(self.origin)
@@ -270,6 +280,8 @@ class ArchUser():
         self.username = username
         self.home = os.path.join('/home', username)
         self.ai = ai
+        self.uid = None
+        self.gid = None
 
     def __str__(self):
         return f'ArchUser {self.username}'
@@ -278,7 +290,18 @@ class ArchUser():
         return hash(str(self))
 
     def run(self, command):
-        self.ai.run_in(command, user=self.username)
+        """
+        please, consider to use explicitly this function into a Chroot context
+        """
+        assert self.exists() == True
+        def demote(uid, gid):
+            print('demoting privileges.')
+            def set_ids():
+                os.setuid(uid)
+                os.setgid(gid)
+            return set_ids
+
+        self.ai.run(command, capture=False, preexec_fn=demote(self.uid, self.gid))
 
     def get_defaults_groups(self):
         return ['audio', 'video', 'render', 'input', 'scanner', 'games']
@@ -291,12 +314,17 @@ class ArchUser():
         self.ai.run_in(['useradd', '-m', '-s', shell, self.username])
         self.ai.run_in(['chown', f'{self.username}:{self.username}', self.home])
         self.ai.run_in(['chmod', '700', self.home])
+        with Chroot(self.ai.mnt) as _:
+                me = ArchUser.list()[self.username]
+                self.gid = me['gid']
+                self.uid = me['uid']
 
     def delete(self, delete_home=False):
         if delete_home:
             self.ai.run_in(['userdel', '-f', self.username])
         else:
             self.ai.run_in(['userdel', self.username])
+        self.uid, self.gid = (None, None)
 
     def set_password(self):
         while True:
@@ -330,6 +358,29 @@ class ArchUser():
         self.run(['sh', '/tmp/ohmyzsh.sh'])
         self.run(['rm', '/tmp/ohmyzsh.sh'])
 
+    def exists(self):
+        return self.uid and self.gid
+
+    @staticmethod
+    def list():
+        users = []
+        with open('/etc/passwd', 'r') as fd:
+            for line in fd.readlines():
+                try:
+                    data = line[0:-1].split(':')
+                    print(data)
+                    user,_,uid,gid,desc,home, shell = data
+                    users.append({
+                        'user': user,
+                        'uid': int(uid),
+                        'gid': int(gid),
+                        'desc': desc,
+                        'home': home,
+                        'shell': shell
+                    })
+                except ValueError:
+                    continue
+        return users
 
 class ArchInstall():
     def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8', pretend=True):
@@ -366,13 +417,13 @@ class ArchInstall():
         # the class is unique by it's mount point: one install per mount_point
         return hash(self.mnt)
 
-    def run(self, command, capture=False):
+    def run(self, command, capture=False, **kwargs):
         print('running', ' '.join(command))
         if self.pretend:
             return
         if capture:
-            return subprocess.check_output(command).decode('utf-8')
-        ret = subprocess.call(command)
+            return subprocess.check_output(command, **kwargs).decode('utf-8')
+        ret = subprocess.call(command, **kwargs)
         if ret != 0:
             raise CommandFail(command)
 
