@@ -392,7 +392,7 @@ class ArchUser():
         self.run(['git', 'clone', 'https://aur.archlinux.org/trizen.git', trizen_path],
             cwd=self.home)
         self.run(['pwd'], cwd=trizen_path)
-        self.run(['makepkg', '-si'], cwd=trizen_path)
+        self.run(['makepkg', '-si', '--noconfirm'], cwd=trizen_path)
         self.run(['trizen', '-Sy'])
         self.run(['rm', '-rf', trizen_path])
 
@@ -513,6 +513,8 @@ class ArchInstall():
         self.file_put('/etc/locale.conf', f'LC_CTYPE={self.lang}\nLANG={self.lang}')
         self.file_put('/etc/locale.gen', self.locale_genfile())
         self.file_put('/etc/resolv.conf', 'nameserver 1.1.1.1\nnameserver 1.0.0.1')
+        self.file_put('/etc/sudoers.d/wheel', '%wheel ALL=(ALL) ALL')
+        self.file_put('/etc/sudoers.d/targetpw', 'Defaults targetpw')
         commands = (
             # System has not been booted with systemd as init (PID 1). Can't operate.
             # ['timedatectl', 'set-ntp', 'true'],
@@ -621,7 +623,7 @@ if __name__ == "__main__":
     user.add_groups(user.get_defaults_groups())
     user.add_groups(['wheel'])
     user.install_trizen()
-    user.install(['visual-studio-code-bin', 'spotify'])
+    user.install(['aur/visual-studio-code-bin', 'spotify'])
     user.install_oh_myzsh()
     user.run(['/usr/bin/pip3', 'install', '--user', 'requests', 'virtualenv'])
 
