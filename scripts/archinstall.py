@@ -129,9 +129,8 @@ class Chroot():
 
     def start(self):
         for bind in self.mounts:
-            if bind.is_mount():
-                continue
-            bind.mount()
+            if bind.is_mount() == False
+                bind.mount()
         os.chroot(self.path)
 
     def stop(self):
