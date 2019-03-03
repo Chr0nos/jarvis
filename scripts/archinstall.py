@@ -470,9 +470,9 @@ class ArchInstall():
     def run_in(self, command, user=None, **kwargs):
         with Chroot(self.mnt) as _:
             if not user:
-                return self.run(command)
+                return self.run(command, **kwargs)
             assert isinstance(user, ArchUser) == True
-            return self.run(command, preexec_fn=user.demote())
+            return self.run(command, preexec_fn=user.demote(), **kwargs)
 
     def pkg_install(self, packages):
         self.run_in(['pacman', '-S', '--noconfirm'] + packages)
@@ -528,11 +528,12 @@ class ArchInstall():
             raise ValueError(name)
 
     def install_grub(self, device, target='i386-pc'):
+        self.pkg_install(['grub'])
         with Chroot(self.mnt) as _:
-            self.pkg_install(['grub'])
             if not os.path.exists('/boot/grub'):
                 os.mkdir('/boot/grub')
             self.run(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
+
         # we install grub from the main context, not the chroot !
         self.run(['grub-install', '--target', target, device])
 
@@ -594,7 +595,6 @@ if __name__ == "__main__":
     parser.add_argument('--root', help='the mount point to use (/mnt)', default='/mnt')
     parser.add_argument('--device', help='wich device to use (for bootloaders)', default='/dev/sda')
     parser.add_argument('--user', help='create a default user ?', required=True)
-    parser.add_argument('--real', help='perform the real install', default=False, action='store_true')
     parser.add_argument('--loader', help='which bootloader to use ?', choices=('grub', 'refind'), required=True)
     args = parser.parse_args()
 
