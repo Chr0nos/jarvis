@@ -12,7 +12,7 @@ BASE = [
     'ttf-dejavu', 'extra/pulseaudio-alsa', 'ttf-freefont', 'otf-font-awesome',
     'gnome-keyring', 'hdparm', 'idle3-tools', 'iw',
     'pavucontrol', 'gparted', 'ntfs-3g', 'exfat-utils', 'sshfs',
-    'ffmpegthumbnailer', 'mdadm', 'wget', 'git'
+    'ffmpegthumbnailer', 'mdadm', 'wget', 'git', 'archlinux-keyring'
 ]
 
 XORG = [
@@ -596,12 +596,6 @@ class ArchInstall():
                     pass
         return lst
 
-# "
-# if __name__ == "__main__":
-#     arch = ArchInstall(hostname='StarK', mnt='/')
-#     user = ArchUser(arch, username='adamaru')
-#     user.uid, user.gid = (1000, 1000)
-#     user.run(['id'], debug_run=True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
