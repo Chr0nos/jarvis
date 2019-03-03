@@ -316,7 +316,7 @@ class ArchUser():
         self.gid = None
         # this a restricted env to lie to childs process.
         self.env = {
-            'HOME', self.home,
+            'HOME': self.home,
             'PWD': self.home,
             'USER': self.username,
             'LOGNAME': self.username,
