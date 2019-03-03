@@ -99,13 +99,13 @@ class MountPoint():
         print('mounting', self.dest)
         if not os.path.isdir(self.dest):
             mktree(self.dest)
-        ret = subprocess.call(self.get_cmd())
+        ret = subprocess.run(self.get_cmd())
         assert ret == 0, ret
 
     def unmount(self):
         if not self.is_mount:
             return
-        ret = subprocess.call(['umount', self.dest])
+        ret = subprocess.run(['umount', self.dest])
         assert ret == 0, ret
 
 class Chroot():
@@ -325,7 +325,7 @@ class ArchUser():
         assert self.exists() == True, (self.uid, self.gid)
         with Chroot(self.ai.mnt) as _:
             with Cd(cwd or self.home) as useless:
-                self.ai.run(command, capture=False, preexec_fn=ArchUser.demote(self))
+                self.ai.run(command, capture=False, preexec_fn=self.demote())
 
     def get_defaults_groups(self):
         return ['audio', 'video', 'render', 'input', 'scanner', 'games']
@@ -386,15 +386,11 @@ class ArchUser():
     def exists(self):
         return self.uid != None and self.gid != None
 
-    @staticmethod
-    #this needs to be static because of a scop thing...
-    def demote(user):
-        assert user.exists() == True
-        def set_ids():
-            print('demoting privileges to ', user.username)
-            os.setuid(user.uid)
-            os.setgid(user.gid)
-        return set_ids
+    def demote(self):
+        assert self.exists() == True
+        print('demoting privileges to ', self.username)
+        os.setgid(self.gid)
+        os.setuid(self.uid)
 
     @staticmethod
     def list():
@@ -455,7 +451,7 @@ class ArchInstall():
         print('running', ' '.join(command), kwargs)
         if capture:
             return subprocess.check_output(command, **kwargs).decode('utf-8')
-        ret = subprocess.call(command, **kwargs)
+        ret = subprocess.run(command, **kwargs)
         if ret != 0:
             raise CommandFail(command)
 
@@ -464,7 +460,7 @@ class ArchInstall():
             if not user:
                 return self.run(command, **kwargs)
             assert isinstance(user, ArchUser) == True
-            return self.run(command, preexec_fn=ArchUser.demote(user), **kwargs)
+            return self.run(command, preexec_fn=user.demote(), **kwargs)
 
     def pkg_install(self, packages):
         self.run_in(['pacman', '-S', '--noconfirm'] + packages)
