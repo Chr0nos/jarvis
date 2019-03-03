@@ -474,8 +474,9 @@ class ArchInstall():
             ['passwd'],
             ['mkinitcpio', '-p', 'linux'],
         )
-        for cmd in commands:
-            self.run_in(cmd)
+        with Chroot(self.mnt) as _:
+            for cmd in commands:
+                self.run(cmd)
 
     def install_bootloader(self, name, device, **kwargs):
         if name == 'refind':
@@ -486,11 +487,13 @@ class ArchInstall():
             raise ValueError(name)
 
     def install_grub(self, device, target='i386-pc'):
-        self.pkg_install(['grub'])
-        if not os.path.exists('/boot/grub'):
-            os.mkdir('/boot/grub')
-        self.run_in(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
-        self.run_in(['grub-install', '--target', target, device])
+        with Chroot(self.mnt) as _:
+            self.pkg_install(['grub'])
+            if not os.path.exists('/boot/grub'):
+                os.mkdir('/boot/grub')
+            self.run(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
+        # we install grub from the main context, not the chroot !
+        self.run(['grub-install', '--target', target, device])
 
     def install_refind(self, device):
         if not os.path.ismount('/boot/efi'):
