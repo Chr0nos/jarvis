@@ -325,8 +325,9 @@ class ArchUser():
         assert self.exists() == True, (self.uid, self.gid)
         if not kwargs.get('cwd'):
             kwargs['cwd'] = self.home
-        with Chroot(self.ai.mnt) as _:
-            self.ai.run(command, capture=False, preexec_fn=self.demote, **kwargs)
+        with Chroot(self.ai.mnt):
+            with Cd(self.home):
+                self.ai.run(command, capture=False, preexec_fn=self.demote, **kwargs)
 
     def get_defaults_groups(self):
         return ['audio', 'video', 'render', 'input', 'scanner', 'games']
@@ -336,7 +337,7 @@ class ArchUser():
             self.ai.run_in(['gpasswd', '-a', self.username, group])
 
     def create(self, shell='/bin/zsh'):
-        with Chroot(self.ai.mnt) as _:
+        with Chroot(self.ai.mnt):
             self.ai.run(['useradd', '-m', '-s', shell, self.username])
             self.ai.run(['chown', f'{self.username}:{self.username}', self.home])
             self.ai.run(['chmod', '700', self.home])
