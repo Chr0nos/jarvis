@@ -326,7 +326,7 @@ class ArchUser():
         if not kwargs.get('cwd'):
             kwargs['cwd'] = self.home
         with Chroot(self.ai.mnt) as _:
-            self.ai.run(command, capture=False, preexec_fn=self.demote(), **kwargs)
+            self.ai.run(command, capture=False, preexec_fn=self.demote, **kwargs)
 
     def get_defaults_groups(self):
         return ['audio', 'video', 'render', 'input', 'scanner', 'games']
