@@ -320,10 +320,11 @@ class ArchUser():
     def __hash__(self):
         return hash(str(self))
 
-    def run(self, command):
+    def run(self, command, cwd=None):
         assert self.exists() == True, (self.uid, self.gid)
         with Chroot(self.ai.mnt) as _:
-            self.ai.run(command, capture=False, preexec_fn=self.demote())
+            with Cd(cwd or self.home) as useless:
+                self.ai.run(command, capture=False, preexec_fn=self.demote())
 
     def get_defaults_groups(self):
         return ['audio', 'video', 'render', 'input', 'scanner', 'games']
@@ -366,13 +367,9 @@ class ArchUser():
 
     def install_trizen(self):
         trizen_path = os.path.join(self.home, 'trizen')
-        cmds = (
-            ['git', 'clone', 'https://aur.archlinux.org/trizen.git', trizen_path],
-            ['makepkg', '-si'],
-            ['trizen', '-Sy']
-        )
-        for command in cmds:
-            self.run(command)
+        self.run(['git', 'clone', 'https://aur.archlinux.org/trizen.git', trizen_path])
+        self.run(['makepkg', '-si'] ,cwd=trizen_path)
+        self.run(['trizen', '-Sy'])
         self.run(['rm', '-rf', trizen_path])
 
     def install(self, packages):
