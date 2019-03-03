@@ -152,7 +152,7 @@ class Chroot():
     def decorator(path):
         def real_decorator(func):
             def wrapper(*args, **kwargs):
-                with Chroot(path) as _:
+                with Chroot(path):
                     func(*args, **kwargs)
             return wrapper
         return real_decorator
@@ -349,7 +349,7 @@ class ArchUser():
                     self.uid = me['uid']
 
     def delete(self, delete_home=False):
-        with Chroot(self.ai.mnt) as _:
+        with Chroot(self.ai.mnt):
             if delete_home:
                 self.ai.run(['userdel', '-f', self.username])
             else:
@@ -359,7 +359,7 @@ class ArchUser():
     def set_password(self):
         while True:
             try:
-                with Chroot(self.ai.mnt) as _:
+                with Chroot(self.ai.mnt):
                     self.ai.run(['passwd', self.username])
                 return
             except KeyboardInterrupt:
@@ -460,7 +460,7 @@ class ArchInstall():
             raise CommandFail(command)
 
     def run_in(self, command, user=None, **kwargs):
-        with Chroot(self.mnt) as _:
+        with Chroot(self.mnt):
             if not user:
                 return self.run(command, **kwargs)
             assert isinstance(user, ArchUser) == True
@@ -506,7 +506,7 @@ class ArchInstall():
             ['passwd'],
             ['mkinitcpio', '-p', 'linux'],
         )
-        with Chroot(self.mnt) as _:
+        with Chroot(self.mnt):
             for cmd in commands:
                 self.run(cmd)
 
@@ -520,7 +520,7 @@ class ArchInstall():
 
     def install_grub(self, device, target='i386-pc'):
         self.pkg_install(['grub'])
-        with Chroot(self.mnt) as _:
+        with Chroot(self.mnt):
             if not os.path.exists('/boot/grub'):
                 os.mkdir('/boot/grub')
             self.run(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
@@ -532,7 +532,7 @@ class ArchInstall():
         # TODO : detect informations about device and mount point of /boot/efi
         partition = 1
         efi_path = '/EFI/refind/refind_x64.efi'
-        with Chroot(self.mnt) as _:
+        with Chroot(self.mnt):
             self.pkg_install(['extra/refind-efi'])
             self.run(['refind-install', '--alldrivers', device])
         if not os.path.exists(os.path.join('/boot/efi', efi_path)):
