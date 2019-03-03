@@ -370,7 +370,7 @@ class ArchUser():
     def install_trizen(self):
         trizen_path = os.path.join(self.home, 'trizen')
         self.run(['git', 'clone', 'https://aur.archlinux.org/trizen.git', trizen_path], cwd=self.home)
-        self.run(['makepkg', '-si'], cwd=trizen_path, cwd=trizen_path)
+        self.run(['makepkg', '-si'], cwd=trizen_path)
         self.run(['trizen', '-Sy'])
         self.run(['rm', '-rf', trizen_path])
 
