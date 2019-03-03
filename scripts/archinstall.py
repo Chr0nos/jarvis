@@ -467,7 +467,7 @@ class ArchInstall():
         if ret != 0:
             raise CommandFail(command)
 
-    def run_in(self, command, user='root', **kwargs):
+    def run_in(self, command, user=None, **kwargs):
         with Chroot(self.mnt) as _:
             if not user:
                 return self.run(command)
