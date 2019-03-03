@@ -91,7 +91,7 @@ class MountPoint():
     def mount(self):
         def mktree(fullpath):
             dirs = fullpath.split('/')
-            path = ''
+            path = '/'
             for d in dirs:
                 path = os.path.join(path, d)
                 if not os.path.exists(path):
@@ -118,8 +118,11 @@ class Chroot():
             MountPoint(f'{path}/dev/shm', opts='nodev,nosuid', fs_type='tmpfs'),
             MountPoint(f'{path}/run', opts='nosuid,nodev,mode=0775', fs_type='tmpfs'),
             MountPoint(f'{path}/tmp', opts='mode=1777,strictatime,nodev,nosuid', fs_type='tmpfs'),
-            MountPoint(f'{path}/sys/firmware/efi/efivars', opts='nosuid,noexec,nodev', fs_type='efivarfs')
         ]
+        if os.path.exists('/sys/firmware/efi'):
+            self.mounts.append(
+                MountPoint(f'{path}/sys/firmware/efi/efivars', opts='nosuid,noexec,nodev', fs_type='efivarfs')
+            )
 
     def start(self):
         for bind in self.mounts:
@@ -438,6 +441,7 @@ class ArchInstall():
             ('en_US.UTF-8', 'UTF-8'),
             ('en_US', 'ISO-8859-1')
         ]
+        self.efi_capable = os.path.exists('/sys.firmware/efi')
 
 
     def __del__(self):
