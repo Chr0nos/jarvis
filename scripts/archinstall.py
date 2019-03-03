@@ -65,7 +65,7 @@ class ConfigError(Exception):
 
 # TODO : add device param
 class MountPoint():
-    def __init__(self, dest, device=None, opts='defaults', fs_type=None):
+    def __init__(self, dest, opts='defaults', fs_type=None, device=None):
         self.dest = dest
         self.opts = opts
         self.fs_type = fs_type
@@ -106,12 +106,12 @@ class Chroot():
         self.real_root = os.open('/', os.O_RDONLY)
         self.path = path
         self.mounts = [
-            MountPoint(f'{path}/proc', 'nosuid,noexec,nodev', 'proc'),
-            MountPoint(f'{path}/dev/pts', 'mode=1777,nosuid,nodev', 'devpts'),
-            MountPoint(f'{path}/dev/shm', 'nodev,nosuid', 'tmpfs'),
-            MountPoint(f'{path}/run', 'nosuid,nodev,mode=0775', 'tmpfs'),
-            MountPoint(f'{path}/tmp', 'mode=1777,strictatime,nodev,nosuid', 'tmpfs'),
-            MountPoint(f'{path}/sys/firmware/efi/efivars', 'nosuid,noexec,nodev', 'efivarfs')
+            MountPoint(f'{path}/proc', opts='nosuid,noexec,nodev', fs_type='proc'),
+            MountPoint(f'{path}/dev/pts', opts='mode=1777,nosuid,nodev', fs_type='devpts'),
+            MountPoint(f'{path}/dev/shm', opts='nodev,nosuid', fs_type='tmpfs'),
+            MountPoint(f'{path}/run', opts='nosuid,nodev,mode=0775', fs_type='tmpfs'),
+            MountPoint(f'{path}/tmp', opts='mode=1777,strictatime,nodev,nosuid', fs_type='tmpfs'),
+            MountPoint(f'{path}/sys/firmware/efi/efivars', opts='nosuid,noexec,nodev', fs_type='efivarfs')
         ]
 
     def start(self):
