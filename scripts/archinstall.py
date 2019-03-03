@@ -392,6 +392,7 @@ class ArchUser():
             print('demoting privileges to ', self.username)
             os.setuid(self.uid)
             os.setgid(self.gid)
+        return set_ids
 
     @staticmethod
     def list():
