@@ -115,6 +115,7 @@ class Chroot():
         self.unbind = unbind
         self.mounts = [
             MountPoint(f'{path}/proc', opts='nosuid,noexec,nodev', fs_type='proc'),
+            MountPoint(f'{path}/dev', opts='mode=0755,nosuid', fs_type='devtmpfs'),
             MountPoint(f'{path}/dev/pts', opts='mode=1777,nosuid,nodev', fs_type='devpts'),
             MountPoint(f'{path}/dev/shm', opts='nodev,nosuid', fs_type='tmpfs'),
             MountPoint(f'{path}/run', opts='nosuid,nodev,mode=0775', fs_type='tmpfs'),
