@@ -325,7 +325,7 @@ class ArchUser():
         assert self.exists() == True, (self.uid, self.gid)
         with Chroot(self.ai.mnt) as _:
             with Cd(cwd or self.home) as useless:
-                self.ai.run(command, capture=False, preexec_fn=self.demote())
+                self.ai.run(command, capture=False, preexec_fn=ArchUser.demote(self))
 
     def get_defaults_groups(self):
         return ['audio', 'video', 'render', 'input', 'scanner', 'games']
