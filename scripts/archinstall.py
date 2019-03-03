@@ -348,9 +348,12 @@ class ArchUser():
             self.ai.run(['useradd', '-m', '-s', shell, self.username])
             self.ai.run(['chown', f'{self.username}:{self.username}', self.home])
             self.ai.run(['chmod', '700', self.home])
-            me = ArchUser.list()[self.username]
-            self.gid = me['gid']
-            self.uid = me['uid']
+            users = ArchUser.list()
+            for u in users:
+                if u['user'] == self.username:
+                    me = u
+                    self.gid = me['gid']
+                    self.uid = me['uid']
 
     def delete(self, delete_home=False):
         with Chroot(self.ai.mnt) as _:
