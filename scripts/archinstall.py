@@ -583,10 +583,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     arch = ArchInstall(hostname=args.hostname, pretend=not args.real)
+    user = ArchUser(arch, username=args.user)
+
     arch.install(DEFAULT)
     arch.install_bootloader(args.loader, args.device)
 
-    user = ArchUser(arch, username=args.user)
     user.create()
     user.set_password()
     user.add_groups(user.get_defaults_groups())
