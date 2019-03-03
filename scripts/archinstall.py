@@ -62,6 +62,61 @@ class ConfigError(Exception):
     pass
 
 
+class MountPoint():
+    def __init__(self, dest, opts='defaults', fs_type=None):
+        assert os.path.isdir(dest) == True, dest
+        self.dest = dest
+        self.opts = opts
+        self.fs_type = fs_type
+
+    def __str__(self):
+        return self.dest
+
+    def __hash__(self):
+        return hash(self.dest)
+
+    def is_mount(self):
+        return os.path.ismount(self.dest)
+
+    def get_cmd(self):
+        cmd = ['mount']
+        if self.fs_type:
+            cmd += ['-t', self.fs_type]
+        if self.opts:
+            cmd += ['-o', self.opts]
+        return cmd + [self.dest]
+
+    def mount(self):
+        ret = subprocess.call(self.get_cmd)
+        assert ret == 0, ret
+
+    def unmount(self):
+        ret subprocess.call(['umount', self.dest])
+        assert ret == 0, ret
+
+class Chroot():
+    def __init__(self, path, cwd=None):
+        self.path = path
+        self.cwd = cwd
+        self.mounts = [
+            MountPoint(f'{path}/proc', 'nosuid,noexec,nodev', 'proc'),
+            MountPoint(f'{path}/dev/pts', 'mode=1777,nosuid,nodev', 'devpts'),
+            MountPoint(f'{path}/dev/shm', 'nodev,nosuid', 'tmpfs'),
+            MountPoint(f'{path}/run', 'nosuid,nodev,mode=0775', 'tmpfs'),
+            MountPoint(f'{path}/tmp', 'mode=1777,strictatime,nodev,nosuid', 'tmpfs'),
+            MountPoint(f'{path}/sys/firmware/efi/efivars', 'nosuid,noexec,nodev', 'efivarfs')
+        ]
+
+    def __enter__(self):
+        for bind in self.mounts:
+            if bind.is_mount:
+                print('passing', bind)
+                continue
+            bind.mount()
+
+    def __exit__(self, a, b, c):
+        pass
+
 class Service():
     packages = []
     groups = []
@@ -110,7 +165,6 @@ class Service():
 
 class Mlocate(Service):
     packages = ['mlocate']
-    service = 'updatedb.service'
     desc = 'files indexer'
 
 
@@ -465,7 +519,7 @@ if __name__ == "__main__":
     services = [
         NetworkManager(),
         Cups(users=[user]),
-        LightDm(enable=False),
+        LightDm(enable=True),
         Fail2Ban(),
         Sshd(),
         Smartd(),
