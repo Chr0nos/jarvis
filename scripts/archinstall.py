@@ -336,6 +336,8 @@ class ArchUser():
         assert self.exists() == True, (self.uid, self.gid)
         if not kwargs.get('cwd'):
             kwargs['cwd'] = self.home
+        if not kwargs.get('env'):
+            kwargs['env'] = self.env
         with Chroot(self.ai.mnt):
             with Cd(self.home):
                 self.ai.run(command, capture=False, preexec_fn=self.demote, **kwargs)
@@ -381,13 +383,14 @@ class ArchUser():
 
     def install_trizen(self):
         trizen_path = os.path.join(self.home, 'trizen')
-        real_path = os.path.join(self.ai.mnt, trizen_path)
+        real_path = f'{self.ai.mnt}{trizen_path}'
         self.run(['id'], cwd=self.home, env=self.env)
         # remove any previous get.
         if os.path.exists(real_path):
             self.ai.run(['rm', '-rf', real_path])
 
-        self.run(['git', 'clone', 'https://aur.archlinux.org/trizen.git', trizen_path], cwd=self.home)
+        self.run(['git', 'clone', 'https://aur.archlinux.org/trizen.git', trizen_path],
+            cwd=self.home)
         self.run(['pwd'], cwd=trizen_path)
         self.run(['makepkg', '-si'], cwd=trizen_path)
         self.run(['trizen', '-Sy'])
