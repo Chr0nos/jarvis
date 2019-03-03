@@ -119,6 +119,7 @@ class Chroot():
             MountPoint(f'{path}/dev/shm', opts='nodev,nosuid', fs_type='tmpfs'),
             MountPoint(f'{path}/run', opts='nosuid,nodev,mode=0775', fs_type='tmpfs'),
             MountPoint(f'{path}/tmp', opts='mode=1777,strictatime,nodev,nosuid', fs_type='tmpfs'),
+            MountPoint(f'{path}/sys', opts='nosuid,noexec,nodev,ro', fs_type='sysfs')
         ]
         if os.path.exists('/sys/firmware/efi'):
             self.mounts.append(
