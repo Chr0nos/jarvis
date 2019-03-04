@@ -508,9 +508,10 @@ class ArchInstall():
     def install(self, packages):
         if packages:
             self.run(['pacstrap', self.mnt] + packages)
+        fstab = self.run(['genfstab', self.mnt], True)
         with Chroot(self.mnt):
             self.file_put('/etc/hostname', self.hostname + '\n')
-            self.file_put('/etc/fstab', self.run(['genfstab', self.mnt], True))
+            self.file_put('/etc/fstab', fstab)
             self.file_put('/etc/locale.conf', f'LC_CTYPE={self.lang}\nLANG={self.lang}')
             self.file_put('/etc/locale.gen', self.locale_genfile())
             self.file_put('/etc/resolv.conf', 'nameserver 1.1.1.1\nnameserver 1.0.0.1\n')
