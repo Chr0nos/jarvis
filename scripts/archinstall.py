@@ -508,24 +508,24 @@ class ArchInstall():
     def install(self, packages):
         if packages:
             self.run(['pacstrap', self.mnt] + packages)
-        self.file_put('/etc/hostname', self.hostname + '\n')
-        self.file_put('/etc/fstab', self.run(['genfstab', self.mnt], True))
-        self.file_put('/etc/locale.conf', f'LC_CTYPE={self.lang}\nLANG={self.lang}')
-        self.file_put('/etc/locale.gen', self.locale_genfile())
-        self.file_put('/etc/resolv.conf', 'nameserver 1.1.1.1\nnameserver 1.0.0.1')
-        self.file_put('/etc/sudoers.d/wheel', '%wheel ALL=(ALL) ALL')
-        self.file_put('/etc/sudoers.d/targetpw', 'Defaults targetpw')
-        commands = (
-            # System has not been booted with systemd as init (PID 1). Can't operate.
-            # ['timedatectl', 'set-ntp', 'true'],
-            ['locale-gen'],
-            ['chmod', '751', '/home'],
-            ['ln', '-sf', f'/usr/share/zoneinfo/{self.timezone}', '/etc/localtime'],
-            ['mkdir', '-pv', '/etc/polkit-1/rules.d/'],
-            ['passwd'],
-            ['mkinitcpio', '-p', 'linux'],
-        )
         with Chroot(self.mnt):
+            self.file_put('/etc/hostname', self.hostname + '\n')
+            self.file_put('/etc/fstab', self.run(['genfstab', self.mnt], True))
+            self.file_put('/etc/locale.conf', f'LC_CTYPE={self.lang}\nLANG={self.lang}')
+            self.file_put('/etc/locale.gen', self.locale_genfile())
+            self.file_put('/etc/resolv.conf', 'nameserver 1.1.1.1\nnameserver 1.0.0.1\n')
+            self.file_put('/etc/sudoers.d/wheel', '%wheel ALL=(ALL) ALL')
+            self.file_put('/etc/sudoers.d/targetpw', 'Defaults targetpw')
+            commands = (
+                # System has not been booted with systemd as init (PID 1). Can't operate.
+                # ['timedatectl', 'set-ntp', 'true'],
+                ['locale-gen'],
+                ['chmod', '751', '/home'],
+                ['ln', '-sf', f'/usr/share/zoneinfo/{self.timezone}', '/etc/localtime'],
+                ['mkdir', '-pv', '/etc/polkit-1/rules.d/'],
+                ['passwd'],
+                ['mkinitcpio', '-p', 'linux'],
+            )
             for cmd in commands:
                 self.run(cmd)
 
