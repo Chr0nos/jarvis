@@ -288,6 +288,15 @@ class Iptables(Service):
     service = 'iptables.service'
     desc = 'firewall'
 
+class BlueTooth(Service):
+    packages = [
+        'extra/bluez',
+        'extra/bluez-utils',
+        'extra/pulseaudio-bluetooth'
+    ]
+    service = 'bluetooth.service'
+    desc = 'bluetooth support'
+
 
 class Cd():
     """
@@ -642,7 +651,9 @@ if __name__ == "__main__":
         Udisks2(),
         Acpid(),
         Iptables(),
-        Mlocate()
+        Mlocate(),
+        Docker(users=[user]),
+        BlueTooth(),
     ]
     arch.install_services(services)
 
