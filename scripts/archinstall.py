@@ -411,7 +411,7 @@ class ArchUser():
 
     def demote(self):
         assert self.exists() == True
-        print('demoting privileges to ', self.username)
+        print('demoting privileges to', self.username)
         os.setgid(self.gid)
         os.setuid(self.uid)
 
@@ -484,7 +484,7 @@ class ArchInstall():
             return self.run(command, preexec_fn=user.demote(), **kwargs)
 
     def pkg_install(self, packages):
-        self.run_in(['pacman', '-S', '--noconfirm'] + packages)
+        self.run(['pacman', '-S', '--noconfirm'] + packages)
 
     def edit(self, filepath):
         self.run_in(['vim', filepath])
@@ -510,6 +510,8 @@ class ArchInstall():
             self.run(['pacstrap', self.mnt] + packages)
         fstab = self.run(['genfstab', self.mnt], True)
         with Chroot(self.mnt):
+            # reinstall keyrings...
+            self.pkg_install(['archlinux-keyring'])
             self.file_put('/etc/hostname', self.hostname + '\n')
             self.file_put('/etc/fstab', fstab)
             self.file_put('/etc/locale.conf', f'LC_CTYPE={self.lang}\nLANG={self.lang}')
@@ -539,8 +541,8 @@ class ArchInstall():
             raise ValueError(name)
 
     def install_grub(self, device, target='i386-pc'):
-        self.pkg_install(['grub'])
         with Chroot(self.mnt):
+            self.pkg_install(['grub'])
             if not os.path.exists('/boot/grub'):
                 os.mkdir('/boot/grub')
             self.run(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
