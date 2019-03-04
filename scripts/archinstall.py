@@ -505,6 +505,10 @@ class ArchInstall():
             file_content += f'{locale} {encoding}\n'
         return file_content
 
+    def set_sudo_free(self, state):
+        content = ('%wheel ALL=(ALL) ALL', '%wheel ALL=(ALL) NOPASSWD: ALL')[int(state)]
+        self.file_put('/etc/sudoers.d/wheel', content)
+
     def install(self, packages):
         if packages:
             self.run(['pacstrap', self.mnt] + packages)
@@ -517,7 +521,7 @@ class ArchInstall():
             self.file_put('/etc/locale.conf', f'LC_CTYPE={self.lang}\nLANG={self.lang}\n')
             self.file_put('/etc/locale.gen', self.locale_genfile())
             self.file_put('/etc/resolv.conf', 'nameserver 1.1.1.1\nnameserver 1.0.0.1\n')
-            self.file_put('/etc/sudoers.d/wheel', '%wheel ALL=(ALL) ALL\n')
+            self.set_sudo_free(True)
             self.file_put('/etc/sudoers.d/targetpw', 'Defaults targetpw\n')
             commands = (
                 # System has not been booted with systemd as init (PID 1). Can't operate.
@@ -526,11 +530,14 @@ class ArchInstall():
                 ['chmod', '751', '/home'],
                 ['ln', '-sf', f'/usr/share/zoneinfo/{self.timezone}', '/etc/localtime'],
                 ['mkdir', '-pv', '/etc/polkit-1/rules.d/'],
-                ['passwd'],
                 ['mkinitcpio', '-p', 'linux'],
             )
             for cmd in commands:
                 self.run(cmd)
+
+    def passwd(self):
+        with Chroot(self.mnt):
+            self.run(['passwd'])
 
     def install_bootloader(self, name, device, **kwargs):
         if name == 'refind':
@@ -638,3 +645,9 @@ if __name__ == "__main__":
         Mlocate()
     ]
     arch.install_services(services)
+
+    print('set root password')
+    arch.passwd()
+    print('set', user.username, 'password')
+    user.set_password()
+    arch.set_sudo_free(False)
