@@ -272,7 +272,7 @@ class Cups(Service):
 class NetworkManager(Service):
     packages = [
         'extra/networkmanager',
-        'networkmanager-openvpn'
+        'networkmanager-openvpn',
         'network-manager-applet',
         'extra/nm-connection-editor'
     ]
