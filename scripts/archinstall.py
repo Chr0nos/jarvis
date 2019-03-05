@@ -6,7 +6,7 @@ import os
 
 BASE = [
     'base', 'base-devel', 'networkmanager', 'htop', 'vim', 'net-tools',
-    'pulseaudio', 'lightdm', 'lightdm-gtk-greeter', 'mpv', 'gpm', 'zsh',
+    'pulseaudio', 'lightdm', 'lightdm-gtk-greeter', 'mpv', 'zsh',
     'terminator', 'fish', 'openssh', 'openssl', 'ttf-liberation',
     'ttf-ubuntu-font-family',
     'ttf-dejavu', 'extra/pulseaudio-alsa', 'ttf-freefont', 'otf-font-awesome',
@@ -35,7 +35,7 @@ EXTRA = [
     'linux-headers',
     'firefox', 'extra/firefox-i18n-fr', 'community/firefox-adblock-plus',
     'community/mtpfs',
-    'tree'
+    'tree', 'tmux'
 ]
 
 MATE = [
@@ -159,14 +159,30 @@ class Chroot():
         return real_decorator
 
 
-def collect_packages(services):
-    pkgs = []
-    for service in services:
-        if not service.packages:
-            continue
-        pkgs += service.packages
-    # remove any duplicate entries
-    return list(set(pkgs))
+class ServicesManager(list):
+    def __init__(self, ai, *args):
+        super().__init__(args)
+        self.ai = ai
+
+    def collect_packages(self):
+        pkgs = []
+        for service in self:
+            if not service.packages:
+                continue
+            pkgs += service.packages
+        # remove any duplicate entries
+        return list(set(pkgs))
+
+    def install(self):
+        for service in self:
+            service.ai = self.ai
+            if service.enable:
+                service.set_enabled(True)
+
+    def add_users(self):
+        for service in self:
+            service.add_users()
+
 
 class Service():
     packages = []
@@ -183,7 +199,9 @@ class Service():
             self.enable = enable
 
     def __hash__(self):
-        return hash(self.service)
+        if self.service:
+            return hash(self.service)
+        return hash(self.desc)
 
     def check(self):
         """
@@ -307,7 +325,7 @@ class Udisks2(Service):
 
 class Nginx(Service):
     packages = ['nginx']
-    service = ['nginx.service']
+    service = 'nginx.service'
     groups = ['www-data']
     desc = 'web server'
 
@@ -413,9 +431,10 @@ class ArchUser():
                 self.ai.run(['userdel', self.username])
         self.uid, self.gid = (None, None)
 
-    def set_password(self):
+    def passwd(self):
         while True:
             try:
+                print('password for', self.username)
                 with Chroot(self.ai.mnt):
                     self.ai.run(['passwd', self.username])
                 return
@@ -593,6 +612,7 @@ class ArchInstall():
                 self.run(cmd)
 
     def passwd(self):
+        print('set root password')
         with Chroot(self.mnt):
             self.run(['passwd'])
 
@@ -634,16 +654,6 @@ class ArchInstall():
     def mount(self, partition, mount_moint):
         self.run(['mount', partition, mount_moint])
 
-    def install_services(self, services):
-        for service in services:
-            if not isinstance(service, Service):
-                raise ValueError(service)
-            service.ai = self
-            service.install()
-            if service.enable:
-                service.set_enabled(True)
-            service.add_users()
-
     @staticmethod
     def get_mounts():
         lst = []
@@ -675,20 +685,7 @@ if __name__ == "__main__":
 
     arch = ArchInstall(hostname=args.hostname)
     user = ArchUser(arch, username=args.user)
-
-    arch.install(DEFAULT)
-    arch.install_bootloader(args.loader, args.device)
-
-    user.create()
-    user.set_password()
-    user.add_groups(user.get_defaults_groups())
-    user.add_groups(['wheel'])
-    user.install_trizen()
-    user.install(['aur/visual-studio-code-bin', 'spotify'])
-    user.install_oh_myzsh()
-    user.run(['/usr/bin/pip3', 'install', '--user', 'requests', 'virtualenv'])
-
-    services = [
+    services = ServicesManager(arch,
         NetworkManager(),
         Cups(users=[user]),
         LightDm(enable=True),
@@ -702,11 +699,23 @@ if __name__ == "__main__":
         Mlocate(),
         Docker(users=[user]),
         BlueTooth(),
-    ]
-    arch.install_services(services)
+    )
 
-    print('set root password')
-    arch.passwd()
-    print('set', user.username, 'password')
+    arch.install(DEFAULT + services.collect_packages())
+    arch.install_bootloader(args.loader, args.device)
+    services.install()
+
+    user.create()
     user.set_password()
+    user.add_groups(user.get_defaults_groups())
+    user.add_groups(['wheel'])
+    user.install_trizen()
+    user.install(['aur/visual-studio-code-bin', 'spotify'])
+    user.install_oh_myzsh()
+    user.run(['/usr/bin/pip3', 'install', '--user', 'requests', 'virtualenv'])
+
+    services.add_users()
+
+    arch.passwd()
+    user.passwd()
     arch.set_sudo_free(False)
