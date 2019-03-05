@@ -663,7 +663,7 @@ class ArchInstall():
             """
             for mount in MountPoint.list():
                 if mount['mnt'] == mount_path:
-                    partition = mount['device'][-1]
+                    partition = int(mount['device'][-1])
                     return partition
             raise ValueError(mount_path)
 
