@@ -638,9 +638,10 @@ class ArchInstall():
         partition = 1
         efi_path = '/EFI/refind/refind_x64.efi'
         with Chroot(self.mnt):
+            self.run(['mkdir', '-vp', '/boot/efi/EFI/refind'])
             self.pkg_install(['extra/refind-efi'])
         self.run(['refind-install', '--alldrivers', '--root', self.mnt + '/boot/efi'])
-        if not os.path.exists('/boot/efi' + efi_path):
+        if not os.path.exists(self.mnt + '/boot/efi' + efi_path):
             print(efi_path)
             raise ConfigError('unable to found the efi path on /boot/efi disk')
         self.run([
