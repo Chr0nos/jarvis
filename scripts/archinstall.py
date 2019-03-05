@@ -7,8 +7,8 @@ import os
 BASE = [
     'base', 'base-devel', 'networkmanager', 'htop', 'vim', 'net-tools',
     'pulseaudio', 'lightdm', 'lightdm-gtk-greeter', 'mpv', 'gpm', 'zsh',
-    'terminator', 'fish', 'openssh', 'openssl', 'networkmanager-openvpn',
-    'network-manager-applet', 'ttf-liberation', 'ttf-ubuntu-font-family',
+    'terminator', 'fish', 'openssh', 'openssl', 'ttf-liberation',
+    'ttf-ubuntu-font-family',
     'ttf-dejavu', 'extra/pulseaudio-alsa', 'ttf-freefont', 'otf-font-awesome',
     'gnome-keyring', 'hdparm', 'idle3-tools', 'iw',
     'pavucontrol', 'gparted', 'ntfs-3g', 'exfat-utils', 'sshfs',
@@ -21,6 +21,7 @@ XORG = [
     'xorg-fonts-100dpi',
     'xorg-xrandr',
     'xorg-xinit',
+    #'xf86-video-nouveau',
     'extra/nvidia-dkms', 'extra/nvidia-settings',
     #'extra/xf86-video-vesa',
     #'extra/xf86-video-intel',
@@ -158,6 +159,15 @@ class Chroot():
         return real_decorator
 
 
+def collect_packages(services):
+    pkgs = []
+    for service in services:
+        if not service.packages:
+            continue
+        pkgs += service.packages
+    # remove any duplicate entries
+    return list(set(pkgs))
+
 class Service():
     packages = []
     groups = []
@@ -184,6 +194,7 @@ class Service():
     def install(self):
         if not self.packages:
             return
+        self.check()
         self.ai.pkg_install(self.packages)
 
     def add_users(self):
@@ -198,10 +209,29 @@ class Service():
     def set_enabled(self, state=True):
         if not self.service:
             return
+        self.check()
         self.ai.run_in(['systemctl', ('disable', 'enable')[state], self.service])
 
     def start(self):
         raise ValueError('You are trying to run a service in a chroot... morron !')
+
+
+class Xorg(Service):
+    packages = [
+        'xorg-server',
+        'xorg-fonts-75dpi',
+        'xorg-fonts-100dpi',
+        'xorg-xrandr',
+        'xorg-xinit',
+        #'xf86-video-nouveau',
+        'extra/nvidia-dkms', 'extra/nvidia-settings',
+        #'extra/xf86-video-vesa',
+        #'extra/xf86-video-intel',
+        #'extra/xf86-video-ati',
+        #'extra/xf86-video-amdgpu',
+        #'extra/xf86-video-vmware',
+    ]
+    desc = 'Graphic interface server (Xorg)'
 
 
 class Mlocate(Service):
@@ -222,7 +252,12 @@ class Cups(Service):
 
 
 class NetworkManager(Service):
-    packages = ['extra/networkmanager']
+    packages = [
+        'extra/networkmanager',
+        'networkmanager-openvpn'
+        'network-manager-applet',
+        'extra/nm-connection-editor'
+    ]
     service = 'NetworkManager'
     dest = 'Network interface manager / dhcp client'
 
@@ -431,8 +466,7 @@ class ArchUser():
             for line in fd.readlines():
                 try:
                     data = line[0:-1].split(':')
-                    print(data)
-                    user,_,uid,gid,desc,home, shell = data
+                    user, _, uid, gid, desc, home, shell = data
                     users.append({
                         'user': user,
                         'uid': int(uid),
@@ -444,6 +478,20 @@ class ArchUser():
                 except ValueError:
                     continue
         return users
+
+    @staticmethod
+    def from_disk(login, ai):
+        assert isinstance(login, str) == True
+        assert isinstance(ai, ArchInstall) == True
+        for account in ArchUser.list():
+            if account['user'] == login:
+                user = ArchUser(login, ai)
+                user.gid = account['gid']
+                user.uid = account['uid']
+                user.home = account['home']
+                return user
+        raise ValueError(login)
+
 
 class ArchInstall():
     def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8'):
