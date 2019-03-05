@@ -6,9 +6,8 @@ import os
 
 BASE = [
     'base', 'base-devel', 'networkmanager', 'htop', 'vim', 'net-tools',
-    'pulseaudio', 'lightdm', 'lightdm-gtk-greeter', 'mpv', 'zsh',
+    'pulseaudio', 'mpv', 'zsh', 'ttf-ubuntu-font-family',
     'terminator', 'fish', 'openssh', 'openssl', 'ttf-liberation',
-    'ttf-ubuntu-font-family',
     'ttf-dejavu', 'extra/pulseaudio-alsa', 'ttf-freefont', 'otf-font-awesome',
     'gnome-keyring', 'hdparm', 'idle3-tools', 'iw',
     'pavucontrol', 'gparted', 'ntfs-3g', 'exfat-utils', 'sshfs',
@@ -633,14 +632,14 @@ class ArchInstall():
             self.run(['grub-install', '--target', target, device])
 
     def install_refind(self, device):
-        if not os.path.ismount(os.path.join(self.mnt, '/boot/efi')):
+        if not os.path.ismount(self.mnt + '/boot/efi'):
             raise(ConfigError('please create and mount /boot/efi (vfat)'))
         # TODO : detect informations about device and mount point of /boot/efi
         partition = 1
         efi_path = '/EFI/refind/refind_x64.efi'
         with Chroot(self.mnt):
             self.pkg_install(['extra/refind-efi'])
-            self.run(['refind-install', '--alldrivers', device])
+        self.run(['refind-install', '--alldrivers', '--root', self.mnt + '/boot/efi'])
         if not os.path.exists('/boot/efi' + efi_path):
             print(efi_path)
             raise ConfigError('unable to found the efi path on /boot/efi disk')
