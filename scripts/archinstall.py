@@ -581,8 +581,10 @@ class ArchInstall():
         return file_content
 
     def set_sudo_free(self, state):
-        content = ('%wheel ALL=(ALL) ALL', '%wheel ALL=(ALL) NOPASSWD: ALL')[int(state)]
-        self.file_put('/etc/sudoers.d/wheel', content)
+        if state == False:
+            self.file_put('/etc/sudoers.d/wheel', '%wheel ALL=(ALL) ALL\n')
+        else:
+            self.file_put('/etc/sudoers.d/wheel', '%wheel ALL=(ALL) NOPASSWD: ALL\n')
 
     def install(self, packages):
         if packages:
@@ -640,7 +642,7 @@ class ArchInstall():
         with Chroot(self.mnt):
             self.run(['mkdir', '-vp', '/boot/efi/EFI/refind'])
             self.pkg_install(['extra/refind-efi'])
-        self.run(['refind-install', '--alldrivers', '--root', self.mnt + '/boot/efi'])
+        self.run(['refind-install', '--root', self.mnt + '/boot/efi'])
         if not os.path.exists(self.mnt + '/boot/efi' + efi_path):
             print(efi_path)
             raise ConfigError('unable to found the efi path on /boot/efi disk')
@@ -707,7 +709,6 @@ if __name__ == "__main__":
     services.install()
 
     user.create()
-    user.set_password()
     user.add_groups(user.get_defaults_groups())
     user.add_groups(['wheel'])
     user.install_trizen()
