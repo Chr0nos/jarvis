@@ -641,7 +641,8 @@ class ArchInstall():
         with Chroot(self.mnt):
             self.pkg_install(['extra/refind-efi'])
             self.run(['refind-install', '--alldrivers', device])
-        if not os.path.exists(os.path.join('/boot/efi', efi_path)):
+        if not os.path.exists('/boot/efi' + efi_path):
+            print(efi_path)
             raise ConfigError('unable to found the efi path on /boot/efi disk')
         self.run([
             'efibootmgr', '-c',
