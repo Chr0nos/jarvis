@@ -108,6 +108,26 @@ class MountPoint():
         ret = subprocess.run(['umount', self.dest])
         assert ret.returncode == 0, ret
 
+    @staticmethod
+    def list():
+        lst = []
+        with open('/proc/mounts','r') as fd:
+            for line in fd.readlines():
+                try:
+                    device, mount_point, fs, opts, dump, pas = line.split()
+                    lst.append({
+                        'device': device,
+                        'mnt': mount_point,
+                        'fs': fs,
+                        'opts': opts,
+                        'dump': dump,
+                        'pass': pas
+                    })
+                except ValueError:
+                    pass
+        return lst
+
+
 class Chroot():
     def __init__(self, path, unbind=False):
         self.real_root = os.open('/', os.O_RDONLY)
@@ -636,12 +656,26 @@ class ArchInstall():
     def install_refind(self, device):
         if not os.path.ismount(self.mnt + '/boot/efi'):
             raise(ConfigError('please create and mount /boot/efi (vfat)'))
-        # TODO : detect informations about device and mount point of /boot/efi
-        partition = 1
+
+        def partition_id(mount_path):
+            """
+            returns the partition id of a mount point.
+            """
+            for mount in MountPoint.list():
+                if mount['mnt'] == mount_path:
+                    partition = mount['device'][-1]
+                    return partition
+            raise ValueError(mount_path)
+
+        partition = partition_id(self.mnt + '/boot/efi')
         efi_path = '/EFI/refind/refind_x64.efi'
         with Chroot(self.mnt):
             self.run(['mkdir', '-vp', '/boot/efi/EFI/refind'])
             self.pkg_install(['extra/refind-efi'])
+            # refind show error on --alldrivers ? okay :)
+            self.run(['cp', '-vr',
+                '/usr/share/refind/drivers_x64',
+                '/boot/efi/EFI/refind/drivers_x64'])
         self.run(['refind-install', '--root', self.mnt + '/boot/efi'])
         if not os.path.exists(self.mnt + '/boot/efi' + efi_path):
             print(efi_path)
@@ -656,25 +690,6 @@ class ArchInstall():
 
     def mount(self, partition, mount_moint):
         self.run(['mount', partition, mount_moint])
-
-    @staticmethod
-    def get_mounts():
-        lst = []
-        with open('/proc/mounts','r') as fd:
-            for line in fd.readlines():
-                try:
-                    device, mount_point, fs, opts, dump, pas = line.split()
-                    lst.append({
-                        'device': device,
-                        'mnt': mount_point,
-                        'fs': fs,
-                        'opts': opts,
-                        'dump': dump,
-                        'pass': pas
-                    })
-                except ValueError:
-                    pass
-        return lst
 
 
 if __name__ == "__main__":
