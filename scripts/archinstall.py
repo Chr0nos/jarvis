@@ -14,21 +14,6 @@ BASE = [
     'ffmpegthumbnailer', 'mdadm', 'wget', 'git', 'archlinux-keyring'
 ]
 
-XORG = [
-    'xorg-server',
-    'xorg-fonts-75dpi',
-    'xorg-fonts-100dpi',
-    'xorg-xrandr',
-    'xorg-xinit',
-    #'xf86-video-nouveau',
-    'extra/nvidia-dkms', 'extra/nvidia-settings',
-    #'extra/xf86-video-vesa',
-    #'extra/xf86-video-intel',
-    #'extra/xf86-video-ati',
-    #'extra/xf86-video-amdgpu',
-    #'extra/xf86-video-vmware',
-]
-
 EXTRA = [
     'extra/adwaita-icon-theme',
     'linux-headers',
@@ -54,7 +39,7 @@ PYTHON = [
     'community/ipython'
 ]
 
-DEFAULT = BASE + XORG + MATE + EXTRA + PYTHON
+DEFAULT = BASE + MATE + EXTRA + PYTHON
 
 class CommandFail(Exception):
     pass
@@ -260,15 +245,36 @@ class Xorg(Service):
         'xorg-fonts-100dpi',
         'xorg-xrandr',
         'xorg-xinit',
+    ]
+    groups = ['video']
+    desc = 'Graphic interface server (Xorg)'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.packages.extend(Xorg.get_driver_packages())
+
+    @staticmethod
+    def get_driver_packages():
         #'xf86-video-nouveau',
-        'extra/nvidia-dkms', 'extra/nvidia-settings',
+        #'extra/nvidia-dkms', 'extra/nvidia-settings',
         #'extra/xf86-video-vesa',
         #'extra/xf86-video-intel',
         #'extra/xf86-video-ati',
         #'extra/xf86-video-amdgpu',
         #'extra/xf86-video-vmware',
-    ]
-    desc = 'Graphic interface server (Xorg)'
+
+        raw = subprocess.run(['lspci'], stdout=subprocess.PIPE)
+        out = raw.stdout.decode('utf-8')
+        for line in out.split('\n'):
+            if 'VGA' not in line:
+                continue
+            if 'NVIDIA' in line:
+                return ['nvidia-dkms', 'extra/nvidia-settings']
+            if 'INTEL' in line:
+                return ['extra/xf86-video-intel']
+            if 'VMware' in line:
+                return ['extra/xf86-video-vmware']
+            return ['extra/xf86-video-vesa']
 
 
 class Mlocate(Service):
@@ -642,6 +648,8 @@ class ArchInstall():
             self.install_refind(device)
         elif name == 'grub':
             self.install_grub(device, **kwargs)
+        elif name == 'grub-efi':
+            self.install_grub(device, target='x86_64-efi', **kwargs)
         else:
             raise ValueError(name)
 
@@ -698,12 +706,13 @@ if __name__ == "__main__":
     parser.add_argument('--root', help='the mount point to use (/mnt)', default='/mnt')
     parser.add_argument('--device', help='wich device to use (for bootloaders)', default='/dev/sda')
     parser.add_argument('--user', help='create a default user ?', required=True)
-    parser.add_argument('--loader', help='which bootloader to use ?', choices=('grub', 'refind'), required=True)
+    parser.add_argument('--loader', help='which bootloader to use ?', choices=('grub', 'grub-efi', 'refind'), required=True)
     args = parser.parse_args()
 
     arch = ArchInstall(hostname=args.hostname)
     user = ArchUser(arch, username=args.user)
     services = ServicesManager(arch,
+        Xorg(),
         NetworkManager(),
         Cups(users=[user]),
         LightDm(enable=True),
