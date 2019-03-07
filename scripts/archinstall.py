@@ -23,8 +23,7 @@ EXTRA = [
 ]
 
 MATE = [
-    'mate', 'mate-extra', 'mate-media', 'mate-power-manager', 'mate-menu',
-    'system-config-printer'
+    'mate', 'mate-extra', 'mate-media', 'mate-power-manager', 'mate-menu'
 ]
 
 XFCE = ['xfce4']
@@ -287,7 +286,8 @@ class Cups(Service):
         'extra/cups',
         'extra/cups-pdf',
         'extra/gutenprint',
-        'extra/foomatic-db-gutenprint-ppds'
+        'extra/foomatic-db-gutenprint-ppds',
+        'system-config-printer'
     ]
     service = 'org.cups.cupsd.service'
     groups = ['lp']
