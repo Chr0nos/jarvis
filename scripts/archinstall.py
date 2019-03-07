@@ -272,7 +272,7 @@ class Xorg(Service):
             if 'INTEL' in line:
                 return ['extra/xf86-video-intel']
             if 'VMware' in line:
-                return ['extra/xf86-video-vmware']
+                return ['extra/xf86-video-vmware', 'xf86-input-vmmouse']
             return ['extra/xf86-video-vesa']
 
 
