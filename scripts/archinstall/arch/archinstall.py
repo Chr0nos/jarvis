@@ -8,6 +8,7 @@ from .exceptions import CommandFail, ConfigError
 from .mount import MountPoint
 from .metapkg import *
 
+
 class ArchInstall():
     def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8'):
         """
