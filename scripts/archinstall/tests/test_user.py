@@ -4,31 +4,19 @@ from mock import patch
 import sys, os;
 sys.path.insert(0, os.getcwd())
 
+from fakeai import FakeAi, fakearch
 from arch import ArchUser, ArchInstall
 
 REAL_USER = os.getenv('USER')
 
-@pytest.fixture
-def user():
-    return ArchUser(FakeAi(hostname='Nope'), username=REAL_USER, uid=1000, gid=1000)
-
-
-class FakeAi(ArchInstall):
-    def run(self, command, **kwargs):
-        print('[out]', command)
-
-    def run_in(self, command, user=None, **kwargs):
-        print('[in]', command)
-
-    def file_put(self, filepath, content):
-        print(filepath, '->', content)
-
-    def passwd(self):
-        print('setting password for root')
-
 
 def fake_chroot(path):
     print('chroot', path)
+
+
+@pytest.fixture
+def user():
+    return ArchUser(FakeAi(hostname='Nope'), username=REAL_USER, uid=1000, gid=1000)
 
 
 @patch('os.chroot', side_effect=fake_chroot)
