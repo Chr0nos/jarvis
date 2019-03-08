@@ -9,9 +9,11 @@ from mock import patch
 from fakeai import fakearch
 from test_user import fake_chroot
 
+
 @pytest.fixture
 def arch():
     return ArchInstall(hostname='localhost')
+
 
 def test_install_missing_hostname():
     with pytest.raises(TypeError):
@@ -30,11 +32,32 @@ def test_install_put(arch):
 
 
 @patch('os.chroot', side_effect=fake_chroot)
-def test_install_bootloader(fc, fakearch):
+def test_install_bootloader_grub(fc, fakearch):
     fakearch.install_bootloader('grub', device='/dev/sda')
+    fakearch.install_bootloader('grub-efi', device='/dev/sda')
     with pytest.raises(ValueError):
         fakearch.install_bootloader('grub-test', device='/dev/sda')
     old_mnt = fakearch.mnt
-    # fakearch.mnt = ''
-    # fakearch.install_bootloader('refind', device='/dev/sda')
-    # fakearch.mnt = old_mnt
+
+
+def test_install_attributes(fakearch):
+    assert fakearch.mnt is not None
+    assert fakearch.hostname is not None
+    assert fakearch.lang is not None
+    assert fakearch.timezone is not None
+    assert fakearch.locales
+    assert fakearch.efi_capable is not None
+
+
+def test_install_hash(fakearch):
+    hash(fakearch)
+
+
+def test_arch_instance():
+    """
+    test about kwargs.
+    """
+    arch = ArchInstall(hostname='louis', mnt='/', lang='en_EN.UTF-8')
+    assert arch.hostname == 'louis'
+    assert arch.mnt == '/'
+    assert arch.lang == 'en_EN.UTF-8'
