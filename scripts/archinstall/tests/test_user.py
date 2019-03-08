@@ -88,3 +88,10 @@ def test_user_list():
         assert user.get('gid') is not None
         assert user.get('shell')
         assert user.get('home')
+
+
+def test_user_attributes(user):
+    assert user.username == REAL_USER
+    assert user.uid == 1000
+    assert user.gid == 1000
+    assert user.home == '/home/' + REAL_USER
