@@ -17,7 +17,7 @@
 			"login": "adamaru",
 			"home": "/home/adamaru",
 			"groups": [
-				"audio", "video", "lp", "wheel", "scanner", "render", "input"
+				"audio", "video", "lp", "wheel", "scanner", "render", "input", "games"
 			],
 			"shell": "/bin/zsh",
 			"trizen": true,
