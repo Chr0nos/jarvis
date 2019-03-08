@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from arch import ArchInstall, ArchUser
 from arch.services import *
-from arch.packages import *
+from arch.metapkg import *
 
 import json
 import sys
