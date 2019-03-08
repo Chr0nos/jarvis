@@ -1,7 +1,9 @@
+#!/usr/bin/python3
 from arch import ArchInstall, ArchUser
 from arch.services import *
 
 import json
+import sys
 
 
 def install_from_json(json_path):
@@ -29,12 +31,15 @@ def install_from_json(json_path):
 
     arch = ArchInstall(hostname=config['hostname'])
     services = ServicesManager(arch, *[srv for srv in services_to_install])
-    arch.install(packages + services.collect_packages() + config.get('packages', []))
+    arch.install(
+        packages + services.collect_packages() + config.get('packages', []))
     services.install()
 
     # creating and configuring users
     for cfg_user in config['users']:
-        user = ArchUser(arch, username=cfg_user['login'], home=cfg_user.get('home'))
+        user = ArchUser(arch,
+                        username=cfg_user['login'],
+                        home=cfg_user.get('home'))
         user.create(shell=cfg_user['shell'])
         user.add_groups(cfg_user['groups'])
         if cfg_user['trizen']:
@@ -56,3 +61,6 @@ def install_from_json(json_path):
     arch.install_bootloader(cfg_user['loader']['name'], efi_path=efi)
     arch.passwd()
 
+
+if __name__ == "__main__":
+    install_from_json(sys.argv[1])

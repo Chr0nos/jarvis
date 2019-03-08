@@ -1,6 +1,7 @@
 from .archinstall import ArchInstall
 from .tools import Cd, ArchChroot
 
+
 class ArchUser():
     def __init__(self, ai, username, home=None, uid=None, gid=None):
         if not isinstance(ai, ArchInstall):
@@ -29,7 +30,7 @@ class ArchUser():
         return hash(str(self))
 
     def run(self, command, **kwargs):
-        assert self.exists() == True, (self.uid, self.gid)
+        assert self.exists(), (self.uid, self.gid)
         if not kwargs.get('cwd'):
             kwargs['cwd'] = self.home
         if not kwargs.get('env'):
@@ -86,7 +87,10 @@ class ArchUser():
         if os.path.exists(real_path):
             self.ai.run(['rm', '-rf', real_path])
 
-        self.run(['git', 'clone', 'https://aur.archlinux.org/trizen.git', trizen_path],
+        self.run(
+            [
+                'git', 'clone', 'https://aur.archlinux.org/trizen.git', trizen_path
+            ],
             cwd=self.home)
         self.run(['pwd'], cwd=trizen_path)
         self.run(['makepkg', '-si', '--noconfirm'], cwd=trizen_path)
@@ -97,18 +101,18 @@ class ArchUser():
         self.run(['trizen', '-S', '--noedit', '--noconfirm'] + packages)
 
     def install_oh_myzsh(self):
-        self.run(['wget',
-                 'https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh',
-                 '-O', '/tmp/ohmyzsh.sh'])
+        self.run(
+            ['wget',
+            'https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh',
+            '-O', '/tmp/ohmyzsh.sh'])
         self.run(['sh', '/tmp/ohmyzsh.sh'])
         self.run(['rm', '/tmp/ohmyzsh.sh'])
 
     def exists(self):
-        return self.uid != None and self.gid != None
+        return self.uid is not None and self.gid is not None
 
     def demote(self):
-        assert self.exists() == True
-        print('demoting privileges to', self.username)
+        assert self.exists()
         os.setgid(self.gid)
         os.setuid(self.uid)
 
@@ -134,8 +138,8 @@ class ArchUser():
 
     @staticmethod
     def from_disk(login, ai):
-        assert isinstance(login, str) == True
-        assert isinstance(ai, ArchInstall) == True
+        assert isinstance(login, str)
+        assert isinstance(ai, ArchInstall)
         for account in ArchUser.list():
             if account['user'] == login:
                 user = ArchUser(login, ai)
@@ -144,4 +148,3 @@ class ArchUser():
                 user.home = account['home']
                 return user
         raise ValueError(login)
-

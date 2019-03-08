@@ -49,7 +49,7 @@ class MountPoint():
     @staticmethod
     def list():
         lst = []
-        with open('/proc/mounts','r') as fd:
+        with open('/proc/mounts', 'r') as fd:
             for line in fd.readlines():
                 try:
                     device, mount_point, fs, opts, dump, pas = line.split()

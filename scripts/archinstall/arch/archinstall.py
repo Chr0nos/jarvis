@@ -49,7 +49,8 @@ class ArchInstall():
     def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8'):
         """
         hostname: the machine hostname
-        mnt: on wich mount point will you install arch ? this mountpoint must exists
+        mnt: on wich mount point will you install arch ?
+        this mountpoint must exists
         lang: a valid lang locale
         pretent: Dont run or change anything, just show what will be done.
         """
@@ -89,7 +90,7 @@ class ArchInstall():
         with ArchChroot(self.mnt):
             if not user:
                 return self.run(command, **kwargs)
-            assert isinstance(user, ArchUser) == True
+            assert isinstance(user, ArchUser)
             return self.run(command, preexec_fn=user.demote(), **kwargs)
 
     def pkg_install(self, packages):
@@ -115,7 +116,7 @@ class ArchInstall():
         return file_content
 
     def set_sudo_free(self, state):
-        if state == False:
+        if not state:
             self.file_put('/etc/sudoers.d/wheel', '%wheel ALL=(ALL) ALL\n')
         else:
             self.file_put('/etc/sudoers.d/wheel', '%wheel ALL=(ALL) NOPASSWD: ALL\n')
@@ -189,8 +190,8 @@ class ArchInstall():
             self.pkg_install(['extra/refind-efi'])
             # refind show error on --alldrivers ? okay :)
             self.run(['cp', '-vr',
-                '/usr/share/refind/drivers_x64',
-                '/boot/efi/EFI/refind/drivers_x64'])
+                      '/usr/share/refind/drivers_x64',
+                      '/boot/efi/EFI/refind/drivers_x64'])
         self.run(['refind-install', '--root', self.mnt + '/boot/efi'])
         if not os.path.exists(self.mnt + '/boot/efi' + efi_path):
             print(efi_path)

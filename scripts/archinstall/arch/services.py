@@ -36,7 +36,7 @@ class Service():
 
     def __init__(self, users=[], enable=None):
         self.users = users
-        if enable != None:
+        if enable is not None:
             self.enable = enable
 
     def __hash__(self):
@@ -91,13 +91,13 @@ class Xorg(Service):
 
     @staticmethod
     def get_driver_packages():
-        #'xf86-video-nouveau',
-        #'extra/nvidia-dkms', 'extra/nvidia-settings',
-        #'extra/xf86-video-vesa',
-        #'extra/xf86-video-intel',
-        #'extra/xf86-video-ati',
-        #'extra/xf86-video-amdgpu',
-        #'extra/xf86-video-vmware',
+        # 'xf86-video-nouveau',
+        # 'extra/nvidia-dkms', 'extra/nvidia-settings',
+        # 'extra/xf86-video-vesa',
+        # 'extra/xf86-video-intel',
+        # 'extra/xf86-video-ati',
+        # 'extra/xf86-video-amdgpu',
+        # 'extra/xf86-video-vmware',
 
         raw = subprocess.run(['lspci'], stdout=subprocess.PIPE)
         out = raw.stdout.decode('utf-8')
@@ -216,6 +216,7 @@ class Iptables(Service):
     service = 'iptables.service'
     desc = 'firewall'
 
+
 class BlueTooth(Service):
     name = 'bluetooth'
     packages = [
@@ -225,4 +226,3 @@ class BlueTooth(Service):
     ]
     service = 'bluetooth.service'
     desc = 'bluetooth support'
-

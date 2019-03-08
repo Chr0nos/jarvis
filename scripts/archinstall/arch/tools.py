@@ -1,5 +1,6 @@
 import os
 
+
 class Chroot():
     def __init__(self, path):
         self.real_root = os.open('/', os.O_RDONLY)
@@ -50,7 +51,7 @@ class ArchChroot(Chroot):
 
     def start(self):
         for bind in self.mounts:
-            if bind.is_mount() == False:
+            if bind.is_mount() is not False:
                 bind.mount()
         super().start()
 
