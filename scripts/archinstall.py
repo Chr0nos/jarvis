@@ -188,6 +188,7 @@ class ServicesManager(list):
 
 
 class Service():
+    name = None
     packages = []
     groups = []
     service = None
@@ -238,6 +239,7 @@ class Service():
 
 
 class Xorg(Service):
+    name = 'xorg'
     packages = [
         'xorg-server',
         'xorg-fonts-75dpi',
@@ -277,11 +279,13 @@ class Xorg(Service):
 
 
 class Mlocate(Service):
+    name = 'mlocate'
     packages = ['mlocate']
     desc = 'files indexer'
 
 
 class Cups(Service):
+    name = 'cups'
     packages = [
         'extra/cups',
         'extra/cups-pdf',
@@ -295,6 +299,7 @@ class Cups(Service):
 
 
 class NetworkManager(Service):
+    name = 'networkmanager'
     packages = [
         'extra/networkmanager',
         'networkmanager-openvpn',
@@ -306,6 +311,7 @@ class NetworkManager(Service):
 
 
 class LightDm(Service):
+    name = 'lightdm'
     packages = ['extra/lightdm', 'extra/lightdm-gtk-greeter']
     service = 'lightdm.service'
     enabled = False
@@ -313,42 +319,49 @@ class LightDm(Service):
 
 
 class Gpm(Service):
+    name = 'gpm'
     packages = ['gpm']
     service = 'gpm.service'
     desc = 'a mouse in the the terminal mode'
 
 
 class Fail2Ban(Service):
+    name = 'fail2ban'
     packages = ['fail2ban']
     service = 'fail2ban.service'
     desc = 'bruteforcers nightmare'
 
 
 class Smartd(Service):
+    name = 'smartd'
     packages = ['smartmontools']
     service = 'smartd.service'
     desc = 'disks errors reporter'
 
 
 class Sshd(Service):
+    name = 'sshd'
     packages = ['openssh']
     service = 'sshd.service'
     desc = 'remote controll service'
 
 
 class Docker(Service):
+    name = 'docker'
     packages = ['docker']
     service = 'docker.service'
     desc = 'docker containers support'
 
 
 class Udisks2(Service):
+    name = 'udisks2'
     packages = ['extra/udisks2']
     service = 'udisks2.service'
     desc = 'drive managements'
 
 
 class Nginx(Service):
+    name = 'nginx'
     packages = ['nginx']
     service = 'nginx.service'
     groups = ['www-data']
@@ -356,17 +369,20 @@ class Nginx(Service):
 
 
 class Acpid(Service):
+    name = 'acpid'
     packages = ['community/acpid']
     service = 'acpid.service'
     desc = 'power management'
 
 
 class Iptables(Service):
+    name = 'iptables'
     packages = ['core/iptables']
     service = 'iptables.service'
     desc = 'firewall'
 
 class BlueTooth(Service):
+    name = 'bluetooth'
     packages = [
         'extra/bluez',
         'extra/bluez-utils',
