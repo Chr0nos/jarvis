@@ -24,7 +24,12 @@ def install_from_json(json_path):
         'MATE': MATE,
         'PYTHON': PYTHON,
         'EXTRA': EXTRA,
-        'BASE': BASE
+        'BASE': BASE,
+        'GNOME': GNOME,
+        'XFCE': XFCE,
+        'I3': I3,
+        'CINNAMON': CINNAMON,
+        'KDE': KDE
     }
     packages = []
     for meta in config['meta']:
