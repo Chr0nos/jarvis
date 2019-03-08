@@ -1,4 +1,5 @@
 import os
+from .mount import MountPoint
 
 
 class Chroot():

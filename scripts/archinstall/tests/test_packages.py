@@ -1,7 +1,5 @@
-import pytest
 from mock import patch
-import sys, os
-sys.path.insert(0, os.getcwd())
+import sys, os; sys.path.insert(0, os.getcwd())
 
 
 def test_packages():
