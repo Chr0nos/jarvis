@@ -4,3 +4,4 @@ from .mount import MountPoint
 from . import services
 from . import tools
 from . import exceptions
+from . import metapkg
