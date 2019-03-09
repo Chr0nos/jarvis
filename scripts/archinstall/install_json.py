@@ -36,7 +36,7 @@ def install_from_json(json_path):
         packages.extend(metas[meta])
 
     arch = ArchInstall(hostname=config['hostname'])
-    services = ServicesManager(arch, *[srv for srv in services_to_install])
+    services = ServicesManager(arch, *[srv() for srv in services_to_install])
     arch.install(
         packages + services.collect_packages() + config.get('packages', []))
     services.install()

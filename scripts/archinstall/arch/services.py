@@ -1,3 +1,4 @@
+import subprocess
 
 class ServicesManager(list):
     def __init__(self, ai, *args):
