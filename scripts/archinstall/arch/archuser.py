@@ -1,7 +1,7 @@
 import os
 
 from .archinstall import ArchInstall
-from .tools import Cd, ArchChroot
+from .tools import Cd, ArchChroot, Chroot
 from .mount import MountPoint
 
 
