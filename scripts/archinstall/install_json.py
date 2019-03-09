@@ -53,7 +53,7 @@ def install_from_json(json_path):
         if cfg_user['ohmyzsh']:
             user.install_oh_myzsh()
         if cfg_user['aur']:
-            user.isntall(cfg_user['aur'])
+            user.install(cfg_user['aur'])
         user.passwd()
 
     # configuring sudo
