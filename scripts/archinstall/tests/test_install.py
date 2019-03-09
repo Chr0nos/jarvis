@@ -15,6 +15,10 @@ def arch():
     return ArchInstall(hostname='localhost')
 
 
+def test_arch_fake(fakearch):
+    assert fakearch.mnt == '/'
+
+
 def test_install_missing_hostname():
     with pytest.raises(TypeError):
         arch = ArchInstall()

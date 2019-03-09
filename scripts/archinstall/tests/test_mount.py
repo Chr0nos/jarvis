@@ -14,3 +14,7 @@ def test_mount_str():
     m = MountPoint(dest='/proc', fs_type='proc', device='/proc')
     print(m)
     assert str(m) is not None
+
+# def test_mount_already_mount():
+#     m = MountPoint(dest='/proc', fs_type='proc', device='/proc')
+#     assert m.is_mount()

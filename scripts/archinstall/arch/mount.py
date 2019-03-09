@@ -34,8 +34,9 @@ class MountPoint():
                 path = os.path.join(path, d)
                 if not os.path.exists(path):
                     os.mkdir(path)
+
         print('mounting', self.dest)
-        if not os.path.isdir(self.dest):
+        if not os.path.exists(self.dest):
             mktree(self.dest)
         ret = subprocess.run(self.get_cmd())
         assert ret.returncode == 0, ret.returncode

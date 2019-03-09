@@ -64,7 +64,10 @@ def install_from_json(json_path):
     arch.set_sudo_free(cfg_user['sudo']['nopasswd'])
 
     efi = config['loader'].get('efi')
-    arch.install_bootloader(cfg_user['loader']['name'], efi_path=efi)
+    device = config['loader'].get('device')
+    arch.install_bootloader(cfg_user['loader']['name'],
+                            efi_path=efi,
+                            device=device)
     arch.passwd()
 
 

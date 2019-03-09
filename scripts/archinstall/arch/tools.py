@@ -22,15 +22,6 @@ class Chroot():
     def __exit__(self, a, b, c):
         self.stop()
 
-    @staticmethod
-    def decorator(path):
-        def real_decorator(func):
-            def wrapper(*args, **kwargs):
-                with Chroot(path):
-                    func(*args, **kwargs)
-            return wrapper
-        return real_decorator
-
 
 class ArchChroot(Chroot):
     def __init__(self, path, unbind=False):
@@ -52,15 +43,15 @@ class ArchChroot(Chroot):
 
     def start(self):
         for bind in self.mounts:
-            if bind.is_mount() is not False:
+            if not bind.is_mount():
                 bind.mount()
         super().start()
 
     def stop(self):
+        super().stop()
         if self.unbind:
             for bind in self.mounts:
                 bind.unmount()
-        super().stop()
 
 
 class Cd():

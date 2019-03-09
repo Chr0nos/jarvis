@@ -4,32 +4,29 @@ from mock import patch
 import sys, os;
 sys.path.insert(0, os.getcwd())
 
-from fakeai import FakeAi, fakearch
+from fakeai import *
 from arch import ArchUser, ArchInstall
+from arch.mount import MountPoint
 
 REAL_USER = os.getenv('USER')
 
 
-def fake_chroot(path):
-    print('chroot', path)
-
-
 @pytest.fixture
 def user():
-    return ArchUser(FakeAi(hostname='Nope'), username=REAL_USER, uid=1000, gid=1000)
+    return ArchUser(FakeAi(hostname='Nope', mnt='/'), username=REAL_USER, uid=1000, gid=1000)
 
 
 @patch('os.chroot', side_effect=fake_chroot)
-def test_user_trizen(fc):
-    arch = FakeAi(hostname='localhost')
-    user = ArchUser(arch, username=REAL_USER, gid=1000, uid=1000)
+@patch('os.mkdir', side_effect=fake_mkdir)
+def test_user_trizen(fmk, fc, fakearch):
+    user = ArchUser(fakearch, username=REAL_USER, gid=1000, uid=1000)
     user.install_trizen()
 
 
 @patch('os.chroot', side_effect=fake_chroot)
-def test_user_install(fc):
-    arch = FakeAi(hostname='localhost')
-    user = ArchUser(arch, username=REAL_USER, gid=1000, uid=1000)
+@patch('arch.mount.MountPoint', callable=FakeMount)
+def test_user_install(fm, fc, fakearch):
+    user = ArchUser(fakearch, username=REAL_USER, gid=1000, uid=1000)
     user.run(['ls'])
 
 
@@ -59,14 +56,6 @@ def test_create(_, user):
 def test_add_groups(user):
     user.add_groups([])
     user.add_groups(['lp', 'docker', 'audio', 'video', 'render'])
-
-
-@patch('os.chroot', side_effect=fake_chroot)
-def test_user_run(_, user):
-    user.run(['ls'])
-    user.run(['ls', '-la'])
-    user.run(['id'])
-    user.run(['ls'], env={}, cwd='/tmp')
 
 
 def test_user_list():
