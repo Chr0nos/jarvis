@@ -65,7 +65,7 @@ def install_from_json(json_path):
 
     efi = config['loader'].get('efi')
     device = config['loader'].get('device')
-    arch.install_bootloader(cfg_user['loader']['name'],
+    arch.install_bootloader(config['loader']['name'],
                             efi_path=efi,
                             device=device)
     arch.passwd()
