@@ -65,7 +65,7 @@ class Service():
             user.add_groups(self.groups)
 
     def set_enabled(self, state=True):
-        if not state:
+        if not state or not self.service:
             return
         self.check()
         self.ai.run_in(['systemctl', ('disable', 'enable')[state], self.service])
