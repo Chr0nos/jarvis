@@ -61,7 +61,7 @@ def install_from_json(json_path):
         arch.run(['pacman', '-Rns', '--noconfirm', 'core/sudo'])
     if not config['sudo']['targetpw']:
         arch.run(['rm', '-f', '/etc/sudoers.d/targetpw'])
-    arch.set_sudo_free(cfg_user['sudo']['nopasswd'])
+    arch.set_sudo_free(config['sudo']['nopasswd'])
 
     efi = config['loader'].get('efi')
     device = config['loader'].get('device')
