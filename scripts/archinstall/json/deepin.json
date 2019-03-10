@@ -30,7 +30,7 @@
 		{
 			"login": "yoyo",
 			"groups": ["audio", "video", "lp", "scanner", "input", "games"],
-			"sheel": "/bin/fish"
+			"shell": "/bin/fish"
 		}
 	],
 	"sudo": {
