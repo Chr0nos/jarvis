@@ -32,17 +32,17 @@ def install_from_json(json_path):
         'KDE': KDE
     }
     packages = []
-    for meta in config['meta']:
+    for meta in config.get('meta', []):
         packages.extend(metas[meta])
 
-    arch = ArchInstall(hostname=config['hostname'])
+    arch = ArchInstall(hostname=config['hostname'], mnt=config.get('mnt', '/mnt'))
     services = ServicesManager(arch, *[srv() for srv in services_to_install])
     arch.install(
         packages + services.collect_packages() + config.get('packages', []))
     services.install()
 
     # creating and configuring users
-    for cfg_user in config['users']:
+    for cfg_user in config.get('users', []):
         user = ArchUser(arch,
                         username=cfg_user['login'],
                         home=cfg_user.get('home'))
@@ -57,17 +57,19 @@ def install_from_json(json_path):
         user.passwd()
 
     # configuring sudo
-    if not config['sudo']['present']:
+    sudo = config.get('sudo', {'present': True, 'targetpw': True, 'nopasswd': False})
+    if not sudo['present']:
         arch.run(['pacman', '-Rns', '--noconfirm', 'core/sudo'])
-    if not config['sudo']['targetpw']:
+    if not sudo['targetpw']:
         arch.run(['rm', '-f', '/etc/sudoers.d/targetpw'])
-    arch.set_sudo_free(config['sudo']['nopasswd'])
+    arch.set_sudo_free(sudo['nopasswd'])
 
-    efi = config['loader'].get('efi')
-    device = config['loader'].get('device')
-    arch.install_bootloader(config['loader']['name'],
-                            efi_path=efi,
-                            device=device)
+    if config.get('loader'):
+        efi = config['loader'].get('efi')
+        device = config['loader'].get('device')
+        arch.install_bootloader(config['loader']['name'],
+                                efi_path=efi,
+                                device=device)
     arch.passwd()
 
 

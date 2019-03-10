@@ -5,6 +5,7 @@
 		"efi": "/EFI/refind/refind_x64.efi"
 	},
 	"packages": [
+		"community/deepin-icon-theme"
 	],
 	"meta": ["MATE", "PYTHON", "EXTRA", "BASE"],
 	"services": [
@@ -23,8 +24,7 @@
 			"trizen": true,
 			"ohmyzsh": true,
 			"aur": [
-				"aur/visual-studio-code-bin",
-				"aur/spotify"
+				"aur/visual-studio-code-bin"
 			]
 		}
 	],
