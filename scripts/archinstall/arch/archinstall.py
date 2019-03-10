@@ -88,7 +88,7 @@ class ArchInstall():
     def install(self, packages):
         if packages:
             self.run(['pacstrap', self.mnt] + packages)
-        fstab = self.run(['genfstab', self.mnt], True)
+        fstab = self.run(['genfstab', '-t', 'UUID', self.mnt], True)
         with ArchChroot(self.mnt):
             # reinstall keyrings...
             self.pkg_install(['archlinux-keyring'])
