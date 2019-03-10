@@ -49,11 +49,11 @@ def install_from_json(json_path):
                         home=cfg_user.get('home'))
         user.create(shell=cfg_user['shell'])
         user.add_groups(cfg_user['groups'])
-        if cfg_user['trizen']:
+        if cfg_user.get('trizen'):
             user.install_trizen()
-        if cfg_user['ohmyzsh']:
+        if cfg_user.get('ohmyzsh'):
             user.install_oh_myzsh()
-        if cfg_user['aur']:
+        if cfg_user.get('aur'):
             user.install(cfg_user['aur'])
         user.passwd()
 
