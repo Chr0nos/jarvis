@@ -12,7 +12,8 @@ def copy_form_host(arch, copy):
 	assert isinstance(copy, dict)
 	assert copy.get('src') is not None
 	assert copy.get('dst') is not None
-	real_dst = os.path.join(arch.mnt, copy['dst'])
+	assert os.path.exists(copy['src'])
+	real_dst = arch.mnt + copy['dst']
 	arch.run(['cp', '-vr', copy['src'], real_dst])
 
 	with Chroot(arch.mnt):
