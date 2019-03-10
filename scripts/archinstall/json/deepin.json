@@ -1,0 +1,41 @@
+{
+	"mnt": "/mnt/arch",
+	"hostname": "deepin",
+	"packages": [
+		"fish",
+		"caja",
+		"deepin",
+		"deepin-calculator",
+		"deepin-screenshoot",
+		"gvfs-mtp",
+		"gvfs-gphoto2",
+		"transmission-gtk"
+	],
+	"meta": ["PYTHON", "EXTRA", "BASE"],
+	"services": [
+		"cups", "iptables", "acpid", "xorg", "lightdm",
+		"mlocate", "fail2ban", "gpm", "networkmanager", "udisks2",
+		"bluetooth", "sshd"
+	],
+	"users": [
+		{
+			"login": "adamaru",
+			"home": "/home/adamaru",
+			"groups": [
+				"audio", "video", "lp", "wheel", "scanner", "render", "input", "games"
+			],
+			"shell": "/bin/zsh",
+			"trizen": true
+		},
+		{
+			"login": ""yoyo",
+			"groups": ["audio", "video", "lp", "scanner", "input", "games"],
+			"sheel": "/bin/fish"
+		}
+	],
+	"sudo": {
+		"present": true,
+		"targetpw": false,
+		"nopasswd": true
+	}
+}
