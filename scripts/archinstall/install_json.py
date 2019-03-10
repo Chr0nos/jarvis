@@ -5,6 +5,7 @@ from arch.metapkg import *
 
 import json
 import sys
+import os
 
 
 def install_from_json(json_path):
@@ -74,4 +75,5 @@ def install_from_json(json_path):
 
 
 if __name__ == "__main__":
+    assert os.getuid() == 0 and os.getgid() == 0, "You need to run this script as root"
     install_from_json(sys.argv[1])
