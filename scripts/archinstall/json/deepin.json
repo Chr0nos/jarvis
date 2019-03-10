@@ -28,7 +28,7 @@
 			"trizen": true
 		},
 		{
-			"login": ""yoyo",
+			"login": "yoyo",
 			"groups": ["audio", "video", "lp", "scanner", "input", "games"],
 			"sheel": "/bin/fish"
 		}
