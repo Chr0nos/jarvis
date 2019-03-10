@@ -37,5 +37,19 @@
 		"present": true,
 		"targetpw": false,
 		"nopasswd": true
-	}
+	},
+	"copy": [
+		{
+			"src": "../../dotfiles/49-passwd_global.rules",
+			"dst": "/etc/polkit-1/rules.d/",
+			"user": "root",
+			"perms": "600"
+		},
+		{
+			"src": "../../dotfiles/vimrc",
+			"dst": "/home/adamaru/.vimrc",
+			"user": "adamaru",
+			"perms": "600"
+		}
+	]
 }

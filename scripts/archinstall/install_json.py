@@ -1,11 +1,25 @@
 #!/usr/bin/python3
-from arch import ArchInstall, ArchUser
+from arch import ArchInstall, ArchUser, Chroot
 from arch.services import *
 from arch.metapkg import *
 
 import json
 import sys
 import os
+
+
+def copy_form_host(arch, copy):
+	assert isinstance(copy, dict)
+	assert copy.get('src') is not None
+	assert copy.get('dst') is not None
+	real_dst = os.path.join(arch.mnt, copy['dst'])
+	arch.run(['cp', '-vr', copy['src'], real_dst])
+
+	with Chroot(arch.mnt):
+		if copy.get('perms'):
+			arch.run_in(['chmod', copy['perms'], copy['dst'])
+		if copy.get('user'):
+			arch.run_in(['chown', '-R', f'{user.username}:{user.username}', copy['dst'])
 
 
 def install_from_json(json_path):
@@ -65,12 +79,17 @@ def install_from_json(json_path):
         arch.run(['rm', '-f', '/etc/sudoers.d/targetpw'])
     arch.set_sudo_free(sudo['nopasswd'])
 
+	# bootloader installation, it is perfectly okay to don't install one with the script.
     if config.get('loader'):
         efi = config['loader'].get('efi')
         device = config['loader'].get('device')
         arch.install_bootloader(config['loader']['name'],
                                 efi_path=efi,
                                 device=device)
+
+	# copy ressources from host guest system
+	for copy in config.get('config', []):
+		copy_form_host(arch, copy)
     arch.passwd()
 
 
