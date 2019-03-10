@@ -72,3 +72,12 @@ def test_user_attributes(user):
     assert user.uid == 1000
     assert user.gid == 1000
     assert user.home == '/home/' + REAL_USER
+
+def test_user_root(fakearch):
+	user = ArchUser(fakearch, username='root', uid=0, gid=0, home='/root')
+	assert user.username == 'root'
+	assert user.uid == 0
+	assert user.gid == 0
+	assert user.home == '/root'
+
+
