@@ -1,5 +1,6 @@
 #!/usr/bin/python3
-from arch import ArchInstall, ArchUser, Chroot
+from arch import ArchInstall, ArchUser
+from arch.tools import Chroot
 from arch.services import *
 from arch.metapkg import *
 
