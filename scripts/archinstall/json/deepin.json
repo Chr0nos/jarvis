@@ -6,7 +6,7 @@
 		"caja",
 		"deepin",
 		"deepin-calculator",
-		"deepin-screenshoot",
+		"community/deepin-screenshot",
 		"gvfs-mtp",
 		"gvfs-gphoto2",
 		"transmission-gtk"
