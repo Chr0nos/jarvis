@@ -20,7 +20,7 @@ def copy_form_host(arch, copy):
 		if copy.get('perms'):
 			arch.run_in(['chmod', copy['perms'], copy['dst']])
 		if copy.get('user'):
-			arch.run_in(['chown', '-R', f'{user.username}:{user.username}', copy['dst'])
+			arch.run_in(['chown', '-R', f'{user.username}:{user.username}', copy['dst']])
 
 
 def install_from_json(json_path):
