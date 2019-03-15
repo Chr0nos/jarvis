@@ -18,7 +18,7 @@ def copy_form_host(arch, copy):
 
 	with Chroot(arch.mnt):
 		if copy.get('perms'):
-			arch.run_in(['chmod', copy['perms'], copy['dst'])
+			arch.run_in(['chmod', copy['perms'], copy['dst']])
 		if copy.get('user'):
 			arch.run_in(['chown', '-R', f'{user.username}:{user.username}', copy['dst'])
 
