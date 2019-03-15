@@ -89,8 +89,8 @@ def install_from_json(json_path):
                                 device=device)
 
 	# copy ressources from host guest system
-	for copy in config.get('config', []):
-		copy_form_host(arch, copy)
+    for copy in config.get('config', []):
+        copy_form_host(arch, copy)
     arch.passwd()
 
 
