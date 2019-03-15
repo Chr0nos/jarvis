@@ -1,9 +1,6 @@
-from mock import patch
-import sys, os; sys.path.insert(0, os.getcwd())
+from arch.metapkg import DEFAULT
 
+from tools import check_packages
 
 def test_packages():
-    from arch.metapkg import DEFAULT
-    for pkg in DEFAULT:
-        if ' ' in pkg:
-            raise ValueError(pkg)
+    check_packages(DEFAULT)
