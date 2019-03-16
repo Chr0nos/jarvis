@@ -71,6 +71,16 @@ def install_from_json(json_path):
             user.install_oh_myzsh()
         if cfg_user.get('aur'):
             user.install(cfg_user['aur'])
+        for command in cfg_user.get('commands', []):
+            if isinstance(command, list):
+                user.run(command)
+            elif isinstance(command, dict):
+                env = command.get('env')
+                cwd = command.get('cwd')
+                command = command['cmd']
+                user.run(command, env=env, cwd=cwd)
+            else:
+                raise TypeError(command)
         user.passwd()
 
     # configuring sudo

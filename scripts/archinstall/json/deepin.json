@@ -25,7 +25,13 @@
 				"audio", "video", "lp", "wheel", "scanner", "render", "input", "games"
 			],
 			"shell": "/bin/zsh",
-			"trizen": true
+			"trizen": true,
+			"commands": [
+				["mkdir", "-pv", ".vim/bundle"],
+				["git", "clone", "https://github.com/VundleVim/Vundle.vim.git .vim/bundle/Vundle.vim"],
+				["vim", "+PluginInstall", "+qall"],
+				{"env": {"HOME": "/home/adamaru"}, "cwd": "/tmp", "cmd": ["ls", "-la"]}
+			]
 		},
 		{
 			"login": "yoyo",
