@@ -30,7 +30,12 @@
 				["mkdir", "-pv", ".vim/bundle"],
 				["git", "clone", "https://github.com/VundleVim/Vundle.vim.git .vim/bundle/Vundle.vim"],
 				["vim", "+PluginInstall", "+qall"],
-				{"env": {"HOME": "/home/adamaru"}, "cwd": "/tmp", "cmd": ["ls", "-la"]}
+				["gpg", "--keyserver", "hkp://keyserver.ubuntu.com:80", "--recv-keys", "931FF8E79F0876134EDDBDCCA87FF9DF48BF1C90"],
+				{
+					"env": {"HOME": "/home/adamaru"},
+					"cwd": "/tmp",
+					"cmd": ["trizen", "-S", "--noedit", "--noconfirm", "aur/spotify"]
+				}
 			]
 		},
 		{
