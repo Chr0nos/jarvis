@@ -1,6 +1,14 @@
 {
-	"mnt": "/mnt/arch",
+	"mnt": "/mnt",
 	"hostname": "deepin",
+	"loader": {
+		"name": "refind"
+	},
+	"pacman": {
+		"servers": [
+			"http://192.168.2.3:8080"
+		]
+	},
 	"packages": [
 		"fish",
 		"caja",

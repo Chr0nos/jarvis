@@ -70,6 +70,18 @@ class ArchInstall():
         with open(filepath, 'w+') as fd:
             fd.write(content)
 
+    def file_insert(self, filepath, content, line_index=0):
+        """
+        put "content" at the start of filepath
+        """
+        assert isinstance(content, str)
+        print(f'inserting into {filepath} at line {line_index}:\n{content}')
+        with open(os.path.join(self.mnt, filepath), 'a+') as fp:
+            file_content = fp.readlines()
+            fp.truncate(0)
+            file_content.insert(line_index, content)
+            fp.write('\n'.join(file_content))
+
     def locale_genfile(self):
         """
         return the content of /etc/locale.gen file based on self.locales
@@ -85,13 +97,17 @@ class ArchInstall():
         else:
             self.file_put('/etc/sudoers.d/wheel', '%wheel ALL=(ALL) NOPASSWD: ALL\n')
 
-    def install(self, packages):
-        if packages:
-            self.run(['pacstrap', self.mnt] + packages)
+    def install(self, packages, custom_servers=None):
+        self.run(['pacstrap', self.mnt, 'base', 'archlinux-keyring'])
         fstab = self.run(['genfstab', '-t', 'UUID', self.mnt], True)
+        if custom_servers:
+            self.file_insert(
+                filepath=os.path.join(self.mnt, '/etc/pacman.d/mirrorlist'),
+                content='\n'.join([f'Server {server}' for server in custom_servers]),
+                line_index=3)
+
         with ArchChroot(self.mnt):
-            # reinstall keyrings...
-            self.pkg_install(['archlinux-keyring'])
+            self.pkg_install(packages)
             self.file_put('/etc/hostname', self.hostname + '\n')
             self.file_put('/etc/fstab', fstab)
             self.file_put('/etc/locale.conf', f'LC_CTYPE={self.lang}\nLANG={self.lang}\n')
