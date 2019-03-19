@@ -24,6 +24,33 @@ def copy_form_host(arch, copy):
 			arch.run_in(['chown', '-R', f'{user.username}:{user.username}', copy['dst']])
 
 
+def handle_users(arch, users):
+    # creating and configuring users
+    for cfg_user in users):
+        user = ArchUser(arch,
+                        username=cfg_user['login'],
+                        home=cfg_user.get('home'))
+        user.create(shell=cfg_user['shell'])
+        user.add_groups(cfg_user['groups'])
+        if cfg_user.get('trizen'):
+            user.install_trizen()
+        if cfg_user.get('ohmyzsh'):
+            user.install_oh_myzsh()
+        if cfg_user.get('aur'):
+            user.install(cfg_user['aur'])
+        for command in cfg_user.get('commands', []):
+            if isinstance(command, list):
+                user.run(command)
+            elif isinstance(command, dict):
+                env = command.get('env')
+                cwd = command.get('cwd')
+                command = command['cmd']
+                user.run(command, env=env, cwd=cwd)
+            else:
+                raise TypeError(command)
+        user.passwd()
+
+
 def install_from_json(json_path):
     with open(json_path, 'r') as json_fd:
         config = json.load(json_fd)
@@ -58,30 +85,7 @@ def install_from_json(json_path):
         packages + services.collect_packages() + config.get('packages', []))
     services.install()
 
-    # creating and configuring users
-    for cfg_user in config.get('users', []):
-        user = ArchUser(arch,
-                        username=cfg_user['login'],
-                        home=cfg_user.get('home'))
-        user.create(shell=cfg_user['shell'])
-        user.add_groups(cfg_user['groups'])
-        if cfg_user.get('trizen'):
-            user.install_trizen()
-        if cfg_user.get('ohmyzsh'):
-            user.install_oh_myzsh()
-        if cfg_user.get('aur'):
-            user.install(cfg_user['aur'])
-        for command in cfg_user.get('commands', []):
-            if isinstance(command, list):
-                user.run(command)
-            elif isinstance(command, dict):
-                env = command.get('env')
-                cwd = command.get('cwd')
-                command = command['cmd']
-                user.run(command, env=env, cwd=cwd)
-            else:
-                raise TypeError(command)
-        user.passwd()
+    handle_users(arch, config.get('users', []))
 
     # configuring sudo
     sudo = config.get('sudo', {'present': True, 'targetpw': True, 'nopasswd': False})
