@@ -76,9 +76,10 @@ class ArchInstall():
         """
         assert isinstance(content, str)
         print(f'inserting into {filepath} at line {line_index}:\n{content}')
-        with open(os.path.join(self.mnt, filepath), 'a+') as fp:
+        with open(os.path.join(self.mnt, filepath), 'r+') as fp:
             file_content = fp.readlines()
             fp.truncate(0)
+            fp.seek(0)
             file_content.insert(line_index, content)
             fp.write('\n'.join(file_content))
 
