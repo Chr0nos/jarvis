@@ -1,7 +1,7 @@
 import os
 
-from .tools import Cd, ArchChroot, Chroot, CommandRunner
-from .mount import MountPoint
+from .runner import CommandRunner
+from .tools import Cd, ArchChroot, Chroot
 
 
 class ArchUser():
