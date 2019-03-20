@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 from .tools import ArchChroot
 from .exceptions import CommandFail
