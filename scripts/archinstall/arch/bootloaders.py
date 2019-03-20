@@ -7,12 +7,12 @@ from arch.tools import CommandRunner
 class BootLoader():
     device = None
     name = None
-    ai = None
+    runner = None
 
-    def __init__(self, ai, device=None):
-		assert isinstance(ai, ArchInstall)
+    def __init__(self, runner, device=None):
+		assert isinstance(runner, ArchInstall)
         self.device = device
-		self.ai = ai
+		self.runner = runner
 
     def install(self, **kwargs):
         raise NotImplementedError
@@ -37,29 +37,29 @@ class BootLoaderRefind(BootLoader):
 
     def install_alldrivers(self):
         # refind show error on --alldrivers ? okay :)
-        self.ai.run(['cp', '-vr',
+        self.runner.run(['cp', '-vr',
             '/usr/share/refind/drivers_x64',
             '/boot/efi/EFI/refind/drivers_x64'])
 
     def install(self, alldrivers=True, **kwargs):
-        assert self.ai.efi_capable, 'This system was not booted in uefi mode.'
-        mnt = self.ai.mnt
+        assert self.runner.efi_capable, 'This system was not booted in uefi mode.'
+        mnt = self.runner.mnt
         if not os.path.ismount(mnt + self.boot):
             raise(ConfigError('please create and mount /boot/efi (vfat)'))
 
         with ArchChroot(mnt):
-            self.ai.run(['mkdir', '-vp', '/boot/efi/EFI/refind'])
-            self.ai.pkg_install(['extra/refind-efi'])
+            self.runner.run(['mkdir', '-vp', '/boot/efi/EFI/refind'])
+            self.runner.pkg_install(['extra/refind-efi'])
             if alldrivers:
                 self.install_alldrivers()
 
         # launching the install from outside of the chroot (host system)
-        self.ai.run(['refind-install', '--root', mnt + self.boot])
+        self.runner.run(['refind-install', '--root', mnt + self.boot])
 
 	def add_entry(self):
         # TODO: check if this call is needed in a further test with vmware
         partition = self.get_partition_id(mnt + self.boot)
-        self.ai.efi_mkentry('rEFInd', self.efi, self.device, partition)
+        self.runner.efi_mkentry('rEFInd', self.efi, self.device, partition)
 
 
 class BootLoaderGrub(BootLoader):
@@ -67,10 +67,10 @@ class BootLoaderGrub(BootLoader):
 
     def install(self, **kwargs):
         target = kwargs.get('target', 'i386-pc')
-		assert target != 'x86_64-efi' or self.ai.efi_capable, 'This system was not booted in uefi mode.'
-        with ArchChroot(self.ai.mnt):
-            self.ai.pkg_install(['grub'] + ['community/os-prober'] if kwargs.get('os-prober') else [])
+		assert target != 'x86_64-efi' or self.runner.efi_capable, 'This system was not booted in uefi mode.'
+        with ArchChroot(self.runner.mnt):
+            self.runner.pkg_install(['grub'] + ['community/os-prober'] if kwargs.get('os-prober') else [])
             if not os.path.exists('/boot/grub'):
                 os.mkdir('/boot/grub')
-            self.ai.run(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
-            self.ai.run(['grub-install', '--target', target, self.device])
+            self.runner.run(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
+            self.runner.run(['grub-install', '--target', target, self.device])
