@@ -157,7 +157,7 @@ class ArchInstall():
             self.run(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
             self.run(['grub-install', '--target', target, device])
 
-    def install_refind(self, device, efi_path='/EFI/refind/refind_x64.efi', **kwargs):
+    def install_refind(self, device, efi_path='/EFI/refind/refind_x64.efi', alldrivers=True, **kwargs):
         if not os.path.ismount(self.mnt + '/boot/efi'):
             raise(ConfigError('please create and mount /boot/efi (vfat)'))
 
@@ -175,10 +175,11 @@ class ArchInstall():
         with ArchChroot(self.mnt):
             self.run(['mkdir', '-vp', '/boot/efi/EFI/refind'])
             self.pkg_install(['extra/refind-efi'])
-            # refind show error on --alldrivers ? okay :)
-            self.run(['cp', '-vr',
-                      '/usr/share/refind/drivers_x64',
-                      '/boot/efi/EFI/refind/drivers_x64'])
+            if alldrivers:
+                # refind show error on --alldrivers ? okay :)
+                self.run(['cp', '-vr',
+                        '/usr/share/refind/drivers_x64',
+                        '/boot/efi/EFI/refind/drivers_x64'])
         self.run(['refind-install', '--root', self.mnt + '/boot/efi'])
         if not os.path.exists(self.mnt + '/boot/efi' + efi_path):
             print(efi_path)
