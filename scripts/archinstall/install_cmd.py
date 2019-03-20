@@ -4,6 +4,9 @@ from arch.services import *
 
 import argparse
 
+# Note to Chr0nos on futur improvement: the arch package could use some asyncio feature 
+# to be easier to read and use.
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--hostname', help='the new machine hostname', default='localhost')

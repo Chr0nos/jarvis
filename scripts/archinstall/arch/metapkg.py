@@ -1,4 +1,5 @@
-
+# Are the font really necessary in BASE ?
+# And a lighter BASE and an ESSENTIAL could be better
 BASE = [
     'base', 'base-devel', 'networkmanager', 'htop', 'vim', 'net-tools',
     'pulseaudio', 'mpv', 'zsh', 'ttf-ubuntu-font-family',
@@ -17,6 +18,8 @@ EXTRA = [
     'tree', 'tmux'
 ]
 
+# A config and theme management classes for the DE could be very useful
+# The DE could even be classes like the services
 MATE = [
     'mate', 'mate-extra', 'mate-media', 'mate-power-manager', 'mate-menu'
 ]
@@ -27,6 +30,7 @@ I3 = ['i3-gaps', 'community/i3status', 'i3blocks', 'i3lock']
 GNOME = ['gnome']
 CINNAMON = ['community/cinnamon']
 
+# Only python ? Where is the DEVEL metapkg ?
 PYTHON = [
     'extra/python',
     'extra/python-pip',
