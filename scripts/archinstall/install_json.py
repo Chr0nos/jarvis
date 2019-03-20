@@ -26,7 +26,7 @@ def copy_form_host(arch, copy):
 
 def handle_users(arch, users):
     # creating and configuring users
-    for cfg_user in users):
+    for cfg_user in users:
         user = ArchUser(arch,
                         username=cfg_user['login'],
                         home=cfg_user.get('home'))
