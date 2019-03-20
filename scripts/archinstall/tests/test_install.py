@@ -24,17 +24,6 @@ def test_install_missing_hostname():
         arch = ArchInstall()
 
 
-def test_install_put(arch):
-    filepath = '/tmp/test'
-    if os.path.exists(filepath):
-        os.unlink(filepath)
-    test_content = 'test\ndata\nfor\fun\n\n'
-    arch.file_put(filepath, test_content)
-    with open(filepath, 'r') as fd:
-        assert fd.read() == test_content
-    os.unlink(filepath)
-
-
 @patch('os.chroot', side_effect=fake_chroot)
 def test_install_bootloader_grub(fc, fakearch):
     fakearch.install_bootloader('grub', device='/dev/sda')

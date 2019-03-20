@@ -1,6 +1,7 @@
 import os
 
-from .mount import ArchChroot, MountPoint
+from .tools import ArchChroot
+from .mount import MountPoint
 
 
 class BootLoader():

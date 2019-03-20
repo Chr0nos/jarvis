@@ -149,7 +149,7 @@ class ArchInstall(CommandRunner):
             grub.install(**kwargs)
         elif name == 'grub-efi':
             egrub = BootLoaderGrub(self, device)
-            egrub.install(target='x86_64-efi' **kwargs)
+            egrub.install(target='x86_64-efi', **kwargs)
         else:
             raise ValueError(name)
 
