@@ -8,6 +8,43 @@ from .exceptions import CommandFail, ConfigError
 from .mount import MountPoint
 from .metapkg import *
 
+class File():
+    def __init__(self, filepath):
+        self.filepath = filepath
+
+    def put(self, content):
+        print('writing into', self.filepath + ':')
+        print(content)
+        with open(self.filepath, 'w+') as fd:
+            fd.write(content)
+
+    def insert(self, content, line_index=0):
+        """
+        put "content" at the start of filepath
+        """
+        assert isinstance(content, str)
+        print(f'inserting into {self.filepath} at line {line_index}:\n{content}')
+        with open(self.filepath, 'r+') as fp:
+            file_content = fp.readlines()
+            fp.truncate(0)
+            fp.seek(0)
+            file_content.insert(line_index, content)
+            fp.write('\n'.join(file_content))
+
+    @staticmethod
+    def to_config(data, separator='=', prepend=''):
+        if isinstance(data, dict):
+            return '\n'.join(list(f'{key}{separator}{value}' for key, value in data.items()))
+        if isinstance(data, list):
+            return '\n'.join(list(f'{prepend}{elem}' for elem in data))
+        raise TypeError(data)
+
+
+class FileFromHost(FileOperations):
+    def __init__(self, filepath, mnt):
+        super().__init__(filepath)
+        self.filepath = os.path.join(mnt, filepath)
+
 
 class ArchInstall():
     def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8'):
@@ -68,26 +105,6 @@ class ArchInstall():
     def edit(self, filepath):
         self.run_in(['vim', filepath])
 
-    def file_put(self, filepath, content):
-        print('writing into', filepath + ':')
-        print(content)
-        filepath = os.path.join(self.mnt, filepath)
-        with open(filepath, 'w+') as fd:
-            fd.write(content)
-
-    def file_insert(self, filepath, content, line_index=0):
-        """
-        put "content" at the start of filepath
-        """
-        assert isinstance(content, str)
-        print(f'inserting into {filepath} at line {line_index}:\n{content}')
-        with open(os.path.join(self.mnt, filepath), 'r+') as fp:
-            file_content = fp.readlines()
-            fp.truncate(0)
-            fp.seek(0)
-            file_content.insert(line_index, content)
-            fp.write('\n'.join(file_content))
-
     def locale_genfile(self):
         """
         return the content of /etc/locale.gen file based on self.locales
@@ -98,30 +115,37 @@ class ArchInstall():
         return file_content
 
     def set_sudo_free(self, state):
+        wheel = FileFromHost('/etc/sudoers.d/wheel')
         if not state:
-            self.file_put('/etc/sudoers.d/wheel', '%wheel ALL=(ALL) ALL\n')
+            wheel.put('%wheel ALL=(ALL) ALL\n')
         else:
-            self.file_put('/etc/sudoers.d/wheel', '%wheel ALL=(ALL) NOPASSWD: ALL\n')
+            wheel.put('%wheel ALL=(ALL) NOPASSWD: ALL\n')
+
+    def setup(self, fstab, vconsole):
+        files_content = (
+            ('/etc/hostname', self.hostname + '\n'),
+            ('/etc/fstab', fstab),
+            ('/etc/locale.conf', File.to_config({'LC_CTYPE': self.lang, 'LANG': self.lang})),
+            ('/etc/locale.gen', self.locale_genfile()),
+            ('/etc/vconsole.conf', File.to_config(vconsole)),
+            ('/etc/resolv.conf', File.to_config(self.dns, prepend='nameserver ')),
+            ('/etc/sudoers.d/targetpw', 'Defaults targetpw\n')
+        )
+        for filepath, content in files_content:
+            FileFromHost(filepath, self.mnt).put(content)
+        self.set_sudo_free(True)
+
 
     def install(self, packages, custom_servers=None, vconsole={'KEYMAP': 'us'}):
         self.run(['pacstrap', self.mnt, 'base', 'archlinux-keyring'])
         fstab = self.run(['genfstab', '-t', 'UUID', self.mnt], True)
         if custom_servers:
-            self.file_insert(
-                filepath=os.path.join(self.mnt, '/etc/pacman.d/mirrorlist'),
-                content='\n'.join([f'Server {server}' for server in custom_servers]),
-                line_index=3)
+            mirrors = FileFromHost('/etc/pacman.d/mirrorlist', self.mnt)
+            mirrors.insert(File.to_config(custom_servers, prepend='Server '), line_index=3)
 
         with ArchChroot(self.mnt):
-            self.pkg_install(packages)
-            self.file_put('/etc/hostname', self.hostname + '\n')
-            self.file_put('/etc/fstab', fstab)
-            self.file_put('/etc/locale.conf', f'LC_CTYPE={self.lang}\nLANG={self.lang}\n')
-            self.file_put('/etc/locale.gen', self.locale_genfile())
-            self.file_put('/etc/vconsole.conf', '\n'.join(list(f'{key}={value}' for key, value in vconsole.items())))
-            self.file_put('/etc/resolv.conf', '\n'.join(list(f'nameserver {dns}' for dns in self.dns)))
-            self.set_sudo_free(True)
-            self.file_put('/etc/sudoers.d/targetpw', 'Defaults targetpw\n')
+            self.pkg_install(packages))
+            self.setup(fstab, vconsole)
             commands = (
                 # System has not been booted with systemd as init (PID 1). Can't operate.
                 # ['timedatectl', 'set-ntp', 'true'],

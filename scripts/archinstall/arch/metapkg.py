@@ -11,7 +11,10 @@ DEV = [
     'git',
     'htop',
     'vim',
-    'terminator'
+    'terminator',
+    'clang',
+    'gdb',
+    'valgrind'
 ]
 
 AUDIO = [
