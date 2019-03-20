@@ -71,6 +71,7 @@ class BootLoader():
 class BootLoaderRefind(BootLoader):
     name = 'refind'
     efi = '/EFI/refind/refind_x64.efi'
+    boot = '/boot/efi'
 
     def install_alldrivers(self):
         # refind show error on --alldrivers ? okay :)
@@ -81,7 +82,7 @@ class BootLoaderRefind(BootLoader):
     def install(self, alldrivers=True, **kwargs):
         assert self.ai.efi_capable, 'This system was not booted in uefi mode.'
         mnt = self.ai.mnt
-        if not os.path.ismount(mnt + '/boot/efi'):
+        if not os.path.ismount(mnt + self.boot):
             raise(ConfigError('please create and mount /boot/efi (vfat)'))
 
         with ArchChroot(mnt):
@@ -91,10 +92,10 @@ class BootLoaderRefind(BootLoader):
                 self.install_alldrivers()
 
         # launching the install from outside of the chroot (host system)
-        self.ai.run(['refind-install', '--root', mnt + '/boot/efi'])
+        self.ai.run(['refind-install', '--root', mnt + self.boot])
 
         # TODO: check if this call is needed in a further test with vmware
-        # partition = self.get_partition_id(mnt + '/boot/efi')
+        # partition = self.get_partition_id(mnt + self.boot)
         # self.ai.efi_mkentry('rEFInd', self.efi, device, partition)
 
 
