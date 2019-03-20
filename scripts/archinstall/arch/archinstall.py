@@ -47,7 +47,7 @@ class FileFromHost(FileOperations):
         self.filepath = os.path.join(mnt, filepath)
 
 
-class ArchInstall():
+class ArchInstall(CommandRunner):
     def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8'):
         """
         hostname: the machine hostname
@@ -56,9 +56,7 @@ class ArchInstall():
         lang: a valid lang locale
         pretent: Dont run or change anything, just show what will be done.
         """
-        if not os.path.exists(mnt):
-            raise ValueError('invalid mount point you morron: ' + mnt)
-        self.mnt = mnt
+        super().__init__(mnt)
         self.hostname = hostname
         self.lang = lang
         self.timezone = 'Europe/Paris'
@@ -83,28 +81,8 @@ class ArchInstall():
         # the class is unique by it's mount point: one install per mount_point
         return hash(self.mnt)
 
-    def run(self, command, capture=False, critical=True, **kwargs):
-        if kwargs.get('debug_run'):
-            del(kwargs['debug_run'])
-            print('running', ' '.join(command), kwargs)
-        if capture:
-            return subprocess.check_output(command, **kwargs).decode('utf-8')
-        ret = subprocess.run(command, **kwargs)
-        if ret.returncode != 0 and critical:
-            raise CommandFail(command)
-
-    def run_in(self, command, user=None, **kwargs):
-        with ArchChroot(self.mnt):
-            if not user:
-                return self.run(command, **kwargs)
-            assert isinstance(user, ArchUser)
-            return self.run(command, preexec_fn=user.demote(), **kwargs)
-
     def pkg_install(self, packages):
         self.run(['pacman', '-S', '--noconfirm'] + packages)
-
-    def edit(self, filepath):
-        self.run_in(['vim', filepath])
 
     def locale_genfile(self):
         """

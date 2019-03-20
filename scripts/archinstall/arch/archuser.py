@@ -1,13 +1,12 @@
 import os
 
-from .archinstall import ArchInstall
-from .tools import Cd, ArchChroot, Chroot
+from .tools import Cd, ArchChroot, Chroot, CommandRunner
 from .mount import MountPoint
 
 
 class ArchUser():
     def __init__(self, ai, username, home=None, uid=None, gid=None):
-        if not isinstance(ai, ArchInstall):
+        if not isinstance(ai, CommandRunner):
             raise ValueError(ai)
         self.username = username
         self.home = home or os.path.join('/home', username)
@@ -142,7 +141,7 @@ class ArchUser():
     @staticmethod
     def from_disk(login, ai):
         assert isinstance(login, str)
-        assert isinstance(ai, ArchInstall)
+        assert isinstance(ai, CommandRunner)
         for account in ArchUser.list():
             if account['user'] == login:
                 user = ArchUser(login, ai)

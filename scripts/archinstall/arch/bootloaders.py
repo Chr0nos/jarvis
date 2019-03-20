@@ -1,5 +1,6 @@
 import os
 from arch.mount import ArchChroot, MountPoint
+from arch.tools import CommandRunner
 
 
 class BootLoader():
@@ -8,6 +9,7 @@ class BootLoader():
     ai = None
 
     def __init__(self, ai, device=None):
+		assert isinstance(ai, CommandRunner)
         self.device = device
 
     def install(self, **kwargs):
@@ -52,9 +54,10 @@ class BootLoaderRefind(BootLoader):
         # launching the install from outside of the chroot (host system)
         self.ai.run(['refind-install', '--root', mnt + self.boot])
 
+	def add_entry(self):
         # TODO: check if this call is needed in a further test with vmware
-        # partition = self.get_partition_id(mnt + self.boot)
-        # self.ai.efi_mkentry('rEFInd', self.efi, device, partition)
+        partition = self.get_partition_id(mnt + self.boot)
+        self.ai.efi_mkentry('rEFInd', self.efi, self.device, partition)
 
 
 class BootLoaderGrub(BootLoader):
@@ -62,10 +65,10 @@ class BootLoaderGrub(BootLoader):
 
     def install(self, **kwargs):
         target = kwargs.get('target', 'i386-pc')
+		assert target != 'x86_64-efi' or self.ai.efi_capable, 'This system was not booted in uefi mode.'
         with ArchChroot(self.ai.mnt):
             self.ai.pkg_install(['grub'] + ['community/os-prober'] if kwargs.get('os-prober') else [])
             if not os.path.exists('/boot/grub'):
                 os.mkdir('/boot/grub')
             self.ai.run(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
             self.ai.run(['grub-install', '--target', target, self.device])
-
