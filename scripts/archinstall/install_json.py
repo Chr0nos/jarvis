@@ -84,7 +84,7 @@ def install_from_json(json_path):
     servers = config.get('pacman', {}).get('servers')
 
     arch = ArchInstall(hostname=config['hostname'], mnt=config.get('mnt', '/mnt'))
-    config.get('dns'):
+    if config.get('dns'):
         arch.dns = config['dns']
     services = ServicesManager(arch, *[srv() for srv in services_to_install])
     arch.install(

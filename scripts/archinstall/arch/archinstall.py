@@ -122,7 +122,7 @@ class ArchInstall(CommandRunner):
             mirrors.insert(File.to_config(custom_servers, prepend='Server '), line_index=3)
 
         with ArchChroot(self.mnt):
-            self.pkg_install(packages))
+            self.pkg_install(packages)
             self.setup(fstab, vconsole)
             commands = (
                 # System has not been booted with systemd as init (PID 1). Can't operate.
