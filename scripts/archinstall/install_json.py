@@ -73,16 +73,23 @@ def install_from_json(json_path):
         'XFCE': XFCE,
         'I3': I3,
         'CINNAMON': CINNAMON,
-        'KDE': KDE
+        'KDE': KDE,
+        'AUDIO': AUDIO,
+        'FONTS': FONTS,
+        'DEV': DEV
     }
     packages = []
     for meta in config.get('meta', []):
         packages.extend(metas[meta])
+    servers = config.get('pacman', {}).get('servers')
 
     arch = ArchInstall(hostname=config['hostname'], mnt=config.get('mnt', '/mnt'))
+    config.get('dns'):
+        arch.dns = config['dns']
     services = ServicesManager(arch, *[srv() for srv in services_to_install])
     arch.install(
-        packages + services.collect_packages() + config.get('packages', []))
+        packages + services.collect_packages() + config.get('packages', []),
+        custom_servers=servers)
     services.install()
 
     handle_users(arch, config.get('users', []))

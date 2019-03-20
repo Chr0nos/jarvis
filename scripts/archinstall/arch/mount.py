@@ -27,17 +27,9 @@ class MountPoint():
         return cmd + [self.device, self.dest]
 
     def mount(self):
-        def mktree(fullpath):
-            dirs = fullpath.split('/')
-            path = '/'
-            for d in dirs:
-                path = os.path.join(path, d)
-                if not os.path.exists(path):
-                    os.mkdir(path)
-
         print('mounting', self.dest)
         if not os.path.exists(self.dest):
-            mktree(self.dest)
+            os.makedirs(self.dest, exist_ok=True)
         ret = subprocess.run(self.get_cmd())
         assert ret.returncode == 0, ret.returncode
 
