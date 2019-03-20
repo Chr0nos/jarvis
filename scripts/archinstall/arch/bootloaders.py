@@ -39,7 +39,7 @@ class BootLoaderRefind(BootLoader):
         # refind show error on --alldrivers ? okay :)
         self.runner.run(['cp', '-vr',
             '/usr/share/refind/drivers_x64',
-            '/boot/efi/EFI/refind/drivers_x64'])
+            self.boot + '/EFI/refind/drivers_x64'])
 
     def install(self, alldrivers=True, **kwargs):
         assert self.runner.efi_capable, 'This system was not booted in uefi mode.'
@@ -48,7 +48,7 @@ class BootLoaderRefind(BootLoader):
             raise(ConfigError('please create and mount /boot/efi (vfat)'))
 
         with ArchChroot(mnt):
-            self.runner.run(['mkdir', '-vp', '/boot/efi/EFI/refind'])
+            self.runner.run(['mkdir', '-vp', self.boot + '/EFI/refind'])
             self.runner.pkg_install(['extra/refind-efi'])
             if alldrivers:
                 self.install_alldrivers()
