@@ -121,6 +121,7 @@ class ArchInstall(CommandRunner):
             mirrors.insert(File.to_config(custom_servers, prepend='Server '), line_index=3)
 
         with ArchChroot(self.mnt):
+            self.run(['pacman', '-Sy'])
             self.pkg_install(packages)
             self.setup(fstab, vconsole)
             commands = (
