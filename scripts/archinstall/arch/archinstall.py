@@ -88,7 +88,7 @@ class BootLoaderRefind(BootLoader):
             self.ai.run(['mkdir', '-vp', '/boot/efi/EFI/refind'])
             self.ai.pkg_install(['extra/refind-efi'])
             if alldrivers:
-                install_alldrivers()
+                self.install_alldrivers()
 
         # launching the install from outside of the chroot (host system)
         self.ai.run(['refind-install', '--root', mnt + '/boot/efi'])
