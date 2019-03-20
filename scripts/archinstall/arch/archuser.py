@@ -6,8 +6,8 @@ from .tools import Cd, ArchChroot, Chroot
 
 class ArchUser():
     def __init__(self, runner, username, home=None, uid=None, gid=None):
-        if not isinstance(ai, CommandRunner):
-            raise ValueError(ai)
+        if not isinstance(runner, CommandRunner):
+            raise ValueError(runner)
         self.username = username
         self.home = home or os.path.join('/home', username)
         self.runner = runner

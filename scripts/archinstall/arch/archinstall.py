@@ -3,9 +3,8 @@ import subprocess
 import os
 
 from .services import *
-from .tools import Cd, ArchChroot
-from .exceptions import CommandFail, ConfigError
-from .mount import MountPoint
+from .tools import ArchChroot
+from .runner import CommandRunner
 from .metapkg import *
 from .bootloaders import BootLoaderRefind, BootLoaderGrub
 
@@ -41,7 +40,7 @@ class File():
         raise TypeError(data)
 
 
-class FileFromHost(FileOperations):
+class FileFromHost(File):
     def __init__(self, filepath, mnt):
         super().__init__(filepath)
         self.filepath = os.path.join(mnt, filepath)

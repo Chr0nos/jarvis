@@ -1,5 +1,7 @@
 import os
+
 from .tools import ArchChroot
+from .exceptions import CommandFail
 
 class CommandRunner():
     def __init__(self, mnt):
