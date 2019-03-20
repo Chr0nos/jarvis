@@ -72,7 +72,6 @@ class ArchInstall(CommandRunner):
             '1.1.1.1',
             '1.0.0.1'
         ]
-        self.efi_capable = os.path.exists('/sys/firmware/efi')
 
     def __str__(self):
         print(f'Archlinux Installer: {self.mnt} lang: {self.lang} host: {self.hostname}')

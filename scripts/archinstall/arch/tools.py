@@ -77,6 +77,7 @@ class CommandRunner():
         if not os.path.exists(mnt):
             raise ValueError('invalid mount point you morron: ' + mnt)
         self.mnt = mnt
+        self.efi_capable = os.path.exists('/sys/firmware/efi')
 
     def run(self, command, capture=False, critical=True, **kwargs):
         if kwargs.get('debug_run'):

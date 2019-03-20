@@ -1,4 +1,5 @@
 import os
+from arch import ArchInstall
 from arch.mount import ArchChroot, MountPoint
 from arch.tools import CommandRunner
 
@@ -9,8 +10,9 @@ class BootLoader():
     ai = None
 
     def __init__(self, ai, device=None):
-		assert isinstance(ai, CommandRunner)
+		assert isinstance(ai, ArchInstall)
         self.device = device
+		self.ai = ai
 
     def install(self, **kwargs):
         raise NotImplementedError
