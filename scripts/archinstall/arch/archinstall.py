@@ -46,6 +46,71 @@ class FileFromHost(FileOperations):
         self.filepath = os.path.join(mnt, filepath)
 
 
+class BootLoader():
+    device = None
+    name = None
+    ai = None
+
+    def __init__(self, ai, device=None):
+        self.device = device
+
+    def install(self, **kwargs):
+        raise NotImplementedError
+
+    def get_partition_id(path):
+        """
+        returns the partition id of a mount point.
+        """
+        for mount in MountPoint.list():
+            if mount['mnt'] == path:
+                partition = int(mount['device'][-1])
+                return partition
+        raise ValueError(path)
+
+
+class BootLoaderRefind(BootLoader):
+    name = 'refind'
+    efi = '/EFI/refind/refind_x64.efi'
+
+    def install_alldrivers(self):
+        # refind show error on --alldrivers ? okay :)
+        self.ai.run(['cp', '-vr',
+            '/usr/share/refind/drivers_x64',
+            '/boot/efi/EFI/refind/drivers_x64'])
+
+    def install(self, alldrivers=True, **kwargs):
+        assert self.ai.efi_capable, 'This system was not booted in uefi mode.'
+        mnt = self.ai.mnt
+        if not os.path.ismount(mnt + '/boot/efi'):
+            raise(ConfigError('please create and mount /boot/efi (vfat)'))
+
+        with ArchChroot(mnt):
+            self.ai.run(['mkdir', '-vp', '/boot/efi/EFI/refind'])
+            self.ai.pkg_install(['extra/refind-efi'])
+            if alldrivers:
+                install_alldrivers()
+
+        # launching the install from outside of the chroot (host system)
+        self.ai.run(['refind-install', '--root', mnt + '/boot/efi'])
+
+        # TODO: check if this call is needed in a further test with vmware
+        # partition = self.get_partition_id(mnt + '/boot/efi')
+        # self.ai.efi_mkentry('rEFInd', self.efi, device, partition)
+
+
+class BootLoaderGrub(BootLoader):
+    name = 'grub'
+
+    def install(self, **kwargs):
+        target = kwargs.get('target', 'i386-pc')
+        with ArchChroot(self.ai.mnt):
+            self.ai.pkg_install(['grub'] + ['community/os-prober'] if kwargs.get('os-prober') else [])
+            if not os.path.exists('/boot/grub'):
+                os.mkdir('/boot/grub')
+            self.ai.run(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
+            self.ai.run(['grub-install', '--target', target, self.device])
+
+
 class ArchInstall():
     def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8'):
         """
@@ -165,51 +230,16 @@ class ArchInstall():
 
     def install_bootloader(self, name, device, **kwargs):
         if name == 'refind':
-            self.install_refind(device)
+            refind = BootLoaderRefind(self, device)
+            refind.install(alldrivers=kwargs.get('alldrivers', True))
         elif name == 'grub':
-            self.install_grub(device, **kwargs)
+            grub = BootLoaderGrub(self, device)
+            grub.install(**kwargs)
         elif name == 'grub-efi':
-            self.install_grub(device, target='x86_64-efi', **kwargs)
+            egrub = BootLoaderGrub(self, device)
+            egrub.install(target='x86_64-efi' **kwargs)
         else:
             raise ValueError(name)
-
-    def install_grub(self, device, target='i386-pc', **kwargs):
-        with ArchChroot(self.mnt):
-            self.pkg_install(['grub'] + ['community/os-prober'] if kwargs.get('os-prober') else [])
-            if not os.path.exists('/boot/grub'):
-                os.mkdir('/boot/grub')
-            self.run(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
-            self.run(['grub-install', '--target', target, device])
-
-    def install_refind(self, device, efi_path='/EFI/refind/refind_x64.efi', alldrivers=True, **kwargs):
-        if not os.path.ismount(self.mnt + '/boot/efi'):
-            raise(ConfigError('please create and mount /boot/efi (vfat)'))
-
-        def partition_id(mount_path):
-            """
-            returns the partition id of a mount point.
-            """
-            for mount in MountPoint.list():
-                if mount['mnt'] == mount_path:
-                    partition = int(mount['device'][-1])
-                    return partition
-            raise ValueError(mount_path)
-
-        partition = partition_id(self.mnt + '/boot/efi')
-        with ArchChroot(self.mnt):
-            self.run(['mkdir', '-vp', '/boot/efi/EFI/refind'])
-            self.pkg_install(['extra/refind-efi'])
-            if alldrivers:
-                # refind show error on --alldrivers ? okay :)
-                self.run(['cp', '-vr',
-                        '/usr/share/refind/drivers_x64',
-                        '/boot/efi/EFI/refind/drivers_x64'])
-        self.run(['refind-install', '--root', self.mnt + '/boot/efi'])
-        if not os.path.exists(self.mnt + '/boot/efi' + efi_path):
-            print(efi_path)
-            raise ConfigError('unable to found the efi path on /boot/efi disk')
-        # TODO: check if this call is needed in a further test with vmware
-        # self.efi_mkentry('rEFInd', efi_path, device, partition)
 
     def efi_mkentry(self, label, efi_path, device, partition, efi_mnt=None):
         """
