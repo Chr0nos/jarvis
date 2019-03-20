@@ -31,6 +31,11 @@ class ArchInstall():
             ('en_US.UTF-8', 'UTF-8'),
             ('en_US', 'ISO-8859-1')
         ]
+        # cloudflares dns by default
+        self.dns = [
+            '1.1.1.1',
+            '1.0.0.1'
+        ]
         self.efi_capable = os.path.exists('/sys/firmware/efi')
 
     def __str__(self):
@@ -40,14 +45,14 @@ class ArchInstall():
         # the class is unique by it's mount point: one install per mount_point
         return hash(self.mnt)
 
-    def run(self, command, capture=False, **kwargs):
+    def run(self, command, capture=False, critical=True, **kwargs):
         if kwargs.get('debug_run'):
             del(kwargs['debug_run'])
             print('running', ' '.join(command), kwargs)
         if capture:
             return subprocess.check_output(command, **kwargs).decode('utf-8')
         ret = subprocess.run(command, **kwargs)
-        if ret.returncode != 0:
+        if ret.returncode != 0 and critical:
             raise CommandFail(command)
 
     def run_in(self, command, user=None, **kwargs):
@@ -98,7 +103,7 @@ class ArchInstall():
         else:
             self.file_put('/etc/sudoers.d/wheel', '%wheel ALL=(ALL) NOPASSWD: ALL\n')
 
-    def install(self, packages, custom_servers=None):
+    def install(self, packages, custom_servers=None, vconsole={'KEYMAP': 'us'}):
         self.run(['pacstrap', self.mnt, 'base', 'archlinux-keyring'])
         fstab = self.run(['genfstab', '-t', 'UUID', self.mnt], True)
         if custom_servers:
@@ -113,7 +118,8 @@ class ArchInstall():
             self.file_put('/etc/fstab', fstab)
             self.file_put('/etc/locale.conf', f'LC_CTYPE={self.lang}\nLANG={self.lang}\n')
             self.file_put('/etc/locale.gen', self.locale_genfile())
-            self.file_put('/etc/resolv.conf', 'nameserver 1.1.1.1\nnameserver 1.0.0.1\n')
+            self.file_put('/etc/vconsole.conf', '\n'.join(list(f'{key}={value}' for key, value in vconsole.items())))
+            self.file_put('/etc/resolv.conf', '\n'.join(list(f'nameserver {dns}' for dns in self.dns)))
             self.set_sudo_free(True)
             self.file_put('/etc/sudoers.d/targetpw', 'Defaults targetpw\n')
             commands = (
@@ -145,7 +151,7 @@ class ArchInstall():
 
     def install_grub(self, device, target='i386-pc', **kwargs):
         with ArchChroot(self.mnt):
-            self.pkg_install(['grub'])
+            self.pkg_install(['grub'] + ['community/os-prober'] if kwargs.get('os-prober') else [])
             if not os.path.exists('/boot/grub'):
                 os.mkdir('/boot/grub')
             self.run(['grub-mkconfig', '-o', '/boot/grub/grub.cfg'])
@@ -177,9 +183,23 @@ class ArchInstall():
         if not os.path.exists(self.mnt + '/boot/efi' + efi_path):
             print(efi_path)
             raise ConfigError('unable to found the efi path on /boot/efi disk')
+        # TODO: check if this call is needed in a further test with vmware
+        # self.efi_mkentry('rEFInd', efi_path, device, partition)
+
+    def efi_mkentry(self, label, efi_path, device, partition, efi_mnt=None):
+        """
+        create a new uefi entry into the bios
+        also checks thats the provided informations are correct.
+        """
+        if not efi_mnt:
+            efi_mnt = self.mnt + '/boot/efi'
+        assert os.path.exists(efi_mnt + efi_path), '.efi file not found'
+        assert os.path.exists(device), 'device not found'
+        assert isinstance(partition, int)
+        assert os.path.exists(device + partition), 'partition not found'
         self.run([
             'efibootmgr', '-c',
-            '-L', 'rEFInd',
+            '-L', label,
             '-l', efi_path,
             '-d', device,
             '-p', str(partition),

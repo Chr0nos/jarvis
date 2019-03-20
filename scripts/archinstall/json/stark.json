@@ -7,7 +7,7 @@
 	"packages": [
 		"community/deepin-icon-theme"
 	],
-	"meta": ["MATE", "PYTHON", "EXTRA", "BASE"],
+	"meta": ["MATE", "PYTHON", "EXTRA", "BASE", "AUDIO", "FONTS"],
 	"services": [
 		"cups", "iptables", "docker", "acpid", "xorg", "lightdm",
 		"mlocate", "fail2ban", "gpm", "networkmanager", "sshd", "udisks2",

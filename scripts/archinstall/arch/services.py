@@ -227,3 +227,21 @@ class BlueTooth(Service):
     ]
     service = 'bluetooth.service'
     desc = 'bluetooth support'
+
+
+class MariaDB(Service):
+    name = 'mariadb'
+    packages = ['extra/mariadb']
+    service = 'mariadb.service'
+    # Need to be initialised with :
+    # mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
+    # before been launched, could be done with args for the service
+    enable = False
+    desc = 'mysql database'
+
+
+class Redis(Service):
+    name = 'redis'
+    packages = ['community/redis']
+    service = 'redis.service'
+    desc = 'cache/key-value database'
