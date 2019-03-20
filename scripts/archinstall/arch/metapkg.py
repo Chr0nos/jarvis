@@ -37,6 +37,8 @@ FONTS = [
     'ttf-freefont',
     'ttf-liberation',
     'otf-font-awesome',
+	'ttf-croscore',
+    'ttf-droid'
 ]
 
 MATE = [
