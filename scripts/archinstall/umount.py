@@ -3,5 +3,5 @@
 from arch.tools import ArchChroot
 
 if __name__ == "__main__":
-    with ArchChroot('/mnt', undind=True):
+    with ArchChroot('/mnt', unbind=True):
         print('unmounting all arch-chroot binds')
