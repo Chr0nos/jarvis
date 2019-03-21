@@ -154,24 +154,6 @@ class ArchInstall(CommandRunner):
         else:
             raise ValueError(name)
 
-    def efi_mkentry(self, label, efi_path, device, partition, efi_mnt=None):
-        """
-        create a new uefi entry into the bios
-        also checks thats the provided informations are correct.
-        """
-        if not efi_mnt:
-            efi_mnt = self.mnt + '/boot/efi'
-        assert os.path.exists(efi_mnt + efi_path), '.efi file not found'
-        assert os.path.exists(device), 'device not found'
-        assert isinstance(partition, int)
-        assert os.path.exists(device + partition), 'partition not found'
-        self.run([
-            'efibootmgr', '-c',
-            '-L', label,
-            '-l', efi_path,
-            '-d', device,
-            '-p', str(partition),
-        ])
 
     def mount(self, partition, mount_moint):
         self.run(['mount', partition, mount_moint])

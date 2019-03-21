@@ -29,7 +29,31 @@ class BootLoader():
 		raise ValueError(path)
 
 
-class BootLoaderRefind(BootLoader):
+class BootLoaderEfi(BootLoader):
+    efi = None
+    boot = '/boot/efi'
+
+    def mkentry(self, label, partition):
+        """
+        create a new uefi entry into the bios
+        also checks thats the provided informations are correct.
+        """
+        assert self.efi
+        efi_mnt = self.mnt + self.boot
+        assert os.path.exists(efi_mnt + self.efi), '.efi file not found'
+        assert os.path.exists(self.device), 'device not found'
+        assert isinstance(partition, int)
+        assert os.path.exists(device + partition), 'partition not found'
+        self.run([
+            'efibootmgr', '-c',
+            '-L', label,
+            '-l', self.efi,
+            '-d', self.device,
+            '-p', str(partition),
+        ])
+
+
+class BootLoaderRefind(BootLoaderEfi):
 	name = 'refind'
 	efi = '/EFI/refind/refind_x64.efi'
 	boot = '/boot/efi'
@@ -58,7 +82,7 @@ class BootLoaderRefind(BootLoader):
 	def add_entry(self):
 		# TODO: check if this call is needed in a further test with vmware
 		partition = self.get_partition_id(mnt + self.boot)
-		self.runner.efi_mkentry('rEFInd', self.efi, self.device, partition)
+        self.mkentry('rEFInd', partition)
 
 
 class BootLoaderGrub(BootLoader):
