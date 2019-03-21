@@ -26,7 +26,7 @@ def copy_form_host(arch, copy):
 
 def handle_users(arch, users):
     # creating and configuring users
-    for cfg_user in users):
+    for cfg_user in users:
         user = ArchUser(arch,
                         username=cfg_user['login'],
                         home=cfg_user.get('home'))
@@ -73,7 +73,10 @@ def install_from_json(json_path):
         'XFCE': XFCE,
         'I3': I3,
         'CINNAMON': CINNAMON,
-        'KDE': KDE
+        'KDE': KDE,
+        'AUDIO': AUDIO,
+        'FONTS': FONTS,
+        'DEV': DEV
     }
     packages = []
     for meta in config.get('meta', []):
@@ -81,6 +84,8 @@ def install_from_json(json_path):
     servers = config.get('pacman', {}).get('servers')
 
     arch = ArchInstall(hostname=config['hostname'], mnt=config.get('mnt', '/mnt'))
+    if config.get('dns'):
+        arch.dns = config['dns']
     services = ServicesManager(arch, *[srv() for srv in services_to_install])
     arch.install(
         packages + services.collect_packages() + config.get('packages', []),

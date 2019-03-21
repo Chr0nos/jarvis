@@ -1,21 +1,47 @@
-# Are the font really necessary in BASE ?
 # And a lighter BASE and an ESSENTIAL could be better
 BASE = [
     'base', 'base-devel', 'networkmanager', 'htop', 'vim', 'net-tools',
-    'pulseaudio', 'mpv', 'zsh', 'ttf-ubuntu-font-family',
-    'terminator', 'fish', 'openssh', 'openssl', 'ttf-liberation',
-    'ttf-dejavu', 'extra/pulseaudio-alsa', 'ttf-freefont', 'otf-font-awesome',
+    'zsh', 'terminator', 'fish', 'openssh', 'openssl',
     'gnome-keyring', 'hdparm', 'idle3-tools', 'iw',
-    'pavucontrol', 'gparted', 'ntfs-3g', 'exfat-utils', 'sshfs',
-    'ffmpegthumbnailer', 'mdadm', 'wget', 'git', 'archlinux-keyring'
+    'gparted', 'ntfs-3g', 'exfat-utils', 'sshfs',
+    'ffmpegthumbnailer', 'mdadm', 'wget', 'git'
+]
+
+DEV = [
+    'git',
+    'htop',
+    'vim',
+    'terminator',
+    'clang',
+    'gdb',
+    'valgrind'
+]
+
+AUDIO = [
+    'pulseaudio',
+    'extra/pulseaudio-alsa',
+    'pavucontrol'
 ]
 
 EXTRA = [
     'extra/adwaita-icon-theme',
     'linux-headers',
-    'firefox', 'extra/firefox-i18n-fr', 'community/firefox-adblock-plus',
+    'firefox',
+    'extra/firefox-i18n-fr',
+    'community/firefox-adblock-plus',
     'community/mtpfs',
-    'tree', 'tmux'
+    'tree',
+    'tmux'
+]
+
+FONTS = [
+    'ttf-ubuntu-font-family',
+    'ttf-dejavu',
+    'ttf-freefont',
+    'ttf-liberation',
+    'otf-font-awesome',
+	'ttf-croscore',
+    'ttf-droid'
 ]
 
 # A config and theme management classes for the DE could be very useful
@@ -37,4 +63,4 @@ PYTHON = [
     'community/ipython'
 ]
 
-DEFAULT = BASE + MATE + EXTRA + PYTHON
+DEFAULT = BASE + AUDIO + FONTS + MATE + EXTRA + PYTHON
