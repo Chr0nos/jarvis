@@ -114,7 +114,7 @@ class ArchInstall(CommandRunner):
 
 
     def install(self, packages, custom_servers=None, vconsole={'KEYMAP': 'us'}):
-        self.run(['pacstrap', self.mnt, 'base', 'archlinux-keyring', 'sudo'])
+        self.run(['pacstrap', self.mnt, 'base', 'base-devel', 'archlinux-keyring', 'sudo'])
         fstab = self.run(['genfstab', '-t', 'UUID', self.mnt], True)
         if custom_servers:
             mirrors = FileFromHost('/etc/pacman.d/mirrorlist', self.mnt)
