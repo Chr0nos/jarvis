@@ -95,7 +95,7 @@ class ArchUser():
             ],
             cwd=self.home)
         self.run(['pwd'], cwd=trizen_path)
-        self.run(['makepkg', '-si', '--noconfirm'], cwd=trizen_path)
+        self.run(['makepkg', '-sic', '--noconfirm'], cwd=trizen_path)
         self.run(['trizen', '-Sy'])
         self.run(['rm', '-rf', trizen_path])
 
