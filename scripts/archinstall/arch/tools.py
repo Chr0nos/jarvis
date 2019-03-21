@@ -51,7 +51,7 @@ class ArchChroot(Chroot):
     def stop(self):
         super().stop()
         if self.unbind:
-            for bind in self.mounts:
+            for bind in reversed(self.mounts):
                 bind.unmount()
 
 
