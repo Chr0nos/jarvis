@@ -92,7 +92,7 @@ class ArchInstall(CommandRunner):
         return file_content
 
     def set_sudo_free(self, state):
-        wheel = FileFromHost('/etc/sudoers.d/wheel')
+        wheel = FileFromHost('/etc/sudoers.d/wheel', self.mnt)
         if not state:
             wheel.put('%wheel ALL=(ALL) ALL\n')
         else:
@@ -114,16 +114,16 @@ class ArchInstall(CommandRunner):
 
 
     def install(self, packages, custom_servers=None, vconsole={'KEYMAP': 'us'}):
-        self.run(['pacstrap', self.mnt, 'base', 'archlinux-keyring'])
+        self.run(['pacstrap', self.mnt, 'base', 'archlinux-keyring', 'sudo'])
         fstab = self.run(['genfstab', '-t', 'UUID', self.mnt], True)
         if custom_servers:
             mirrors = FileFromHost('/etc/pacman.d/mirrorlist', self.mnt)
             mirrors.insert(File.to_config(custom_servers, prepend='Server '), line_index=3)
 
         with ArchChroot(self.mnt):
+            self.setup(fstab, vconsole)
             self.run(['pacman', '-Sy'])
             self.pkg_install(packages)
-            self.setup(fstab, vconsole)
             commands = (
                 # System has not been booted with systemd as init (PID 1). Can't operate.
                 # ['timedatectl', 'set-ntp', 'true'],
