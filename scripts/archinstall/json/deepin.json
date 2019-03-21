@@ -5,9 +5,19 @@
 		"name": "refind"
 	},
 	"pacman": {
+		"branchs": [
+			"core",
+			"extra",
+			"community",
+			"community-testing",
+			"multilib",
+			"multilib-testing",
+			"testing"
+		],
 		"servers": [
 			"http://192.168.2.3:8080"
-		]
+		],
+		"color": true
 	},
 	"packages": [
 		"fish",
