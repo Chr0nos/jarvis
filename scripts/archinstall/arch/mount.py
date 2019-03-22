@@ -36,6 +36,7 @@ class MountPoint():
     def unmount(self):
         if not self.is_mount:
             return
+        print('unmounting ', self.dest)
         ret = subprocess.run(['umount', self.dest])
         assert ret.returncode == 0, ret
 
