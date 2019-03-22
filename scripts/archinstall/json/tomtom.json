@@ -1,0 +1,44 @@
+{
+	"mnt": "/mnt",
+	"hostname": "minitom",
+	"loader": {
+		"name": "refind"
+	},
+	"packages": [
+		"zsh",
+		"fish",
+		"gvfs-mtp",
+		"gvfs-gphoto2",
+		"transmission-gtk",
+		"extra/firefox"
+	],
+	"meta": ["EXTRA", "BASE", "AUDIO", "FONTS", "MATE"],
+	"services": [
+		"cups", "iptables", "acpid", "xorg", "lightdm",
+		"mlocate", "fail2ban", "gpm", "networkmanager", "udisks2",
+		"bluetooth", "sshd"
+	],
+	"users": [
+		{
+			"login": "tomtom",
+			"home": "/home/tomtom",
+			"groups": [
+				"audio", "video", "lp", "wheel", "scanner", "render", "input", "games"
+			],
+			"shell": "/bin/zsh"
+		}
+	],
+	"sudo": {
+		"present": true,
+		"targetpw": false,
+		"nopasswd": true
+	},
+	"copy": [
+		{
+			"src": "../../dotfiles/49-passwd_global.rules",
+			"dst": "/etc/polkit-1/rules.d/",
+			"user": "root",
+			"perms": "600"
+		}
+	]
+}
