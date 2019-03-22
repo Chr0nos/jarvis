@@ -10,7 +10,8 @@
 		"gvfs-mtp",
 		"gvfs-gphoto2",
 		"transmission-gtk",
-		"extra/firefox"
+		"extra/firefox",
+		"mpv"
 	],
 	"meta": ["EXTRA", "BASE", "AUDIO", "FONTS", "MATE"],
 	"services": [
