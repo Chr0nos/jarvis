@@ -2,7 +2,7 @@ import os
 
 from .tools import ArchChroot
 from .mount import MountPoint
-
+from .exceptions import ConfigError
 
 class BootLoader():
 	device = None
