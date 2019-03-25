@@ -22,7 +22,7 @@ class File():
         """
         put "content" at the start of filepath
         """
-        assert isinstance(content, str)
+        assert isinstance(content, str), type(content)
         print(f'inserting into {self.filepath} at line {line_index}:\n{content}')
         with open(self.filepath, 'r+') as fp:
             file_content = fp.readlines()

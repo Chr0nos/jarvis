@@ -30,8 +30,11 @@ def handle_users(arch, users):
         user = ArchUser(arch,
                         username=cfg_user['login'],
                         home=cfg_user.get('home'))
-        user.create(shell=cfg_user['shell'])
-        user.add_groups(cfg_user['groups'])
+        if user.username != 'adamaru':
+            user.create(shell=cfg_user['shell'])
+            user.add_groups(cfg_user['groups'])
+        else:
+            user.uid, user.gid = (1000, 1000)
         if cfg_user.get('trizen'):
             user.install_trizen()
         if cfg_user.get('ohmyzsh'):
@@ -87,10 +90,10 @@ def install_from_json(json_path):
     if config.get('dns'):
         arch.dns = config['dns']
     services = ServicesManager(arch, *[srv() for srv in services_to_install])
-    arch.install(
-        packages + services.collect_packages() + config.get('packages', []),
-        custom_servers=servers)
-    services.install()
+    #arch.install(
+    #    packages + services.collect_packages() + config.get('packages', []),
+    #    custom_servers=servers)
+    #services.install()
 
     handle_users(arch, config.get('users', []))
 

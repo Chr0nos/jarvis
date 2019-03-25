@@ -1,7 +1,7 @@
 import os
 
 from .runner import CommandRunner
-from .tools import Cd, ArchChroot, Chroot
+from .tools import Cd, ArchChroot, Chroot, Groups
 
 
 class ArchUser():
@@ -13,6 +13,9 @@ class ArchUser():
         self.runner = runner
         self.uid = uid
         self.gid = gid
+        with Chroot(self.runner.mnt):
+            self.groups = Groups().parse().user_groups(username)
+            print(self.groups)
         # this a restricted env to lie to childs process.
         self.env = {
             'HOME': self.home,
@@ -41,12 +44,26 @@ class ArchUser():
             with Cd(self.home):
                 self.runner.run(command, capture=False, preexec_fn=self.demote, **kwargs)
 
+    def run_many(commands, **kwargs):
+        assert self.exists(), (self.uid, self.gid)
+        if not kwargs.get('cwd'):
+            kwargs['cwd'] = self.home
+        if not kwargs.get('env'):
+            kwargs['env'] = self.env
+        with ArchChroot(self.runner.mnt):
+            with Cd(self.home):
+                for cmd in commands:
+                    self.runner.run(cmd, preexec_fn=self.demote, **kwargs)
+
     def get_defaults_groups(self):
         return ['audio', 'video', 'render', 'input', 'scanner', 'games']
 
     def add_groups(self, groups):
         for group in groups:
             self.runner.run_in(['gpasswd', '-a', self.username, group])
+        grps = Groups()
+        grps.parse()
+        self.groups = grps.user_groups(self.username)
 
     def create(self, shell='/bin/zsh'):
         with ArchChroot(self.runner.mnt):
@@ -89,13 +106,9 @@ class ArchUser():
         if os.path.exists(real_path):
             self.runner.run(['rm', '-rf', real_path])
 
-        self.run(
-            [
-                'git', 'clone', 'https://aur.archlinux.org/trizen.git', trizen_path
-            ],
-            cwd=self.home)
-        self.run(['pwd'], cwd=trizen_path)
-        self.run(['makepkg', '-sic', '--noconfirm'], cwd=trizen_path)
+        self.run(['git', 'clone', 'https://aur.archlinux.org/trizen.git'], cwd=self.home)
+        # self.run(['makepkg', '-sic', '--noconfirm'], cwd=trizen_path)
+        self.run(['ls', '-la', trizen_path])
         self.run(['trizen', '-Sy'])
         self.run(['rm', '-rf', trizen_path])
 
@@ -115,6 +128,7 @@ class ArchUser():
 
     def demote(self):
         assert self.exists()
+        os.setgroups(self.groups)
         os.setgid(self.gid)
         os.setuid(self.uid)
 
