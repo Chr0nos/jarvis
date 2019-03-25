@@ -128,7 +128,8 @@ class ArchUser():
 
     def demote(self):
         assert self.exists()
-        os.setgroups(self.groups)
+        if self.groups:
+            os.setgroups(self.groups)
         os.setgid(self.gid)
         os.setuid(self.uid)
 
