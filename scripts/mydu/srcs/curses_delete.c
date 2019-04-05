@@ -87,7 +87,7 @@ size_t					curses_delete(struct curses_window *win, struct node *node)
 		.deleted_size = 0
 	};
 	pthread_create(&deletion_thread, NULL, &delete_task, &task);
-	curses_centerfrom_parent(&wait, WAIT_WINDOW_HEIGH, WAIT_WINDOW_WIDTH);
+	curses_centerfrom_parent(&wait, WAIT_WINDOW_WIDTH, WAIT_WINDOW_HEIGH);
 	curses_new_window(&wait);
 	return (task.deleted_items);
 }
