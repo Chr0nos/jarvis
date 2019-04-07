@@ -1,0 +1,9 @@
+[Service]
+ExecStart=/usr/bin/live-modprober.py
+Type=simple
+
+[Unit]
+Desription=My live modprober from command line arguments.
+
+[Install]
+WantedBy=multi-user.target
