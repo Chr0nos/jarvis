@@ -44,10 +44,7 @@ class Service():
         return hash(self.name)
 
     def check(self):
-        """
-        """
-        if not self.ai:
-            raise ConfigError('you must set self.ai before using this service')
+        assert self.ai, 'you must set self.ai before using this service'
 
     def install(self):
         if not self.packages:
@@ -92,14 +89,6 @@ class Xorg(Service):
 
     @staticmethod
     def get_driver_packages():
-        # 'xf86-video-nouveau',
-        # 'extra/nvidia-dkms', 'extra/nvidia-settings',
-        # 'extra/xf86-video-vesa',
-        # 'extra/xf86-video-intel',
-        # 'extra/xf86-video-ati',
-        # 'extra/xf86-video-amdgpu',
-        # 'extra/xf86-video-vmware',
-
         raw = subprocess.run(['lspci'], stdout=subprocess.PIPE)
         out = raw.stdout.decode('utf-8')
         for line in out.split('\n'):

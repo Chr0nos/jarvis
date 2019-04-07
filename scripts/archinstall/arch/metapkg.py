@@ -66,12 +66,12 @@ META = {
     'default': BASE + AUDIO + FONTS + MATE + EXTRA + PYTHON,
     'dev': DEV,
     'cinnamon': CINNAMON,
-    'extra' EXTRA,
+    'extra': EXTRA,
     'fonts': FONTS,
     'gnome': GNOME,
     'i3': I3,
     'kde': KDE,
-    'mate': MATE
+    'mate': MATE,
     'python': PYTHON,
     'xfce': XFCE,
 }

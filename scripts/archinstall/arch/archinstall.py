@@ -2,10 +2,8 @@
 import subprocess
 import os
 
-from .services import *
 from .tools import ArchChroot
 from .runner import CommandRunner
-from .metapkg import *
 from .bootloaders import BootLoaderRefind, BootLoaderGrub
 
 class File():
