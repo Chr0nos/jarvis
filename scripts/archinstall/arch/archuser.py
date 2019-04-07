@@ -1,19 +1,21 @@
 import os
 
-from .archinstall import ArchInstall
-from .tools import Cd, ArchChroot, Chroot
-from .mount import MountPoint
+from .runner import CommandRunner
+from .tools import Cd, ArchChroot, Chroot, Groups
 
 
 class ArchUser():
-    def __init__(self, ai, username, home=None, uid=None, gid=None):
-        if not isinstance(ai, ArchInstall):
-            raise ValueError(ai)
+    def __init__(self, runner, username, home=None, uid=None, gid=None):
+        if not isinstance(runner, CommandRunner):
+            raise ValueError(runner)
         self.username = username
         self.home = home or os.path.join('/home', username)
-        self.ai = ai
+        self.runner = runner
         self.uid = uid
         self.gid = gid
+        with Chroot(self.runner.mnt):
+            self.groups = Groups().parse().user_groups(username)
+            print(self.groups)
         # this a restricted env to lie to childs process.
         self.env = {
             'HOME': self.home,
@@ -38,22 +40,36 @@ class ArchUser():
             kwargs['cwd'] = self.home
         if not kwargs.get('env'):
             kwargs['env'] = self.env
-        with ArchChroot(self.ai.mnt):
+        with ArchChroot(self.runner.mnt):
             with Cd(self.home):
-                self.ai.run(command, capture=False, preexec_fn=self.demote, **kwargs)
+                self.runner.run(command, capture=False, preexec_fn=self.demote, **kwargs)
+
+    def run_many(commands, **kwargs):
+        assert self.exists(), (self.uid, self.gid)
+        if not kwargs.get('cwd'):
+            kwargs['cwd'] = self.home
+        if not kwargs.get('env'):
+            kwargs['env'] = self.env
+        with ArchChroot(self.runner.mnt):
+            with Cd(self.home):
+                for cmd in commands:
+                    self.runner.run(cmd, preexec_fn=self.demote, **kwargs)
 
     def get_defaults_groups(self):
         return ['audio', 'video', 'render', 'input', 'scanner', 'games']
 
     def add_groups(self, groups):
         for group in groups:
-            self.ai.run_in(['gpasswd', '-a', self.username, group])
+            self.runner.run_in(['gpasswd', '-a', self.username, group])
+        grps = Groups()
+        grps.parse()
+        self.groups = grps.user_groups(self.username)
 
     def create(self, shell='/bin/zsh'):
-        with ArchChroot(self.ai.mnt):
-            self.ai.run(['useradd', '-d', self.home, '-m', '-s', shell, self.username])
-            self.ai.run(['chown', f'{self.username}:{self.username}', self.home])
-            self.ai.run(['chmod', '700', self.home])
+        with ArchChroot(self.runner.mnt):
+            self.runner.run(['useradd', '-d', self.home, '-m', '-s', shell, self.username])
+            self.runner.run(['chown', f'{self.username}:{self.username}', self.home])
+            self.runner.run(['chmod', '700', self.home])
             users = ArchUser.list()
             for u in users:
                 if u['user'] == self.username:
@@ -62,19 +78,19 @@ class ArchUser():
                     self.uid = me['uid']
 
     def delete(self, delete_home=False):
-        with ArchChroot(self.ai.mnt):
+        with ArchChroot(self.runner.mnt):
             if delete_home:
-                self.ai.run(['userdel', '-f', self.username])
+                self.runner.run(['userdel', '-f', self.username])
             else:
-                self.ai.run(['userdel', self.username])
+                self.runner.run(['userdel', self.username])
         self.uid, self.gid = (None, None)
 
     def passwd(self):
         while True:
             try:
                 print('password for', self.username)
-                with Chroot(self.ai.mnt):
-                    self.ai.run(['passwd', self.username])
+                with Chroot(self.runner.mnt):
+                    self.runner.run(['passwd', self.username])
                 return
             except KeyboardInterrupt:
                 print(f'setup of user {self.username} skipped: no password set')
@@ -84,19 +100,15 @@ class ArchUser():
 
     def install_trizen(self):
         trizen_path = os.path.join(self.home, 'trizen')
-        real_path = f'{self.ai.mnt}{trizen_path}'
+        real_path = f'{self.runner.mnt}{trizen_path}'
         self.run(['id'], cwd=self.home, env=self.env)
         # remove any previous get.
         if os.path.exists(real_path):
-            self.ai.run(['rm', '-rf', real_path])
+            self.runner.run(['rm', '-rf', real_path])
 
-        self.run(
-            [
-                'git', 'clone', 'https://aur.archlinux.org/trizen.git', trizen_path
-            ],
-            cwd=self.home)
-        self.run(['pwd'], cwd=trizen_path)
-        self.run(['makepkg', '-si', '--noconfirm'], cwd=trizen_path)
+        self.run(['git', 'clone', 'https://aur.archlinux.org/trizen.git'], cwd=self.home)
+        # self.run(['makepkg', '-sic', '--noconfirm'], cwd=trizen_path)
+        self.run(['ls', '-la', trizen_path])
         self.run(['trizen', '-Sy'])
         self.run(['rm', '-rf', trizen_path])
 
@@ -116,6 +128,8 @@ class ArchUser():
 
     def demote(self):
         assert self.exists()
+        if self.groups:
+            os.setgroups(self.groups)
         os.setgid(self.gid)
         os.setuid(self.uid)
 
@@ -140,12 +154,12 @@ class ArchUser():
         return users
 
     @staticmethod
-    def from_disk(login, ai):
+    def from_disk(login, runner):
         assert isinstance(login, str)
-        assert isinstance(ai, ArchInstall)
+        assert isinstance(runner, CommandRunner)
         for account in ArchUser.list():
             if account['user'] == login:
-                user = ArchUser(login, ai)
+                user = ArchUser(login, runner)
                 user.gid = account['gid']
                 user.uid = account['uid']
                 user.home = account['home']

@@ -1,6 +1,24 @@
 {
-	"mnt": "/mnt/arch",
+	"mnt": "/mnt",
 	"hostname": "deepin",
+	"loader": {
+		"name": "refind"
+	},
+	"pacman": {
+		"branchs": [
+			"core",
+			"extra",
+			"community",
+			"community-testing",
+			"multilib",
+			"multilib-testing",
+			"testing"
+		],
+		"servers": [
+			"http://192.168.2.3:8080"
+		],
+		"color": true
+	},
 	"packages": [
 		"fish",
 		"caja",
@@ -11,7 +29,7 @@
 		"gvfs-gphoto2",
 		"transmission-gtk"
 	],
-	"meta": ["PYTHON", "EXTRA", "BASE"],
+	"meta": ["PYTHON", "EXTRA", "BASE", "AUDIO", "FONTS"],
 	"services": [
 		"cups", "iptables", "acpid", "xorg", "lightdm",
 		"mlocate", "fail2ban", "gpm", "networkmanager", "udisks2",
@@ -25,7 +43,18 @@
 				"audio", "video", "lp", "wheel", "scanner", "render", "input", "games"
 			],
 			"shell": "/bin/zsh",
-			"trizen": true
+			"trizen": true,
+			"commands": [
+				["mkdir", "-pv", ".vim/bundle"],
+				["git", "clone", "https://github.com/VundleVim/Vundle.vim.git", ".vim/bundle/Vundle.vim"],
+				["vim", "+PluginInstall", "+qall"],
+				["gpg", "--keyserver", "hkp://keyserver.ubuntu.com:80", "--recv-keys", "931FF8E79F0876134EDDBDCCA87FF9DF48BF1C90"],
+				{
+					"env": {"HOME": "/home/adamaru"},
+					"cwd": "/tmp",
+					"cmd": ["trizen", "-S", "--noedit", "--noconfirm", "aur/spotify"]
+				}
+			]
 		},
 		{
 			"login": "yoyo",

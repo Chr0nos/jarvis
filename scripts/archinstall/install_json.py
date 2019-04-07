@@ -24,6 +24,36 @@ def copy_form_host(arch, copy):
 			arch.run_in(['chown', '-R', f'{user.username}:{user.username}', copy['dst']])
 
 
+def handle_users(arch, users):
+    # creating and configuring users
+    for cfg_user in users:
+        user = ArchUser(arch,
+                        username=cfg_user['login'],
+                        home=cfg_user.get('home'))
+        if user.username != 'adamaru':
+            user.create(shell=cfg_user['shell'])
+            user.add_groups(cfg_user['groups'])
+        else:
+            user.uid, user.gid = (1000, 1000)
+        if cfg_user.get('trizen'):
+            user.install_trizen()
+        if cfg_user.get('ohmyzsh'):
+            user.install_oh_myzsh()
+        if cfg_user.get('aur'):
+            user.install(cfg_user['aur'])
+        for command in cfg_user.get('commands', []):
+            if isinstance(command, list):
+                user.run(command)
+            elif isinstance(command, dict):
+                env = command.get('env')
+                cwd = command.get('cwd')
+                command = command['cmd']
+                user.run(command, env=env, cwd=cwd)
+            else:
+                raise TypeError(command)
+        user.passwd()
+
+
 def install_from_json(json_path):
     with open(json_path, 'r') as json_fd:
         config = json.load(json_fd)
@@ -46,32 +76,26 @@ def install_from_json(json_path):
         'XFCE': XFCE,
         'I3': I3,
         'CINNAMON': CINNAMON,
-        'KDE': KDE
+        'KDE': KDE,
+        'AUDIO': AUDIO,
+        'FONTS': FONTS,
+        'DEV': DEV
     }
     packages = []
     for meta in config.get('meta', []):
         packages.extend(metas[meta])
+    servers = config.get('pacman', {}).get('servers')
 
     arch = ArchInstall(hostname=config['hostname'], mnt=config.get('mnt', '/mnt'))
+    if config.get('dns'):
+        arch.dns = config['dns']
     services = ServicesManager(arch, *[srv() for srv in services_to_install])
-    arch.install(
-        packages + services.collect_packages() + config.get('packages', []))
-    services.install()
+    #arch.install(
+    #    packages + services.collect_packages() + config.get('packages', []),
+    #    custom_servers=servers)
+    #services.install()
 
-    # creating and configuring users
-    for cfg_user in config.get('users', []):
-        user = ArchUser(arch,
-                        username=cfg_user['login'],
-                        home=cfg_user.get('home'))
-        user.create(shell=cfg_user['shell'])
-        user.add_groups(cfg_user['groups'])
-        if cfg_user.get('trizen'):
-            user.install_trizen()
-        if cfg_user.get('ohmyzsh'):
-            user.install_oh_myzsh()
-        if cfg_user.get('aur'):
-            user.install(cfg_user['aur'])
-        user.passwd()
+    handle_users(arch, config.get('users', []))
 
     # configuring sudo
     sudo = config.get('sudo', {'present': True, 'targetpw': True, 'nopasswd': False})

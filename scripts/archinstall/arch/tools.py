@@ -1,4 +1,5 @@
 import os
+import subprocess
 from .mount import MountPoint
 
 
@@ -50,7 +51,7 @@ class ArchChroot(Chroot):
     def stop(self):
         super().stop()
         if self.unbind:
-            for bind in self.mounts:
+            for bind in reversed(self.mounts):
                 bind.unmount()
 
 
@@ -68,3 +69,45 @@ class Cd():
 
     def __exit__(self, a, b, c):
         os.chdir(self.origin)
+
+
+class Groups():
+    by_id = {}
+    by_name = {}
+    lst = []
+
+    def parse(self):
+        self.lst = []
+        self.by_id = {}
+        self.by_name = {}
+        with open('/etc/group') as grp:
+            for line in grp.readlines():
+                line = line[0:-1]
+                name, x, gid, users = line.split(':')
+                gid = int(gid)
+                if users:
+                    users = users.split(',')
+                else:
+                    users = []
+                group = {'name': name, 'gid': gid, 'users': users}
+                self.by_id[gid] = group
+                self.by_name[name] = group
+                self.lst.append(gid)
+        return self
+
+    def list(self):
+        return self.lst
+
+    def add(self, name, gid, users=[]):
+        group = {'name': name, 'gid': gid, 'users': users}
+        self.by_id[gid] = group
+        self.by_name[name] = group
+        self.lst.append(gid)
+        return group
+
+    def user_groups(self, login):
+        lst = []
+        for gid, group in self.by_id.items():
+            if login in group['users']:
+                lst.append(gid)
+        return lst
