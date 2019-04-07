@@ -5,7 +5,7 @@ from .tools import Cd, ArchChroot, Chroot, Groups
 
 
 class ArchUser():
-    def __init__(self, runner, username, home=None, uid=None, gid=None):
+    def __init__(self, runner: CommandRunner, username, home=None, uid=None, gid=None):
         if not isinstance(runner, CommandRunner):
             raise ValueError(runner)
         self.username = username
@@ -154,7 +154,7 @@ class ArchUser():
         return users
 
     @staticmethod
-    def from_disk(login, runner):
+    def from_disk(login, runner: CommandRunner):
         assert isinstance(login, str)
         assert isinstance(runner, CommandRunner)
         for account in ArchUser.list():
