@@ -113,7 +113,9 @@ class ArchInstall(CommandRunner):
         self.set_sudo_free(True)
 
 
-    def install(self, packages, custom_servers=None, vconsole={'KEYMAP': 'us'}):
+    def install(self, packages, custom_servers=None, vconsole=None):
+        if not vconsole:
+            vconsole = {'KEYMAP': 'us'}
         self.run(['pacstrap', self.mnt, 'base', 'base-devel', 'archlinux-keyring', 'sudo'])
         fstab = self.run(['genfstab', '-t', 'UUID', self.mnt], True)
         if custom_servers:
