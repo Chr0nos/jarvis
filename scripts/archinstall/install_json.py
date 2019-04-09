@@ -30,11 +30,9 @@ def handle_users(arch, users):
         user = ArchUser(arch,
                         username=cfg_user['login'],
                         home=cfg_user.get('home'))
-        if user.username != 'adamaru':
-            user.create(shell=cfg_user['shell'])
-            user.add_groups(cfg_user['groups'])
-        else:
-            user.uid, user.gid = (1000, 1000)
+        user.create(shell=cfg_user['shell'])
+        user.add_groups(cfg_user['groups'])
+
         if cfg_user.get('trizen'):
             user.install_trizen()
         if cfg_user.get('ohmyzsh'):
