@@ -13,7 +13,6 @@ class ArchUser():
         self.runner = runner
         self.uid = uid
         self.gid = gid
-        self.groups = None
 
         with Chroot(self.runner.mnt):
             self.groups = Groups().parse().user_groups(username)
@@ -64,10 +63,7 @@ class ArchUser():
     def add_groups(self, groups):
         for group in groups:
             self.runner.run_in(['gpasswd', '-a', self.username, group])
-        if not self.groups:
-            self.groups = Groups()
-        self.groups.parse()
-        self.groups = grps.user_groups(self.username)
+        self.groups = Groups().parse().user_groups(self.username)
 
     def create(self, shell='/bin/zsh'):
         with ArchChroot(self.runner.mnt):
