@@ -70,7 +70,7 @@ def install_from_json(json_path):
                 services_to_install.append(service)
         return services_to_install
 
-    def packages_list_from_metas(metas: list) -> list
+    def packages_list_from_metas(metas: list) -> list:
         packages = []
         for meta in metas:
             meta_pkgs = META.get(meta.lower()
