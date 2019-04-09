@@ -84,7 +84,7 @@ def install_from_json(json_path):
     arch = ArchInstall(hostname=config['hostname'], mnt=config.get('mnt', '/mnt'))
     if config.get('dns'):
         arch.dns = config['dns']
-    services_to_install = services_prepair(config.get('services'], [])
+    services_to_install = services_prepair(config.get('services'], []))
     services = ServicesManager(arch, *[srv() for srv in services_to_install])
     arch.install(
        packages + services.collect_packages() + config.get('packages', []),
