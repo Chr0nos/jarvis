@@ -1,6 +1,6 @@
 import os
 
-from .runner import CommandRunner
+from .runner import CommandRunner, CommandFail
 from .tools import Cd, ArchChroot, Chroot, Groups
 
 
@@ -44,7 +44,7 @@ class ArchUser():
             with Cd(self.home):
                 self.runner.run(command, capture=False, preexec_fn=self.demote, **kwargs)
 
-    def run_many(commands, **kwargs):
+    def run_many(self, commands, **kwargs):
         assert self.exists(), (self.uid, self.gid)
         if not kwargs.get('cwd'):
             kwargs['cwd'] = self.home
