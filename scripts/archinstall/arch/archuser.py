@@ -63,7 +63,8 @@ class ArchUser():
     def add_groups(self, groups):
         for group in groups:
             self.runner.run_in(['gpasswd', '-a', self.username, group])
-        self.groups = Groups().parse().user_groups(self.username)
+        with ArchChroot(self.runner.mnt):
+            self.groups = Groups().parse().user_groups(self.username)
 
     def create(self, shell='/bin/zsh'):
         with ArchChroot(self.runner.mnt):
@@ -76,6 +77,7 @@ class ArchUser():
                     me = u
                     self.gid = me['gid']
                     self.uid = me['uid']
+                    return self
 
     def delete(self, delete_home=False):
         with ArchChroot(self.runner.mnt):
