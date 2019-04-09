@@ -101,14 +101,14 @@ class ArchUser():
                 pass
 
     def install_trizen(self):
-        trizen_path = os.path.join(self.home, 'trizen')
+        trizen_path = '/tmp/trizen'
         real_path = f'{self.runner.mnt}{trizen_path}'
         self.run(['id'], cwd=self.home, env=self.env)
         # remove any previous get.
         if os.path.exists(real_path):
             self.runner.run(['rm', '-rf', real_path])
 
-        self.run(['git', 'clone', 'https://aur.archlinux.org/trizen.git'], cwd=self.home)
+        self.run(['git', 'clone', 'https://aur.archlinux.org/trizen.git'], cwd='/tmp')
         self.run(['makepkg', '-sic', '--noconfirm'], cwd=trizen_path)
         self.run(['ls', '-la', trizen_path])
         self.run(['trizen', '-Sy'])
