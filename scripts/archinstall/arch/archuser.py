@@ -13,6 +13,8 @@ class ArchUser():
         self.runner = runner
         self.uid = uid
         self.gid = gid
+        self.groups = None
+
         with Chroot(self.runner.mnt):
             self.groups = Groups().parse().user_groups(username)
             print(self.groups)
@@ -55,14 +57,16 @@ class ArchUser():
                 for cmd in commands:
                     self.runner.run(cmd, preexec_fn=self.demote, **kwargs)
 
-    def get_defaults_groups(self):
+    @staticmethod
+    def get_defaults_groups():
         return ['audio', 'video', 'render', 'input', 'scanner', 'games']
 
     def add_groups(self, groups):
         for group in groups:
             self.runner.run_in(['gpasswd', '-a', self.username, group])
-        grps = Groups()
-        grps.parse()
+        if not self.groups:
+            self.groups = Groups()
+        self.groups.parse()
         self.groups = grps.user_groups(self.username)
 
     def create(self, shell='/bin/zsh'):
@@ -129,7 +133,7 @@ class ArchUser():
     def demote(self):
         assert self.exists()
         if self.groups:
-            os.setgroups(self.groups)
+            os.setgroups(self.groups.lst)
         os.setgid(self.gid)
         os.setuid(self.uid)
 
