@@ -107,7 +107,7 @@ class ArchUser():
             self.runner.run(['rm', '-rf', real_path])
 
         self.run(['git', 'clone', 'https://aur.archlinux.org/trizen.git'], cwd=self.home)
-        # self.run(['makepkg', '-sic', '--noconfirm'], cwd=trizen_path)
+        self.run(['makepkg', '-sic', '--noconfirm'], cwd=trizen_path)
         self.run(['ls', '-la', trizen_path])
         self.run(['trizen', '-Sy'])
         self.run(['rm', '-rf', trizen_path])
@@ -129,7 +129,7 @@ class ArchUser():
     def demote(self):
         assert self.exists()
         if self.groups:
-            os.setgroups(self.groups.lst)
+            os.setgroups(self.groups)
         os.setgid(self.gid)
         os.setuid(self.uid)
 
