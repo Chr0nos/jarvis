@@ -24,10 +24,13 @@
 		"caja",
 		"deepin",
 		"deepin-calculator",
+		"deepin-terminal",
 		"community/deepin-screenshot",
 		"gvfs-mtp",
 		"gvfs-gphoto2",
-		"transmission-gtk"
+		"transmission-gtk",
+		"community/firefox-dark-reader",
+		"community/firefox-ublock-origin"
 	],
 	"meta": ["PYTHON", "EXTRA", "BASE", "AUDIO", "FONTS"],
 	"services": [
