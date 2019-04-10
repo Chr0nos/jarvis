@@ -2,7 +2,7 @@
 from arch import ArchInstall, ArchUser
 from arch.tools import Chroot
 from arch.services import *
-from arch.metapkg import *
+from arch.metapkg import META
 
 import json
 import sys
@@ -30,11 +30,9 @@ def handle_users(arch, users):
         user = ArchUser(arch,
                         username=cfg_user['login'],
                         home=cfg_user.get('home'))
-        if user.username != 'adamaru':
-            user.create(shell=cfg_user['shell'])
-            user.add_groups(cfg_user['groups'])
-        else:
-            user.uid, user.gid = (1000, 1000)
+        user.create(shell=cfg_user['shell'])
+        user.add_groups(cfg_user['groups'])
+
         if cfg_user.get('trizen'):
             user.install_trizen()
         if cfg_user.get('ohmyzsh'):
@@ -58,42 +56,38 @@ def install_from_json(json_path):
     with open(json_path, 'r') as json_fd:
         config = json.load(json_fd)
 
-    services = [
-        Xorg, NetworkManager, Cups, LightDm, Fail2Ban, Sshd, Smartd, Udisks2,
-        Gpm, Udisks2, Acpid, Iptables, Mlocate, Docker, BlueTooth, Nginx
-    ]
-    services_to_install = []
-    for service in services:
-        if service.name in config['services']:
-            services_to_install.append(service)
+    def services_prepair(requested_services):
+        services = [
+            Xorg, NetworkManager, Cups, LightDm, Fail2Ban, Sshd, Smartd,
+            Udisks2, Gpm, Udisks2, Acpid, Iptables, Mlocate, Docker, BlueTooth,
+            Nginx
+        ]
+        services_to_install = []
+        for service in services:
+            if service.name in requested_services:
+                services_to_install.append(service)
+        return services_to_install
 
-    metas = {
-        'MATE': MATE,
-        'PYTHON': PYTHON,
-        'EXTRA': EXTRA,
-        'BASE': BASE,
-        'GNOME': GNOME,
-        'XFCE': XFCE,
-        'I3': I3,
-        'CINNAMON': CINNAMON,
-        'KDE': KDE,
-        'AUDIO': AUDIO,
-        'FONTS': FONTS,
-        'DEV': DEV
-    }
-    packages = []
-    for meta in config.get('meta', []):
-        packages.extend(metas[meta])
+    def packages_list_from_metas(metas: list) -> list:
+        packages = []
+        for meta in metas:
+            meta_pkgs = META.get(meta.lower())
+            assert meta_pkgs
+            packages += meta_pkgs
+        return packages
+
+    packages = packages_list_from_metas(config.get('meta', []))
     servers = config.get('pacman', {}).get('servers')
 
     arch = ArchInstall(hostname=config['hostname'], mnt=config.get('mnt', '/mnt'))
     if config.get('dns'):
         arch.dns = config['dns']
+    services_to_install = services_prepair(config.get('services', []))
     services = ServicesManager(arch, *[srv() for srv in services_to_install])
-    #arch.install(
-    #    packages + services.collect_packages() + config.get('packages', []),
-    #    custom_servers=servers)
-    #services.install()
+    arch.install(
+       packages + services.collect_packages() + config.get('packages', []),
+       custom_servers=servers)
+    services.install()
 
     handle_users(arch, config.get('users', []))
 

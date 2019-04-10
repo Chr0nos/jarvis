@@ -39,12 +39,12 @@ class BootLoaderEfi(BootLoader):
 		also checks thats the provided informations are correct.
 		"""
 		assert self.efi
-		efi_mnt = self.mnt + self.boot
+		efi_mnt = self.runner.mnt + self.boot
 		assert os.path.exists(efi_mnt + self.efi), '.efi file not found'
 		assert os.path.exists(self.device), 'device not found'
 		assert isinstance(partition, int)
-		assert os.path.exists(device + partition), 'partition not found'
-		self.run([
+		assert os.path.exists(self.device + partition), 'partition not found'
+		self.runner.run([
 			'efibootmgr', '-c',
 			'-L', label,
 			'-l', self.efi,
@@ -81,7 +81,7 @@ class BootLoaderRefind(BootLoaderEfi):
 
 	def add_entry(self):
 		# TODO: check if this call is needed in a further test with vmware
-		partition = self.get_partition_id(mnt + self.boot)
+		partition = self.get_partition_id(self.runner.mnt + self.boot)
 		self.mkentry('rEFInd', partition)
 
 
