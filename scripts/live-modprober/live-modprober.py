@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 import subprocess
+import os
 
 
 class KernelOpts:
@@ -36,6 +37,63 @@ class Modprobe:
         for m in self.load:
             subprocess.run(['modprobe', m], **kwargs)
 
+class XorgSection:
+    kind = None
+    identifier = None
+
+
+class XorgDevice(XorgSection):
+    driver = None
+    kind = "Device"
+    fields = ()
+
+    def __str__(self):
+        content = []
+        class_fields = [
+            ('Identifier', self.identifier)
+        ]
+        if self.driver:
+            class_fields.append(('Driver', self.driver))
+        for key, value in (tuple(class_fields)) + self.fields:
+            if isinstance(value, str):
+                value = f'"{value}"'
+            # transorm: ['a', 'b', 'c'] to: "a" "b" "c"
+            elif isinstance(value, list):
+                line = ''
+                for x in value:
+                    line += f'"{x}" '
+                value = line[0:-1]
+            content.append(f'\t{key:<15} {value}')
+        return \
+            f'Section "{self.kind}"\n' + '\n'.join(content) + '\nEndSection\n'
+
+
+class XorgNvidiaCard(XorgDevice):
+    driver = 'nvidia'
+    identifier = 'Nvidia graphic card'
+    fields = (
+        ('VendorName', 'Nvidia Corporation'),
+    )
+
+
+class NouveauCard(XorgDevice):
+    driver = 'nouveau'
+    identifier = 'Nouveau graphic card'
+
+
+class XorgScreen(XorgDevice):
+    def __init__(self, card):
+        self.card = card
+
+    identifier = 'Screen0'
+    kind = 'Screen'
+    fields = (
+        ('Option', ['Stereo', '0']),
+        ('Option', ['nvidiaXineramaInfoOrder', 'DFP-0']),
+        ('Option', ['SLI', 'Off']),
+        ('Option', ['BaseMosaic', 'Off']),
+    )
+
 
 def run():
     kernel = KernelOpts()
@@ -44,5 +102,17 @@ def run():
     prober.load = kernel.get('modprobe.load').split(',')
     prober.run()
 
+    nvidia_cfg = '/etc/X11/xorg.conf.d/20-nvidia.conf'
+    if 'nvidia' in prober.load:
+        config = '\n'.join([sc, nv, NouveauCard()])
+        with open(nvidia_cfg, 'w') as cfg:
+            cfg.write(config)
+    else:
+        os.unlink(nvidia_cfg)
+
+
 if __name__ == "__main__":
-    run()
+    nv = XorgNvidiaCard()
+    sc = XorgScreen(nv)
+    print(nv, sc, sep='\n')
+    #run()
