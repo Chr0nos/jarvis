@@ -64,8 +64,14 @@ class XorgDevice(XorgSection):
                     line += f'"{x}" '
                 value = line[0:-1]
             content.append(f'\t{key:<15} {value}')
+        extra = self.extra()
+        if extra:
+            content.append('\n'.join(extra))
         return \
             f'Section "{self.kind}"\n' + '\n'.join(content) + '\nEndSection\n'
+
+    def extra(self):
+        return None
 
 
 class XorgNvidiaCard(XorgDevice):
@@ -81,18 +87,38 @@ class NouveauCard(XorgDevice):
     identifier = 'Nouveau graphic card'
 
 
-class XorgScreen(XorgDevice):
-    def __init__(self, card):
-        self.card = card
+class VesaCard(XorgDevice):
+    driver = 'vesa'
+    identifier = 'vesa device'
 
+
+class XorgMonitor(XorgDevice):
+    identifier = 'Monitor0'
+    kind = 'Monitor'
+    fields = (
+        ('Option', 'DPMS'),
+    )
+
+
+class XorgScreen(XorgDevice):
     identifier = 'Screen0'
     kind = 'Screen'
     fields = (
+        ('DefaultDepth', 24),
         ('Option', ['Stereo', '0']),
         ('Option', ['nvidiaXineramaInfoOrder', 'DFP-0']),
         ('Option', ['SLI', 'Off']),
         ('Option', ['BaseMosaic', 'Off']),
     )
+
+    def __init__(self, card):
+        self.card = card
+        self.fields = (('Device', card.identifier),) + self.fields
+
+    def extra(self) -> tuple:
+        depth_name = 'Depth'
+        depth = 24
+        return ('\tSubSection "Display"', f'\t\t{depth_name:<8}{depth}', '\tEndSubSection')
 
 
 def run():
@@ -104,7 +130,10 @@ def run():
 
     nvidia_cfg = '/etc/X11/xorg.conf.d/20-nvidia.conf'
     if 'nvidia' in prober.load:
-        config = '\n'.join([sc, nv, NouveauCard()])
+        nv = XorgNvidiaCard()
+        sc = XorgScreen(nv)
+        mo = XorgMonitor()
+        config = '\n'.join([sc, mo, nv])
         with open(nvidia_cfg, 'w') as cfg:
             cfg.write(config)
     else:
@@ -114,5 +143,6 @@ def run():
 if __name__ == "__main__":
     nv = XorgNvidiaCard()
     sc = XorgScreen(nv)
-    print(nv, sc, sep='\n')
+    mo = XorgMonitor()
+    print(nv, mo, sc, sep='\n', end='')
     #run()
