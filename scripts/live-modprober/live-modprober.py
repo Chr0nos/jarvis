@@ -80,6 +80,8 @@ class XorgNvidiaCard(XorgDevice):
     identifier = 'Nvidia graphic card'
     fields = (
         ('VendorName', 'Nvidia Corporation'),
+        ('Option', ['RegistryDwords', 'PerfLevelSrc=0x3322; PowerMizerDefaultAC=0x1']),
+        ('Option', ['TripleBuffer', 'True'])
     )
 
 
@@ -108,6 +110,7 @@ class XorgScreen(XorgDevice):
         ('DefaultDepth', 24),
         ('Option', ['Stereo', '0']),
         ('Option', ['nvidiaXineramaInfoOrder', 'DFP-0']),
+        ('Option', ['metamodes', 'nvidia-auto-select +0+0 { ForceFullCompositionPipeline = On }']),
         ('Option', ['SLI', 'Off']),
         ('Option', ['BaseMosaic', 'Off']),
     )
