@@ -44,6 +44,8 @@ class XorgSection:
 
 
 class XorgRawField(str):
+    """Pass a raw value to the configuration file without any form of processing
+    """
     pass
 
 
