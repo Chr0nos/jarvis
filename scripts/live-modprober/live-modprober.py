@@ -134,11 +134,14 @@ def run():
         nv = XorgNvidiaCard()
         sc = XorgScreen(nv)
         mo = XorgMonitor()
-        config = '\n'.join([sc, mo, nv])
+        config = '\n'.join([str(sc), str(mo), str(nv)])
         with open(nvidia_cfg, 'w') as cfg:
             cfg.write(config)
     else:
-        os.unlink(nvidia_cfg)
+        try:
+            os.unlink(nvidia_cfg)
+        except FileNotFoundError:
+            pass
 
 
 def test_org():
