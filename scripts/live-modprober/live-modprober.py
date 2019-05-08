@@ -43,6 +43,10 @@ class XorgSection:
     identifier = None
 
 
+class XorgRawField(str):
+    pass
+
+
 class XorgDevice(XorgSection):
     driver = None
     kind = "Device"
@@ -56,7 +60,9 @@ class XorgDevice(XorgSection):
         if self.driver:
             class_fields.append(('Driver', self.driver))
         for key, value in (tuple(class_fields)) + self.fields:
-            if isinstance(value, str):
+            if isinstance(value, XorgRawField):
+                value = str(value)
+            elif isinstance(value, str):
                 value = f'"{value}"'
             # transorm: ['a', 'b', 'c'] to: "a" "b" "c"
             elif isinstance(value, list):
@@ -99,9 +105,10 @@ class XorgMonitor(XorgDevice):
     identifier = 'Monitor0'
     kind = 'Monitor'
     fields = (
+        ('HorizSync', XorgRawField('30.0 - 81.0')),
+        ('VertRefresh', XorgRawField('56.0 - 75.0')),
         ('Option', 'DPMS'),
     )
-
 
 class XorgScreen(XorgDevice):
     identifier = 'Screen0'
