@@ -37,6 +37,7 @@ class Modprobe:
         for m in self.load:
             subprocess.run(['modprobe', m], **kwargs)
 
+
 class XorgSection:
     kind = None
     identifier = None
@@ -140,9 +141,12 @@ def run():
         os.unlink(nvidia_cfg)
 
 
-if __name__ == "__main__":
+def test_org():
     nv = XorgNvidiaCard()
     sc = XorgScreen(nv)
     mo = XorgMonitor()
     print(nv, mo, sc, sep='\n', end='')
-    #run()
+
+
+if __name__ == "__main__":
+    run()
