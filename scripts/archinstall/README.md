@@ -6,11 +6,29 @@ The best way is to write a simple .json file (examples are available in ./json/
 then just run `./install_json.py json/file.json`
 the script will only asks for root and user(s) password(s) at the end of the installation
 
+# The case of the live iso
+the live iso does not have `git` intalled but you can do:
+```shell
+pacman -S unzip
+wget https://github.com/Chr0nos/jarvis/archive/master.zip -O jarvis.zip
+unzip jarvis
+cd jarvis/scripts/archinstall/
+```
+
+or
+
+```shell
+pacman -S git
+git clone https://github.com/Chr0nos/jarvis.git
+cd jarvis/scripts/archinstall/
+```
+
 # Example
 for this example, i will assume that you use `/dev/sdx` device.
 
+
 ```shell
-cdisk /dev/sdx
+cfdisk /dev/sdx
 
 # create /boot partition
 mkfs.vfat -F32 -n EFI /dev/sdx1
@@ -36,3 +54,6 @@ swapon /dev/sdx4
 ```
 
 That's all, you can now reboot
+
+# Dependencies
+None, just for the unit tests, for python i just use builtin modules
