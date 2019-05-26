@@ -11,8 +11,8 @@ def marmite(hauteur, diametre=None, circonference=None):
         raise ValueError('please choose between diametre and circonference')
     if not diametre:
         diametre = circonference / math.pi
-    surface = math.pi * pow(diametre, 2) / 4 
-    return round(hauteur * surface / 1000, 1) 
+    surface = math.pi * pow(diametre, 2) / 4
+    return round(hauteur * surface / 1000, 1)
 
 
 def densite(mesure, temperature):
@@ -34,4 +34,21 @@ def fromPlato(plato):
 
 
 def fromBrix(brix):
+    """Convertis des brix en densitee
+    """
     return round((brix / (258.6 - ((brix / 258.2) * 227.1)) + 1) * 1000, 1)
+
+
+
+def color(volume_brassin, *args):
+    """Chaque argument doit etre un tuple avec (masse_kg, coleur_ebc)
+    renvoi la couleur finale de la biere
+    le volume_brassin est en littres
+    """
+    def get_relative_color():
+        beer_color = 0;
+        for (mass, color) in args:
+            beer_color += color * mass
+        return 4.23 * beer_color / volume_brassin
+
+    return round(2.9396 * pow(get_relative_color(), 0.6859), 1)
