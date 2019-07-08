@@ -125,10 +125,11 @@ class MainWindow(Window):
     def __init__(self, title):
         print('init start')
         self.screen = curses.initscr()
+        assert self.screen is not None
         curses.noecho()
         curses.cbreak()
         curses.start_color()
-        super().__init__(None, title, 0, 0, 0, 0)
+        super(MainWindow, self).__init__(None, title, 0, 0, curses.COLS, curses.LINES)
         self.screen.keypad(True)
         print('init done')
 
