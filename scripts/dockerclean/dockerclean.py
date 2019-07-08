@@ -69,15 +69,20 @@ class Window:
         self.parent = parent
         self.w = w
         self.h = h
-        self.x = x + parent.x
-        self.y = y + parent.y
-        self.screen = parent.screen
+
         self.title = title
         self.title_len = len(title)
+        if parent is None:
+            self.x = x
+            self.y = y
+        else:
+            self.x = x + parent.x
+            self.y = y + parent.y
+            self.screen = parent.screen
 
-    def put_center(self, content: str, line=0):
+    def put_center(self, content: str, y=0):
         return self.screen.addstr(
-            self.h + line,
+            self.h + y,
             self.x + (self.w >> 1) - (len(content) >> 1),
             content
         )
@@ -116,21 +121,21 @@ class Window:
             self.action(key)
 
 
-class MainWindow(Window, CursesErrorHandler):
-    x = 0
-    y = 0
-    parent = None
-
+class MainWindow(Window):
     def __init__(self, title):
-        self.title = title
-        self.title_len = len(title)
+        print('init start')
         self.screen = curses.initscr()
         curses.noecho()
         curses.cbreak()
         curses.start_color()
+        super().__init__(None, title, 0, 0, 0, 0)
         self.screen.keypad(True)
+        print('init done')
 
     def __del__(self):
+        self.close()
+
+    def close(self):
         curses.nocbreak()
         self.screen.keypad(False)
         curses.echo()
@@ -147,8 +152,27 @@ class MainWindow(Window, CursesErrorHandler):
     def decorate(self):
         pass
 
+    def put(self, y, x, content: str):
+        return self.screen.addstr(y, x, content)
+
+    def put_center(self, content: str, y=0):
+        return self.screen.addstr(y, (self.w >> 1) - (len(content) >> 1))
+
     def display(self):
-        self.put(1, 1, 'test')
+        self.screen.addstr(0, 0, 'test')
+        self.put(0, 0, 'test 2')
+
+    def loop(self):
+        while True:
+            try:
+                super().loop()
+            except KeyboardInterrupt:
+                return
+            except Exception as err:
+                self.screen.clear()
+                self.screen.addstr(10, 10, 'error: ' + str(err))
+                self.screen.refresh()
+                self.screen.getch()
 
 
 class DockerImagesManager(Main, CursesErrorHandler):
@@ -226,7 +250,8 @@ class DockerImagesManager(Main, CursesErrorHandler):
 
 
 if __name__ == "__main__":
-    m = DockerImagesManager()
-    m.loop_handler()
-    # w = MainWindow('Docker Images Manager')
-    # w.loop_handler()
+    # m = DockerImagesManager()
+    m = MainWindow('Docker Images Manager')
+    # w.close()
+    # print(m.x, m.y, m.w, m.h)
+    m.loop()
