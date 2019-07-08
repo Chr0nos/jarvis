@@ -12,70 +12,17 @@ def wsize(n):
     return str(round(n, 2)) + powers[i]
 
 
-class CursesErrorHandler:
-    def loop_handler(self):
-        while True:
-            try:
-                self.loop()
-            except KeyboardInterrupt:
-                return
-            except Exception as err:
-                self.screen.clear()
-                self.screen.addstr(10, 10, 'error: ' + str(err))
-                self.screen.refresh()
-                self.screen.getch()
-
-
-class Main:
-    x = 0
-    y = 0
-
-    def __init__(self):
-        self.screen = curses.initscr()
-        curses.noecho()
-        curses.cbreak()
-        curses.start_color()
-        self.screen.keypad(True)
-
-    def __del__(self):
-        curses.nocbreak()
-        self.screen.keypad(False)
-        curses.echo()
-        curses.endwin()
-
-    def refresh(self, key):
-        self.screen.addstr(2, 10, f'hello world, {key}')
-
-    @property
-    def w(self):
-        return int(curses.COLS)
-
-    @property
-    def h(self):
-        return int(curses.LINES)
-
-    def loop(self):
-        key = None
-        while True:
-            self.screen.clear()
-            self.refresh(key)
-            self.screen.refresh()
-            key = self.screen.getkey()
-            #key = self.screen.gethc()
-
-
 class Window:
     def __init__(self, parent, title: str, x: int, y: int, w: int, h: int):
         self.parent = parent
-        self.w = w
-        self.h = h
-
         self.title = title
         self.title_len = len(title)
         if parent is None:
             self.x = x
             self.y = y
         else:
+            self.w = w
+            self.h = h
             self.x = x + parent.x
             self.y = y + parent.y
             self.screen = parent.screen
@@ -129,7 +76,8 @@ class MainWindow(Window):
         curses.noecho()
         curses.cbreak()
         curses.start_color()
-        super(MainWindow, self).__init__(None, title, 0, 0, curses.COLS, curses.LINES)
+        # super(MainWindow, self).__init__(None, title, 0, 0, curses.COLS, curses.LINES)
+        Window.__init__(self, None, title, 0, 0, curses.COLS, curses.LINES)
         self.screen.keypad(True)
         print('init done')
 
@@ -160,8 +108,7 @@ class MainWindow(Window):
         return self.screen.addstr(y, (self.w >> 1) - (len(content) >> 1))
 
     def display(self):
-        self.screen.addstr(0, 0, 'test')
-        self.put(0, 0, 'test 2')
+        pass
 
     def loop(self):
         while True:
@@ -176,9 +123,9 @@ class MainWindow(Window):
                 self.screen.getch()
 
 
-class DockerImagesManager(Main, CursesErrorHandler):
+class DockerImagesManager(MainWindow):
     def __init__(self):
-        super().__init__()
+        super().__init__('Docker Images Manager')
         self.line_max = 0
         self.client = docker.from_env()
         self.setup()
@@ -241,18 +188,10 @@ class DockerImagesManager(Main, CursesErrorHandler):
         line += 1
         self.screen.addstr(line, 1, wsize(total))
 
-    def refresh(self, key):
-        if key == 'q':
-            raise KeyboardInterrupt
-        if key == 'r':
-            self.setup()
-        self.action(key)
-        self.display()
-
 
 if __name__ == "__main__":
-    # m = DockerImagesManager()
-    m = MainWindow('Docker Images Manager')
+    m = DockerImagesManager()
+    # m = MainWindow('Docker Images Manager')
     # w.close()
     # print(m.x, m.y, m.w, m.h)
     m.loop()
