@@ -12,32 +12,6 @@ def wsize(n):
     return str(round(n, 2)) + powers[i]
 
 
-class Main:
-    def __init__(self):
-        self.screen = curses.initscr()
-        curses.noecho()
-        curses.cbreak()
-        self.screen.keypad(True)
-
-    def __del__(self):
-        curses.nocbreak()
-        self.screen.keypad(False)
-        curses.echo()
-        curses.endwin()
-
-    def refresh(self, key):
-        self.screen.addstr(2, 10, f'hello world, {key}')
-
-    def loop(self):
-        key = None
-        while True:
-            self.screen.clear()
-            self.refresh(key)
-            self.screen.refresh()
-            key = self.screen.getkey()
-            #key = self.screen.gethc()
-
-
 class CursesErrorHandler:
     def loop_handler(self):
         while True:
@@ -52,6 +26,125 @@ class CursesErrorHandler:
                 self.screen.getch()
 
 
+class Main:
+    x = 0
+    y = 0
+
+    def __init__(self):
+        self.screen = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        curses.start_color()
+        self.screen.keypad(True)
+
+    def __del__(self):
+        curses.nocbreak()
+        self.screen.keypad(False)
+        curses.echo()
+        curses.endwin()
+
+    def refresh(self, key):
+        self.screen.addstr(2, 10, f'hello world, {key}')
+
+    @property
+    def w(self):
+        return int(curses.COLS)
+
+    @property
+    def h(self):
+        return int(curses.LINES)
+
+    def loop(self):
+        key = None
+        while True:
+            self.screen.clear()
+            self.refresh(key)
+            self.screen.refresh()
+            key = self.screen.getkey()
+            #key = self.screen.gethc()
+
+
+class Window:
+    def __init__(self, parent, title: str, x: int, y: int, w: int, h: int):
+        self.parent = parent
+        self.w = w
+        self.h = h
+        self.x = x + parent.x
+        self.y = y + parent.y
+        self.screen = parent.screen
+        self.title = title
+        self.title_len = len(title)
+
+    def put_center(self, content: str, line=0):
+        return self.screen.addstr(
+            self.h + line,
+            self.x + (self.w >> 1) - (len(content) >> 1),
+            content
+        )
+
+    def put(self, y, x, content: str):
+        return self.screen.addstr(self.h + y, self.x + x, content)
+
+    def decorate(self):
+        self.put(0, 0, '-' * self.w)
+        for line in range(0, self.h):
+            self.put(line, 0, '|')
+            self.put(line, self.w, '|')
+        self.put(0, 0, '-' * (self.w + 1))
+        self.put(self.h, 0, '-' * (self.w + 1))
+        self.put_center(self.title + f' {self.w}x{self.h}')
+
+    def clear(self):
+        for line in range(self.h):
+            self.put(line, 0, ' ' * self.w)
+
+    def display(self, context=None):
+        pass
+
+    def action(self, key):
+        pass
+
+    def loop(self):
+        assert self.screen
+        while True:
+            self.decorate()
+            self.display()
+            self.screen.refresh()
+            key = self.screen.getkey()
+            if key == 'q':
+                return
+            self.input(key)
+
+
+class MainWindow(Window, CursesErrorHandler):
+    x = 0
+    y = 0
+    parent = None
+
+    def __init__(self, title):
+        self.title = title
+        self.title_len = len(title)
+        self.screen = curses.initscr()
+        curses.noecho()
+        curses.cbreak()
+        curses.start_color()
+        self.screen.keypad(True)
+
+    def __del__(self):
+        curses.nocbreak()
+        self.screen.keypad(False)
+        curses.echo()
+        curses.endwin()
+
+    @property
+    def w(self):
+        return int(curses.COLS)
+
+    @property
+    def h(self):
+        return int(curses.LINES)
+
+
 
 class DockerImagesManager(Main, CursesErrorHandler):
     def __init__(self):
@@ -61,25 +154,38 @@ class DockerImagesManager(Main, CursesErrorHandler):
         self.setup()
 
     def action(self, key):
-        self.screen.addstr(42, 0, f'action: {key} {type(key)}')
+        self.screen.addstr(self.line_max + 5, 0, f'action: {key}')
         if key == 'd':
             self.delete_selection()
         if key == 'KEY_UP':
             self.line = max(self.line - 1, 0)
         if key == 'KEY_DOWN':
             self.line = min(self.line + 1, self.line_max)
+        if key == 'w':
+            w = Window(
+                parent=self,
+                title='test',
+                x=(self.w >> 2),
+                y=self.y + 3,
+                w=(self.w >> 1),
+                h=(self.h >> 1)
+            )
+            w.loop()
 
     def get_selected_id(self):
         return list(self.images.values())[self.line]
 
     def delete_selection(self):
+        self.display()
         image = self.get_selected_id()
-        self.screen.addstr(44, 0, f'are you sure to delete {image.short_id} ({image.tags}) ? (y/n)')
+        line = self.line_max + 2
+        self.screen.addstr(line, 0, f'are you sure to delete {image.short_id} ({image.tags}) ? (y/n)')
         key = self.screen.getkey()
         if key == 'y':
             self.client.images.remove(image.id)
             self.images.pop(image.id, None)
-        self.screen.addstr(44, 0, ' ' * 80)
+            self.line_max = max(self.line_max - 1, 0)
+        self.screen.addstr(line + 1, 0, ' ' * self.w)
 
     def setup(self):
         """List availables images and reset the current line selection to 0
