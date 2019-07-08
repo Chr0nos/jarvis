@@ -74,7 +74,7 @@ class DockerImagesManager(Main, CursesErrorHandler):
 
     def delete_selection(self):
         image = self.get_selected_id()
-        self.screen.addstr(44, 0, f'are you sure to delete {image.id} ? (y/n)')
+        self.screen.addstr(44, 0, f'are you sure to delete {image.short_id} ({image.tags}) ? (y/n)')
         key = self.screen.getkey()
         if key == 'y':
             self.client.images.remove(image.id)

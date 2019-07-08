@@ -52,3 +52,4 @@ def color(volume_brassin, *args):
         return 4.23 * beer_color / volume_brassin
 
     return round(2.9396 * pow(get_relative_color(), 0.6859), 1)
+
