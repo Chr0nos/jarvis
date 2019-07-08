@@ -134,14 +134,13 @@ class XorgScreen(XorgDevice):
         return ('\tSubSection "Display"', f'\t\t{depth_name:<8}{depth}', '\tEndSubSection')
 
 
-def run():
-    kernel = KernelOpts()
-    prober = Modprobe()
-    prober.blacklist = kernel.get('modprobe.blacklist').split(',')
-    prober.load = kernel.get('modprobe.load').split(',')
-    prober.run()
-
-    nvidia_cfg = '/etc/X11/xorg.conf.d/20-nvidia.conf'
+def make_nvidia_config(prober, nvidia_cfg=None):
+    """create a nvidia xorg config file if needed
+    if not needed the current file will be removed to avoir issues with
+    non nvidia graphic cards
+    """
+    if not nvidia_cfg:
+        nvidia_cfg = '/etc/X11/xorg.conf.d/20-nvidia.conf'
     if 'nvidia' in prober.load:
         nv = XorgNvidiaCard()
         sc = XorgScreen(nv)
@@ -154,6 +153,15 @@ def run():
             os.unlink(nvidia_cfg)
         except FileNotFoundError:
             pass
+
+
+def run():
+    kernel = KernelOpts()
+    prober = Modprobe()
+    prober.blacklist = kernel.get('modprobe.blacklist').split(',')
+    prober.load = kernel.get('modprobe.load').split(',')
+    prober.run()
+    make_nvidia_config(prober)
 
 
 def test_org():
