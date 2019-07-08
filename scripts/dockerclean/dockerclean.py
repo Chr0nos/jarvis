@@ -112,8 +112,8 @@ class Window:
             self.screen.refresh()
             key = self.screen.getkey()
             if key == 'q':
-                return
-            self.input(key)
+                raise KeyboardInterrupt
+            self.action(key)
 
 
 class MainWindow(Window, CursesErrorHandler):
@@ -144,6 +144,11 @@ class MainWindow(Window, CursesErrorHandler):
     def h(self):
         return int(curses.LINES)
 
+    def decorate(self):
+        pass
+
+    def display(self):
+        self.put(1, 1, 'test')
 
 
 class DockerImagesManager(Main, CursesErrorHandler):
@@ -223,3 +228,5 @@ class DockerImagesManager(Main, CursesErrorHandler):
 if __name__ == "__main__":
     m = DockerImagesManager()
     m.loop_handler()
+    # w = MainWindow('Docker Images Manager')
+    # w.loop_handler()
