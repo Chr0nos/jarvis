@@ -76,8 +76,7 @@ class MainWindow(Window):
         curses.noecho()
         curses.cbreak()
         curses.start_color()
-        # super(MainWindow, self).__init__(None, title, 0, 0, curses.COLS, curses.LINES)
-        Window.__init__(self, None, title, 0, 0, curses.COLS, curses.LINES)
+        super().__init__(None, title, 0, 0, curses.COLS, curses.LINES)
         self.screen.keypad(True)
         print('init done')
 
