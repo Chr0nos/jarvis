@@ -27,21 +27,31 @@ class Window:
             self.y = y + parent.y
             self.screen = parent.screen
 
+    def __del__(self):
+        self.refresh_parents()
+
+    def refresh_parents(self):
+        parent = self.parent
+        while parent is not None:
+            parent.display()
+            parent = parent.parent
+
     def put_center(self, content: str, y=0):
         return self.screen.addstr(
-            self.h + y,
+            self.y + y,
             self.x + (self.w >> 1) - (len(content) >> 1),
             content
         )
 
     def put(self, y, x, content: str):
-        return self.screen.addstr(self.h + y, self.x + x, content)
+        return self.screen.addstr(self.y + y, self.x + x, content)
 
     def decorate(self):
         self.put(0, 0, '-' * self.w)
+        spaces = ' ' * max(self.w - 1, 0)
         for line in range(0, self.h):
-            self.put(line, 0, '|')
-            self.put(line, self.w, '|')
+            self.put(line, 0, f'|{spaces}|')
+            # self.put(line, self.w, '|')
         self.put(0, 0, '-' * (self.w + 1))
         self.put(self.h, 0, '-' * (self.w + 1))
         self.put_center(self.title + f' {self.w}x{self.h}')
@@ -64,7 +74,7 @@ class Window:
             self.screen.refresh()
             key = self.screen.getkey()
             if key == 'q':
-                raise KeyboardInterrupt
+                return
             self.action(key)
 
 
@@ -109,10 +119,10 @@ class MainWindow(Window):
     def display(self):
         pass
 
-    def loop(self):
+    def loop_handler(self):
         while True:
             try:
-                super().loop()
+                self.loop()
             except KeyboardInterrupt:
                 return
             except Exception as err:
@@ -142,7 +152,7 @@ class DockerImagesManager(MainWindow):
                 parent=self,
                 title='test',
                 x=(self.w >> 2),
-                y=self.y + 3,
+                y=3,
                 w=(self.w >> 1),
                 h=(self.h >> 1)
             )
@@ -193,4 +203,4 @@ if __name__ == "__main__":
     # m = MainWindow('Docker Images Manager')
     # w.close()
     # print(m.x, m.y, m.w, m.h)
-    m.loop()
+    m.loop_handler()
