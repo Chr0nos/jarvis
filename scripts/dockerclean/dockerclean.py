@@ -30,6 +30,12 @@ class Window:
     def __del__(self):
         self.refresh_parents()
 
+    def geometry_auto(self):
+        self.x = (self.w >> 2)
+        self.y = self.y + 3
+        self.w = (self.w >> 1)
+        self.h = (self.h >> 1)
+
     def refresh_parents(self):
         parent = self.parent
         while parent is not None:
@@ -79,7 +85,6 @@ class Window:
 
 class MainWindow(Window):
     def __init__(self, title):
-        print('init start')
         self.screen = curses.initscr()
         assert self.screen is not None
         curses.noecho()
@@ -87,7 +92,6 @@ class MainWindow(Window):
         curses.start_color()
         super().__init__(None, title, 0, 0, curses.COLS, curses.LINES)
         self.screen.keypad(True)
-        print('init done')
 
     def __del__(self):
         self.close()
@@ -109,8 +113,8 @@ class MainWindow(Window):
     def decorate(self):
         pass
 
-    def put(self, y, x, content: str):
-        return self.screen.addstr(y, x, content)
+    def put(self, y, x, *args, **kwargs):
+        return self.screen.addstr(y, x, *args, **kwargs)
 
     def put_center(self, content: str, y=0):
         return self.screen.addstr(y, (self.w >> 1) - (len(content) >> 1))
@@ -129,6 +133,30 @@ class MainWindow(Window):
                 self.screen.addstr(10, 10, 'error: ' + str(err))
                 self.screen.refresh()
                 self.screen.getch()
+
+
+class ConfirmWindow(Window):
+    state = False
+    margin = 7
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('title', 'Are you sure ?')
+        super().__init__(*args, **kwargs)
+
+    def action(self, key):
+        if key == 'y':
+            self.state = True
+            raise KeyboardInterrupt
+        if key in ('KEY_LEFT', 'KEY_RIGHT'):
+            self.state = not self.state
+
+    def display(self):
+        col = self.x + (self.w >> 1)
+        line = self.y + (self.h >> 1)
+        color = curses.A_UNDERLINE if self.line == line else curses.A_DIM
+
+        self.put(line, col - self.margin, 'Yes', curses.A_UNDERLINE if self.state else curses.A_DIM)
+        self.put(line, col + self.margin, 'No', curses.A_UNDERLINE if self.state else curses.A_DIM)
 
 
 class DockerImagesManager(MainWindow):
@@ -154,16 +182,12 @@ class DockerImagesManager(MainWindow):
                     self.put_center(str(self.selection.tags), 2)
 
 
-            w = TestWindow(
-                parent=self,
-                title='test',
-                x=(self.w >> 2),
-                y=self.y + 3,
-                w=(self.w >> 1),
-                h=(self.h >> 1)
-            )
+            w = TestWindow(self, 'test', (self.w >> 2), self.y + 3, (self.w >> 1), (self.h >> 1))
             w.selection = self.get_selected_id()
             w.show()
+
+        if key == 'd':
+            w = ConfirmWindow(self, )
 
     def get_selected_id(self):
         return list(self.images.values())[self.line]
