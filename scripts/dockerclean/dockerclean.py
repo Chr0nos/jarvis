@@ -51,7 +51,6 @@ class Window:
         spaces = ' ' * max(self.w - 1, 0)
         for line in range(0, self.h):
             self.put(line, 0, f'|{spaces}|')
-            # self.put(line, self.w, '|')
         self.put(0, 0, '-' * (self.w + 1))
         self.put(self.h, 0, '-' * (self.w + 1))
         self.put_center(self.title + f' {self.w}x{self.h}')
@@ -66,7 +65,7 @@ class Window:
     def action(self, key):
         pass
 
-    def loop(self):
+    def show(self):
         assert self.screen
         while True:
             self.decorate()
@@ -122,7 +121,7 @@ class MainWindow(Window):
     def loop_handler(self):
         while True:
             try:
-                self.loop()
+                self.show()
             except KeyboardInterrupt:
                 return
             except Exception as err:
@@ -148,15 +147,23 @@ class DockerImagesManager(MainWindow):
         if key == 'KEY_DOWN':
             self.line = min(self.line + 1, self.line_max)
         if key == 'w':
-            w = Window(
+
+            class TestWindow(Window):
+                def display(self):
+                    self.put_center(self.selection.short_id, 1)
+                    self.put_center(str(self.selection.tags), 2)
+
+
+            w = TestWindow(
                 parent=self,
                 title='test',
                 x=(self.w >> 2),
-                y=3,
+                y=self.y + 3,
                 w=(self.w >> 1),
                 h=(self.h >> 1)
             )
-            w.loop()
+            w.selection = self.get_selected_id()
+            w.show()
 
     def get_selected_id(self):
         return list(self.images.values())[self.line]
@@ -200,7 +207,4 @@ class DockerImagesManager(MainWindow):
 
 if __name__ == "__main__":
     m = DockerImagesManager()
-    # m = MainWindow('Docker Images Manager')
-    # w.close()
-    # print(m.x, m.y, m.w, m.h)
     m.loop_handler()
