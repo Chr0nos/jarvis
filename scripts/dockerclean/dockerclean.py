@@ -20,6 +20,7 @@ class Window:
         self.parent = parent
         self.title = title
         self.title_len = len(title)
+        self.closed = True
         if parent is None:
             self.x = x
             self.y = y
@@ -94,6 +95,7 @@ class Window:
 
     def show(self):
         assert self.screen
+        self.closed = False
         while True:
             self.decorate()
             self.display()
@@ -102,7 +104,8 @@ class Window:
             if key == 'q':
                 return
             if self.action(key) == self.CLOSE:
-                return self.CLOSE
+                self.closed = True
+                return self
 
 
 class MainWindow(Window):
@@ -214,9 +217,8 @@ class DockerImagesManager(MainWindow):
                         w.selection = self.selection
                         w.show()
 
-                    if key == 'd':
-                        w = ConfirmWindow(self)
-                        w.show()
+                    if key == 'd' and ConfirmWindow(self).show().state:
+                        raise KeyboardInterrupt
 
                 def display(self):
                     self.put_center(self.selection.short_id, 1)
