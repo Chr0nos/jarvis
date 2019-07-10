@@ -106,8 +106,6 @@ class Window:
 
 
 class MainWindow(Window):
-    level = 0
-
     def __init__(self, title):
         self.screen = curses.initscr()
         assert self.screen is not None
@@ -186,9 +184,8 @@ class ConfirmWindow(Window):
             return self.CLOSE
 
     def display(self):
-        col = self.x + (self.w >> 1)
-        line = self.y + (self.h >> 1)
-
+        col = self.w >> 1
+        line = self.h >> 1
         self.put(line, col - self.margin, 'Yes', curses.A_UNDERLINE if self.state else curses.A_DIM)
         self.put(line, col + self.margin, 'No', curses.A_UNDERLINE if not self.state else curses.A_DIM)
 
