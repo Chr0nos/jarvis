@@ -181,6 +181,9 @@ class ConfirmWindow(Window):
         if key == 'y':
             self.state = True
             return self.CLOSE
+        if key == 'n':
+            self.state = False
+            return self.CLOSE
         if key in ('KEY_LEFT', 'KEY_RIGHT'):
             self.state = not self.state
         if key == '\n':
