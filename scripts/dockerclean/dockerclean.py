@@ -38,6 +38,9 @@ class Window:
         self.refresh_parents()
         self.screen.refresh()
 
+    def __str__(self):
+        return f'{self.title} ({self.w}x{self.h})'
+
     def geometry_auto(self):
         self.x = (self.w >> 2)
         self.y = self.y + 3
@@ -45,7 +48,10 @@ class Window:
         self.h = (self.h >> 1)
 
     def refresh_parents(self):
-        self.parent_iter('refresh', self.SUFIX)
+        lst = self.parent_list()
+        lst.reverse()
+        for p in lst:
+            p.refresh()
 
     def parent_iter(self, method, mode, *args, **kwargs):
         def stack_back(parent):
@@ -59,6 +65,14 @@ class Window:
                 f(*args, **kwargs)
 
         stack_back(self.parent)
+
+    def parent_list(self):
+        lst = []
+        parent = self.parent
+        while parent:
+            lst.append(parent)
+            parent = parent.parent
+        return lst
 
     def put_center(self, content: str, y=0):
         return self.screen.addstr(
@@ -77,7 +91,7 @@ class Window:
             self.put(line, 0, f'|{spaces}|')
         self.put(0, 0, '-' * (self.w + 1))
         self.put(self.h, 0, '-' * (self.w + 1))
-        self.put_center(self.title + f' {self.w}x{self.h}')
+        self.put_center(str(self))
 
     def clear(self):
         for line in range(self.h):
@@ -89,6 +103,7 @@ class Window:
     def refresh(self):
         self.decorate()
         self.display()
+        self.screen.refresh()
 
     def action(self, key):
         pass
@@ -97,11 +112,10 @@ class Window:
         assert self.screen
         self.closed = False
         while True:
-            self.decorate()
-            self.display()
-            self.screen.refresh()
+            self.refresh()
             key = self.screen.getkey()
             if key == 'q':
+                self.closed = True
                 return
             if self.action(key) == self.CLOSE:
                 self.closed = True
@@ -149,7 +163,7 @@ class MainWindow(Window):
 
     def refresh(self):
         self.screen.clear()
-        self.display()
+        super().refresh()
 
     def loop_handler(self):
         while True:
@@ -228,7 +242,6 @@ class DockerImagesManager(MainWindow):
                     self.put_center(str(self.selection.tags), 2)
                     self.put_center(str(self.level), 3)
 
-
             w = TestWindow(self, 'test', (self.w >> 2), self.y + 3, (self.w >> 1), (self.h >> 1))
             w.selection = self.get_selected_id()
             w.show()
@@ -268,6 +281,7 @@ class DockerImagesManager(MainWindow):
         self.screen.addstr(line, 1, '-' * 80)
         line += 1
         self.screen.addstr(line, 1, wsize(total))
+
 
 if __name__ == "__main__":
     m = DockerImagesManager()
