@@ -1,7 +1,6 @@
 import docker, curses, logging
 from time import sleep
 
-
 def wsize(n):
     powers = ('b', 'kb', 'mb', 'gb', 'tb')
     m = len(powers)
@@ -13,6 +12,9 @@ def wsize(n):
 
 
 class Window:
+    PREFIX = 0
+    SUFIX = 1
+
     def __init__(self, parent, title: str, x: int, y: int, w: int, h: int):
         self.parent = parent
         self.title = title
@@ -20,14 +22,17 @@ class Window:
         if parent is None:
             self.x = x
             self.y = y
+            self.level = 0
         else:
             self.w = w
             self.h = h
             self.x = x + parent.x
             self.y = y + parent.y
             self.screen = parent.screen
+            self.level = parent.level + 1
 
     def __del__(self):
+        self.screen.clear()
         self.refresh_parents()
 
     def geometry_auto(self):
@@ -37,10 +42,20 @@ class Window:
         self.h = (self.h >> 1)
 
     def refresh_parents(self):
-        parent = self.parent
-        while parent is not None:
-            parent.display()
-            parent = parent.parent
+        self.parent_iter('refresh', self.SUFIX)
+
+    def parent_iter(self, method, mode, *args, **kwargs):
+        def stack_back(parent):
+            if parent is None:
+                return
+            f = getattr(parent, method)
+            if mode & self.PREFIX:
+                f(*args, **kwargs)
+            stack_back(parent.parent)
+            if mode & self.SUFIX:
+                f(*args, **kwargs)
+
+        stack_back(self.parent)
 
     def put_center(self, content: str, y=0):
         return self.screen.addstr(
@@ -49,8 +64,8 @@ class Window:
             content
         )
 
-    def put(self, y, x, content: str):
-        return self.screen.addstr(self.y + y, self.x + x, content)
+    def put(self, y, x, *args, **kwargs):
+        return self.screen.addstr(self.y + y, self.x + x, *args, **kwargs)
 
     def decorate(self):
         self.put(0, 0, '-' * self.w)
@@ -68,6 +83,11 @@ class Window:
     def display(self, context=None):
         pass
 
+    def refresh(self):
+        self.clear()
+        self.decorate()
+        self.display()
+
     def action(self, key):
         pass
 
@@ -84,6 +104,8 @@ class Window:
 
 
 class MainWindow(Window):
+    level = 0
+
     def __init__(self, title):
         self.screen = curses.initscr()
         assert self.screen is not None
@@ -121,6 +143,10 @@ class MainWindow(Window):
 
     def display(self):
         pass
+
+    def refresh(self):
+        self.screen.clear()
+        self.display()
 
     def loop_handler(self):
         while True:
@@ -177,9 +203,16 @@ class DockerImagesManager(MainWindow):
         if key == 'w':
 
             class TestWindow(Window):
+                def action(self, key):
+                    if key == 'w':
+                        w = TestWindow(self, 'Test', 2, 2, self.w, self.h)
+                        w.selection = self.selection
+                        w.show()
+
                 def display(self):
                     self.put_center(self.selection.short_id, 1)
                     self.put_center(str(self.selection.tags), 2)
+                    self.put_center(str(self.level), 3)
 
 
             w = TestWindow(self, 'test', (self.w >> 2), self.y + 3, (self.w >> 1), (self.h >> 1))
