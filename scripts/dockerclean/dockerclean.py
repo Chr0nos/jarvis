@@ -201,8 +201,8 @@ class DockerImagesManager(MainWindow):
         self.setup()
 
     def action(self, key):
-        self.screen.addstr(self.line_max + 5, 0, f'action: {key}')
-        if key == 'd':
+        self.screen.addstr(curses.LINES - 1, 0, f'action: {key}')
+        if key == 'd' and ConfirmWindow(self).show().state:
             self.delete_selection()
         if key == 'KEY_UP':
             self.line = max(self.line - 1, 0)
@@ -234,16 +234,11 @@ class DockerImagesManager(MainWindow):
         return list(self.images.values())[self.line]
 
     def delete_selection(self):
-        self.display()
         image = self.get_selected_id()
-        line = self.line_max + 2
-        self.screen.addstr(line, 0, f'are you sure to delete {image.short_id} ({image.tags}) ? (y/n)')
-        key = self.screen.getkey()
-        if key == 'y':
-            self.client.images.remove(image.id)
-            self.images.pop(image.id, None)
-            self.line_max = max(self.line_max - 1, 0)
-        self.screen.addstr(line + 1, 0, ' ' * self.w)
+        self.client.images.remove(image.id)
+        self.images.pop(image.id, None)
+        self.line_max = max(self.line_max - 1, 0)
+        self.display()
 
     def setup(self):
         """List availables images and reset the current line selection to 0
@@ -263,12 +258,13 @@ class DockerImagesManager(MainWindow):
             size = wsize(size_bytes)
             tag = img.tags[0] if len(img.tags) else 'None'
             self.screen.addstr(line, 1, f'{size:10} {tag:42} {img.short_id}', color)
+            if line + 3 > curses.LINES:
+                return
             line += 1
             total += size_bytes
         self.screen.addstr(line, 1, '-' * 80)
         line += 1
         self.screen.addstr(line, 1, wsize(total))
-
 
 if __name__ == "__main__":
     m = DockerImagesManager()
