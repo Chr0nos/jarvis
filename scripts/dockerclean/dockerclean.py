@@ -74,7 +74,7 @@ class Window:
             parent = parent.parent
         return lst
 
-    def put_center(self, content: str, y=0):
+    def put_center(self, y, content: str):
         return self.screen.addstr(
             self.y + y,
             self.x + (self.w >> 1) - (len(content) >> 1),
@@ -85,13 +85,14 @@ class Window:
         return self.screen.addstr(self.y + y, self.x + x, *args, **kwargs)
 
     def decorate(self):
-        self.put(0, 0, '-' * self.w)
+        color = curses.color_pair(3)
+        self.put(0, 0, '-' * self.w, color)
         spaces = ' ' * max(self.w - 1, 0)
         for line in range(0, self.h):
-            self.put(line, 0, f'|{spaces}|')
-        self.put(0, 0, '-' * (self.w + 1))
-        self.put(self.h, 0, '-' * (self.w + 1))
-        self.put_center(str(self))
+            self.put(line, 0, f'|{spaces}|', color)
+        self.put(0, 0, '-' * (self.w + 1), color)
+        self.put(self.h, 0, '-' * (self.w + 1), color)
+        self.put_center(0, str(self))
 
     def clear(self):
         for line in range(self.h):
@@ -131,9 +132,15 @@ class MainWindow(Window):
         curses.start_color()
         super().__init__(None, title, 0, 0, curses.COLS, curses.LINES)
         self.screen.keypad(True)
+        self.color_init()
 
     def __del__(self):
         self.close()
+
+    def color_init(self):
+        curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)
+        curses.init_pair(2, curses.COLOR_CYAN, curses.COLOR_BLACK)
+        curses.init_pair(3, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
 
     def close(self):
         curses.nocbreak()
@@ -153,9 +160,12 @@ class MainWindow(Window):
         pass
 
     def put(self, y, x, *args, **kwargs):
+        color = kwargs.pop('color', None)
+        if color is not None:
+            return self.screen.addstr(y, x, *args, curses.color_pair(color), **kwargs)
         return self.screen.addstr(y, x, *args, **kwargs)
 
-    def put_center(self, content: str, y=0):
+    def put_center(self, y, content: str):
         return self.screen.addstr(y, (self.w >> 1) - (len(content) >> 1))
 
     def display(self):
@@ -238,13 +248,15 @@ class DockerImagesManager(MainWindow):
                         raise KeyboardInterrupt
 
                 def display(self):
-                    self.put_center(self.selection.short_id, 1)
-                    self.put_center(str(self.selection.tags), 2)
-                    self.put_center(str(self.level), 3)
+                    self.put_center(1, self.selection.short_id)
+                    self.put_center(2, str(self.selection.tags))
+                    self.put_center(3, str(self.level))
 
             w = TestWindow(self, 'test', (self.w >> 2), self.y + 3, (self.w >> 1), (self.h >> 1))
             w.selection = self.get_selected_id()
             w.show()
+        if key == 'r':
+            self.setup()
 
     def get_selected_id(self):
         return list(self.images.values())[self.line]
@@ -269,11 +281,11 @@ class DockerImagesManager(MainWindow):
         line = 0
         total = 0
         for img in self.images.values():
-            color = curses.A_UNDERLINE if self.line == line else curses.A_DIM
             size_bytes = img.attrs.get('Size')
             size = wsize(size_bytes)
             tag = img.tags[0] if len(img.tags) else 'None'
-            self.screen.addstr(line, 1, f'{size:10} {tag:42} {img.short_id}', color)
+            self.put(line, 0, f'{size:10} {tag:42} {img.short_id}',
+                color=(2 if line == self.line else 1))
             if line + 3 > curses.LINES:
                 return
             line += 1
