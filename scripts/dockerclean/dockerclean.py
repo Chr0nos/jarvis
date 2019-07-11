@@ -251,7 +251,7 @@ class DockerImagesManager(MainWindow):
 
     def delete_selection(self):
         image = self.get_selected_id()
-        self.client.images.remove(image.id)
+        self.client.images.remove(image.id, force=True)
         self.images.pop(image.id, None)
         self.line_max = max(self.line_max - 1, 0)
         self.display()
