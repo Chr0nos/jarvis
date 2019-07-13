@@ -1,3 +1,4 @@
+#!./venv/bin/python
 import os
 import argparse
 import re
@@ -8,7 +9,7 @@ import zipfile
 
 from neomodel import (
 	config, StructuredNode, StringProperty, IntegerProperty,
-	UniqueIdProperty, RelationshipTo, One
+	UniqueIdProperty, RelationshipTo, One, BooleanProperty
 )
 
 PASSWORD = os.getenv('PASSWORD')
@@ -31,6 +32,7 @@ class Toon(StructuredNode):
 	titleno = IntegerProperty()
 	gender = RelationshipTo('Gender', 'Genre', cardinality=One)
 	chapter = StringProperty()
+	fetched = BooleanProperty(default=False)
 
 	@staticmethod
 	def from_url(url):
@@ -99,22 +101,34 @@ class Toon(StructuredNode):
 		print('->', filepath)
 		return filepath
 
-	def pull(self, target):
+	def get_soup(self):
 		page = requests.get(self.url)
 		if page.status_code != 200:
 			raise ValueError(page.status_code)
 		soup = BeautifulSoup.BeautifulSoup(page.text, 'lxml')
+		return soup
+
+	def pull(self, target):
 		if not os.path.exists(self.path):
 			os.mkdir(self.path)
-		with TemporaryDirectory() as tmpd:
-			os.chdir(tmpd)
-			i  = 0
-			cbz = zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED)
-			for url in self.index(soup):
-				filepath = self.fetch_url(url, os.path.join(tmpd, f'{i:03}.jpg'))
-				cbz.write(filepath, os.path.basename(filepath))
-				i += 1
-			cbz.close()
+		soup = self.get_soup()
+
+		def leech():
+			with TemporaryDirectory() as tmpd:
+				os.chdir(tmpd)
+				i  = 0
+				cbz = zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED)
+				for url in self.index(soup):
+					filepath = self.fetch_url(url, os.path.join(tmpd, f'{i:03}.jpg'))
+					cbz.write(filepath, os.path.basename(filepath))
+					i += 1
+				cbz.close()
+			self.fetched = True
+			self.save()
+
+		if not self.fetched:
+			leech()
+
 		print('cbz:', target)
 		next_page = soup.find_all("a", class_='pg_next')[0].get('href')
 		next_toon = Toon.from_url(next_page)
