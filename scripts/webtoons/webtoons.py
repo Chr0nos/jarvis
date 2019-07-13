@@ -53,8 +53,12 @@ class Toon(StructuredNode):
 		return toon
 
 	@property
+	def path(self):
+		return os.path.join('/run/media/adamaru/Aiur/Scans/Webtoons/', self.name)
+
+	@property
 	def cbz_path(self):
-		return os.path.join('/run/media/adamaru/Aiur/Scans/Webtoons/', self.name, f'{self.chapter}.cbz')
+		return os.path.join(self.path, f'{self.chapter}.cbz')
 
 	@property
 	def url(self):
@@ -100,13 +104,15 @@ class Toon(StructuredNode):
 		if page.status_code != 200:
 			raise ValueError(page.status_code)
 		soup = BeautifulSoup.BeautifulSoup(page.text, 'lxml')
+		if not os.path.exists(self.path):
+			os.mkdir(self.path)
 		with TemporaryDirectory() as tmpd:
 			os.chdir(tmpd)
 			i  = 0
 			cbz = zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED)
 			for url in self.index(soup):
 				filepath = self.fetch_url(url, os.path.join(tmpd, f'{i:03}.jpg'))
-				cbz.write(filepath)
+				cbz.write(filepath, os.path.basename(filepath))
 				i += 1
 			cbz.close()
 		print('cbz:', target)
@@ -127,7 +133,7 @@ if __name__ == "__main__":
 	if args.list:
 		print('subscribed toons:')
 		for toon in Toon.iter():
-			print(f'{toon.name:12} {toon.chapter}')
+			print(f'{toon.name:30} {toon.chapter}')
 
 	if args.add:
 		t = Toon.from_url(args.add)
