@@ -73,7 +73,7 @@ class Toon(StructuredNode):
 
 	@staticmethod
 	def iter():
-		for toon in Toon.nodes.all():
+		for toon in Toon.nodes.order_by('name').all():
 			yield toon
 
 	def index(self, soup: BeautifulSoup):
