@@ -1,5 +1,6 @@
 #!./venv/bin/python
 import os
+import sys
 import argparse
 import re
 import requests
@@ -36,7 +37,7 @@ class Toon(StructuredNode):
 
 	@staticmethod
 	def from_url(url):
-		print('parsing ', url)
+		# print('parsing ', url)
 		r = re.compile(r'^https:\/\/([\w\.]+)\/en\/([\w-]+)\/([\w-]+)\/([\w-]+)\/viewer\?title_no=(\d+)&episode_no=(\d+)')
 		m = r.match(url)
 		if not m:
@@ -98,7 +99,9 @@ class Toon(StructuredNode):
 			for chunk in response.iter_content(8192):
 				fd.write(chunk)
 			fd.close()
-		print('->', filepath)
+		sys.stdout.write('.')
+		sys.stdout.flush()
+		# print('->', filepath)
 		return filepath
 
 	def get_soup(self):
@@ -108,16 +111,27 @@ class Toon(StructuredNode):
 		soup = BeautifulSoup.BeautifulSoup(page.text, 'lxml')
 		return soup
 
-	def pull(self, target):
+	def get_next_instance(self, soup: BeautifulSoup):
+		next_page = soup.find_all("a", class_='pg_next')[0].get('href')
+		next_toon = Toon.from_url(next_page)
+		self.delete()
+		return next_toon
+
+	def pull(self, force=False):
 		if not os.path.exists(self.path):
 			os.mkdir(self.path)
+
 		soup = self.get_soup()
+		if not force and os.path.exists(self.cbz_path):
+			print(f'{self.name} {self.chapter} : skiped, already present')
+			return self.get_next_instance(soup)
 
 		def leech():
+			print(f'{self.name} {self.chapter} : ', end='')
 			with TemporaryDirectory() as tmpd:
 				os.chdir(tmpd)
 				i  = 0
-				cbz = zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED)
+				cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
 				for url in self.index(soup):
 					filepath = self.fetch_url(url, os.path.join(tmpd, f'{i:03}.jpg'))
 					cbz.write(filepath, os.path.basename(filepath))
@@ -125,15 +139,14 @@ class Toon(StructuredNode):
 				cbz.close()
 			self.fetched = True
 			self.save()
+			sys.stdout.write('\n')
+			sys.stdout.flush()
 
 		if not self.fetched:
 			leech()
-
-		print('cbz:', target)
-		next_page = soup.find_all("a", class_='pg_next')[0].get('href')
-		next_toon = Toon.from_url(next_page)
-		self.delete()
-		return next_toon
+		else:
+			print('cbz:', self.cbz_path)
+		return self.get_next_instance(soup)
 
 
 if __name__ == "__main__":
@@ -156,7 +169,8 @@ if __name__ == "__main__":
 		t = Toon.nodes.get(name=args.pull)
 		try:
 			while True:
-				t = t.pull(t.cbz_path)
+				t = t.pull()
+
 		except ValueError:
 			print('done')
 
