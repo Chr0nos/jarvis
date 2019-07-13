@@ -149,11 +149,31 @@ class Toon(StructuredNode):
 		return self.get_next_instance(soup)
 
 
+class ToonManager:
+	@staticmethod
+	def pull_toon(toon):
+		try:
+			while True:
+				toon = toon.pull()
+		except ValueError:
+			print('done')
+
+	@classmethod
+	def pull_all(cls):
+		for toon in Toon.nodes:
+			cls.pull_toon(toon)
+
+	@classmethod
+	def pull(cls, name):
+		cls.pull_toon(Toon.nodes.get(name=name))
+
+
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-a', '--add')
 	parser.add_argument('-l', '--list', action='store_true')
 	parser.add_argument('-p', '--pull')
+	parser.add_argument('-P', '--pullall', action='store_true')
 	parser.add_argument('-d', '--delete')
 
 	args = parser.parse_args()
@@ -163,17 +183,13 @@ if __name__ == "__main__":
 			print(f'{toon.name:30} {toon.chapter}')
 
 	if args.add:
-		t = Toon.from_url(args.add)
+		Toon.from_url(args.add)
 
-	if args.pull:
-		t = Toon.nodes.get(name=args.pull)
-		try:
-			while True:
-				t = t.pull()
+	if args.pullall:
+		ToonManager.pull_all()
 
-		except ValueError:
-			print('done')
-
+	elif args.pull:
+		ToonManager.pull(args.pull)
 
 	if args.delete:
 		try:
