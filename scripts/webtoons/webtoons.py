@@ -23,7 +23,7 @@ config.DATABASE_URL = f'bolt://neo4j:{PASSWORD}@10.8.0.1:7687'
 class Gender(StructuredNode):
 	name = StringProperty(unique=True)
 
-	def post_save(self):
+	def post_create(self):
 		print('created a new gender', self.name)
 
 
@@ -80,7 +80,8 @@ class Toon(StructuredNode):
 	def index(self, soup: BeautifulSoup):
 		for img in soup.find_all('img', class_="_images"):
 			url = img['data-url']
-			if 'jpg' not in url and 'png' not in url:
+			if 'jpg' not in url and 'JPG' not in url and 'png' not in url:
+				# print('i', url)
 				continue
 			yield url
 
@@ -157,11 +158,18 @@ class ToonManager:
 				toon = toon.pull()
 		except ValueError:
 			print('done')
+		except KeyboardInterrupt:
+			os.unlink(toon.cbz_path)
+			print('canceled, removed incomplete cbz', toon.cbz_path)
+			raise KeyboardInterrupt
 
 	@classmethod
 	def pull_all(cls):
 		for toon in Toon.nodes:
-			cls.pull_toon(toon)
+			try:
+				cls.pull_toon(toon)
+			except KeyboardInterrupt:
+				return
 
 	@classmethod
 	def pull(cls, name):
@@ -175,6 +183,8 @@ if __name__ == "__main__":
 	parser.add_argument('-p', '--pull')
 	parser.add_argument('-P', '--pullall', action='store_true')
 	parser.add_argument('-d', '--delete')
+	parser.add_argument('-r', '--redl')
+	parser.add_argument('-u', '--update')
 
 	args = parser.parse_args()
 	if args.list:
@@ -197,3 +207,20 @@ if __name__ == "__main__":
 			print('deleted')
 		except Toon.DoesNotExist:
 			print(f'no such toon {args.delete}')
+
+
+	if args.redl:
+		t = Toon.from_url(args.redl)
+		try:
+			t.pull()
+		except KeyboardInterrupt:
+			pass
+		print('removed temporary toon.')
+
+	if args.update:
+		t = Toon.from_url(args.update)
+		t.delete()
+		for old in Toon.nodes.filter(name=t.name).all():
+			old.delete()
+		t.save()
+		print('updated', t.name)
