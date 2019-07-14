@@ -31,7 +31,7 @@ def test_user_install(fm, fc, fakearch):
 
 
 def test_user_groups(user):
-    user.get_defaults_groups()
+    ArchUser.get_defaults_groups()
 
 
 def test_user_exists(user):
