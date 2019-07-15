@@ -41,6 +41,11 @@ class Window:
     def __str__(self):
         return f'{self.title} ({self.w}x{self.h})'
 
+    def setAttr(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        return self
+
     def geometry_auto(self):
         self.x = (self.w >> 2)
         self.y = self.y + 3
@@ -109,6 +114,11 @@ class Window:
     def action(self, key):
         pass
 
+    def onClose(self):
+        """Trigger called only if the user pressed 'q' to quit a window.
+        """
+        pass
+
     def show(self):
         assert self.screen
         self.closed = False
@@ -117,7 +127,8 @@ class Window:
             key = self.screen.getkey()
             if key == 'q':
                 self.closed = True
-                return
+                self.onClose()
+                return self
             if self.action(key) == self.CLOSE:
                 self.closed = True
                 return self
@@ -191,12 +202,13 @@ class MainWindow(Window):
 
 
 class ConfirmWindow(Window):
-    state = False
     margin = 7
 
-    def __init__(self, parent, title=None):
+    def __init__(self, parent, title=None, default=False):
         if title is None:
             title = 'Are you sure ?'
+        self.state = default
+        self.default = default
         w = 60
         h = 10
         x = (parent.w >> 1) - (w >> 1)
@@ -221,6 +233,9 @@ class ConfirmWindow(Window):
         self.put(line, col - self.margin, 'Yes', curses.A_UNDERLINE if self.state else curses.A_DIM)
         self.put(line, col + self.margin, 'No', curses.A_UNDERLINE if not self.state else curses.A_DIM)
 
+    def onClose(self):
+        self.state = self.default
+
 
 class DockerImagesManager(MainWindow):
     def __init__(self):
@@ -229,43 +244,60 @@ class DockerImagesManager(MainWindow):
         self.client = docker.from_env()
         self.setup()
 
+    def action_delete(self):
+        image = self.get_selected_id()
+        if not ConfirmWindow(self, title=f'Delete {image.short_id} ?').show().state:
+            return
+        self.client.images.remove(image.id, force=True)
+        self.images.pop(image.id, None)
+        self.line_max = max(self.line_max - 1, 0)
+        self.display()
+
+    def action_test_window(self):
+        class TestWindow(Window):
+            def action(self, key):
+                if key == 'w':
+                    w = TestWindow(self, 'Test', 2, 2, self.w, self.h)
+                    w.selection = self.selection
+                    w.show()
+
+                if key == 'd' and ConfirmWindow(self).show().state:
+                    raise KeyboardInterrupt
+
+            def display(self):
+                self.put_center(1, self.selection.short_id)
+                self.put_center(2, str(self.selection.tags))
+                self.put_center(3, str(self.level))
+
+        w = TestWindow(self, 'test', (self.w >> 2), self.y + 3, (self.w >> 1), (self.h >> 1))
+        w.selection = self.get_selected_id()
+        w.show()
+
+    def action_scroll_up(self):
+        self.line = max(self.line - 1, 0)
+
+    def action_scroll_down(self):
+        self.line = min(self.line + 1, self.line_max)
+
+
     def action(self, key):
         self.screen.addstr(curses.LINES - 1, 0, f'action: {key}')
-        if key == 'd' and ConfirmWindow(self).show().state:
-            self.delete_selection()
-        if key == 'KEY_UP':
-            self.line = max(self.line - 1, 0)
-        if key == 'KEY_DOWN':
-            self.line = min(self.line + 1, self.line_max)
-        if key == 'w':
-
-            class TestWindow(Window):
-                def action(self, key):
-                    if key == 'w':
-                        w = TestWindow(self, 'Test', 2, 2, self.w, self.h)
-                        w.selection = self.selection
-                        w.show()
-
-                    if key == 'd' and ConfirmWindow(self).show().state:
-                        raise KeyboardInterrupt
-
-                def display(self):
-                    self.put_center(1, self.selection.short_id)
-                    self.put_center(2, str(self.selection.tags))
-                    self.put_center(3, str(self.level))
-
-            w = TestWindow(self, 'test', (self.w >> 2), self.y + 3, (self.w >> 1), (self.h >> 1))
-            w.selection = self.get_selected_id()
-            w.show()
-        if key == 'r':
-            self.setup()
+        actions = {
+            'd': self.action_delete,
+            'w': self.action_test_window,
+            'r': self.setup,
+            'KEY_UP': self.action_scroll_up,
+            'KEY_DOWN': self.action_scroll_down
+        }
+        if actions.get(key):
+            actions[key]()
 
     def get_selected_id(self):
         return list(self.images.values())[self.line]
 
     def delete_selection(self):
         image = self.get_selected_id()
-        self.client.images.remove(image.id)
+        self.client.images.remove(image.id, force=True)
         self.images.pop(image.id, None)
         self.line_max = max(self.line_max - 1, 0)
         self.display()

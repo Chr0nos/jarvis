@@ -167,7 +167,6 @@ class WebToons():
 			print("Server has returned {} : stopping.".format(page.status_code))
 			return None
 		soup = BeautifulSoup.BeautifulSoup(page.text, 'lxml')
-		i = 0
 		for img in soup.find_all('img', class_="_images"):
 			url = img['data-url']
 			if 'jpg' not in url and 'png' not in url:
