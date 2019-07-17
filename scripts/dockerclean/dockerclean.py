@@ -140,6 +140,7 @@ class MainWindow(Window):
         assert self.screen is not None
         curses.noecho()
         curses.cbreak()
+        curses.curs_set(0)
         curses.start_color()
         super().__init__(None, title, 0, 0, curses.COLS, curses.LINES)
         self.screen.keypad(True)
@@ -154,6 +155,7 @@ class MainWindow(Window):
         curses.init_pair(3, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
 
     def close(self):
+        curses.curs_set(1)
         curses.nocbreak()
         self.screen.keypad(False)
         curses.echo()
