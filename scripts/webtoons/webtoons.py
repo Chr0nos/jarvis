@@ -212,7 +212,7 @@ if __name__ == "__main__":
 	if args.redl:
 		t = Toon.from_url(args.redl)
 		try:
-			t.pull()
+			t.pull().delete()
 		except KeyboardInterrupt:
 			pass
 		print('removed temporary toon.')
