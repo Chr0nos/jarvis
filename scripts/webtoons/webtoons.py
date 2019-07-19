@@ -35,13 +35,17 @@ class Toon(StructuredNode):
 	chapter = StringProperty()
 	fetched = BooleanProperty(default=False)
 
+	class exceptions:
+		class UrlInvalid(Exception):
+			pass
+
 	@staticmethod
 	def from_url(url):
 		# print('parsing ', url)
 		r = re.compile(r'^https:\/\/([\w\.]+)\/en\/([\w-]+)\/([\w-]+)\/([\w-]+)\/viewer\?title_no=(\d+)&episode_no=(\d+)')
 		m = r.match(url)
 		if not m:
-			raise ValueError(url)
+			raise Toon.exceptions.UrlInvalid(url)
 		site, gender_name, name, episode, title_no, episode_no = m.groups()
 
 		try:
@@ -156,8 +160,8 @@ class ToonManager:
 		try:
 			while True:
 				toon = toon.pull()
-		except ValueError:
-			print('done')
+		except Toon.exceptions.UrlInvalid:
+			pass
 		except KeyboardInterrupt:
 			os.unlink(toon.cbz_path)
 			print('canceled, removed incomplete cbz', toon.cbz_path)
