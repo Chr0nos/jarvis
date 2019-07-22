@@ -26,6 +26,13 @@ class Gender(StructuredNode):
 	def post_create(self):
 		print('created a new gender', self.name)
 
+	@staticmethod
+	def get_or_create(name):
+		try:
+			return Gender.nodes.get(name=name)
+		except Gender.DoesNotExist:
+			return Gender(name=name).save()
+
 
 class Toon(StructuredNode):
 	name = StringProperty()
@@ -47,13 +54,7 @@ class Toon(StructuredNode):
 		if not m:
 			raise Toon.exceptions.UrlInvalid(url)
 		site, gender_name, name, episode, title_no, episode_no = m.groups()
-
-		try:
-			gender = Gender.nodes.get(name=gender_name)
-		except Gender.DoesNotExist:
-			gender = Gender(name=gender_name)
-			gender.save()
-
+		gender = Gender.get_or_create(gender_name)
 		toon = Toon(name=name, epno=episode_no, chapter=episode, titleno=title_no)
 		toon.save()
 		toon.gender.connect(gender)
@@ -149,8 +150,6 @@ class Toon(StructuredNode):
 
 		if not self.fetched:
 			leech()
-		else:
-			print('cbz:', self.cbz_path)
 		return self.get_next_instance(soup)
 
 
@@ -166,6 +165,10 @@ class ToonManager:
 			os.unlink(toon.cbz_path)
 			print('canceled, removed incomplete cbz', toon.cbz_path)
 			raise KeyboardInterrupt
+		except requests.exceptions.ConnectionError as err:
+			os.unlink(toon.cbz_path)
+			print('connection error, removed incomplete cbz', err)
+
 
 	@classmethod
 	def pull_all(cls):
@@ -173,6 +176,10 @@ class ToonManager:
 			try:
 				cls.pull_toon(toon)
 			except KeyboardInterrupt:
+				return
+			except requests.exceptions.ConnectionError as err:
+				os.unlink(toon.cbz_path)
+				print('connection error, removed incomplete cbz', err)
 				return
 
 	@classmethod
