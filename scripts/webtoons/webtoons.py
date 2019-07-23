@@ -7,10 +7,12 @@ import requests
 import bs4 as BeautifulSoup
 from tempfile import TemporaryDirectory
 import zipfile
+from datetime import datetime
 
 from neomodel import (
 	config, StructuredNode, StringProperty, IntegerProperty,
-	UniqueIdProperty, RelationshipTo, One, BooleanProperty
+	UniqueIdProperty, RelationshipTo, One, BooleanProperty,
+	DateTimeProperty, Q
 )
 
 PASSWORD = os.getenv('PASSWORD')
@@ -41,6 +43,8 @@ class Toon(StructuredNode):
 	gender = RelationshipTo('Gender', 'Genre', cardinality=One)
 	chapter = StringProperty()
 	fetched = BooleanProperty(default=False)
+	last_fetch = DateTimeProperty(optional=True)
+	created = DateTimeProperty(default=datetime.now())
 
 	class exceptions:
 		class UrlInvalid(Exception):
@@ -130,6 +134,8 @@ class Toon(StructuredNode):
 		soup = self.get_soup()
 		if not force and os.path.exists(self.cbz_path):
 			print(f'{self.name} {self.chapter} : skiped, already present')
+			self.last_fetch = datetime.now()
+			self.save()
 			return self.get_next_instance(soup)
 
 		def leech():
@@ -144,6 +150,7 @@ class Toon(StructuredNode):
 					i += 1
 				cbz.close()
 			self.fetched = True
+			self.last_fetch = datetime.now()
 			self.save()
 			sys.stdout.write('\n')
 			sys.stdout.flush()
@@ -171,8 +178,9 @@ class ToonManager:
 
 
 	@classmethod
-	def pull_all(cls):
-		for toon in Toon.nodes:
+	def pull_all(cls, smart):
+		qs = Toon.nodes
+		for toon in qs:
 			try:
 				cls.pull_toon(toon)
 			except KeyboardInterrupt:
@@ -187,6 +195,12 @@ class ToonManager:
 		cls.pull_toon(Toon.nodes.get(name=name))
 
 
+def get_date(d):
+	if not d:
+		return ''
+	return d.ctime()
+
+
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-a', '--add')
@@ -196,18 +210,19 @@ if __name__ == "__main__":
 	parser.add_argument('-d', '--delete')
 	parser.add_argument('-r', '--redl')
 	parser.add_argument('-u', '--update')
+	parser.add_argument('-s', '--smart', action='store_true')
 
 	args = parser.parse_args()
 	if args.list:
 		print('subscribed toons:')
 		for toon in Toon.iter():
-			print(f'{toon.name:30} {toon.chapter}')
+			print(f'{toon.name:30} {toon.chapter:30} {get_date(toon.last_fetch)}')
 
 	if args.add:
 		Toon.from_url(args.add)
 
 	if args.pullall:
-		ToonManager.pull_all()
+		ToonManager.pull_all(args.smart)
 
 	elif args.pull:
 		ToonManager.pull(args.pull)
