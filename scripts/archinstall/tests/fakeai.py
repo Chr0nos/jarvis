@@ -3,7 +3,7 @@ sys.path.insert(0, os.getcwd())
 
 from mock import patch
 
-from arch import ArchInstall
+from arch import ArchInstall, CommandRunner
 from arch.mount import MountPoint
 from pytest import fixture
 
@@ -30,11 +30,20 @@ class FakeMount(MountPoint):
         print('unmount')
 
 
+class FakeRunner(CommandRunner):
+    def run(self, command, return_value=None, **kwargs):
+        print('running ' + ' '.join(command) + '(' + kwargs + ')')
+        return force_return
+
+
 @fixture
 @patch('arch.mount.MountPoint', callable=FakeMount)
 def fakearch(_):
     return FakeAi(hostname='fakeai', mnt='/')
 
+@fixture
+def fakerunner():
+    return FakeRunner('/')
 
 def fake_chroot(path):
     print('chroot', path)

@@ -45,7 +45,7 @@ class FileFromHost(File):
 
 
 class ArchInstall(CommandRunner):
-    def __init__(self, hostname, mnt='/mnt', lang='fr_FR.UTF-8'):
+    def __init__(self, hostname, mnt='/mnt', lang='en_US.UTF-8'):
         """
         hostname: the machine hostname
         mnt: on wich mount point will you install arch ?

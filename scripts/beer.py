@@ -39,11 +39,11 @@ def fromBrix(brix):
     return round((brix / (258.6 - ((brix / 258.2) * 227.1)) + 1) * 1000, 1)
 
 
-
 def color(volume_brassin, *args):
     """Chaque argument doit etre un tuple avec (masse_kg, coleur_ebc)
     renvoi la couleur finale de la biere
     le volume_brassin est en littres
+    retourne une valeur en EBC, valide uniquement en dessous de 100 EBC
     """
     def get_relative_color():
         beer_color = 0;
