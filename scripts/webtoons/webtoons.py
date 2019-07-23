@@ -240,7 +240,7 @@ if __name__ == "__main__":
 		try:
 			t.pull().delete()
 		except KeyboardInterrupt:
-			pass
+			t.delete()
 		print('removed temporary toon.')
 
 	if args.update:
