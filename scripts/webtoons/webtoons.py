@@ -12,7 +12,7 @@ from datetime import datetime
 from neomodel import (
 	config, StructuredNode, StringProperty, IntegerProperty,
 	UniqueIdProperty, RelationshipTo, One, BooleanProperty,
-	DateTimeProperty, Q
+	DateTimeProperty, Q, UniqueIdProperty, StructuredRel
 )
 
 PASSWORD = os.getenv('PASSWORD')
@@ -23,7 +23,7 @@ config.DATABASE_URL = f'bolt://neo4j:{PASSWORD}@10.8.0.1:7687'
 
 
 class Gender(StructuredNode):
-	name = StringProperty(unique=True)
+	name = StringProperty(unique=True, required=True)
 
 	def post_create(self):
 		print('created a new gender', self.name)
@@ -33,15 +33,20 @@ class Gender(StructuredNode):
 		try:
 			return Gender.nodes.get(name=name)
 		except Gender.DoesNotExist:
+			print('creating a new gender', name)
 			return Gender(name=name).save()
 
 
+class GenderRel(StructuredRel):
+	name = StringProperty(unique=True)
+
+
 class Toon(StructuredNode):
-	name = StringProperty()
-	epno = IntegerProperty()
-	titleno = IntegerProperty()
-	gender = RelationshipTo('Gender', 'Genre', cardinality=One)
-	chapter = StringProperty()
+	name = StringProperty(required=True)
+	epno = IntegerProperty(required=True)
+	titleno = IntegerProperty(required=True)
+	gender = RelationshipTo('Gender', 'Genre', cardinality=One, model=GenderRel)
+	chapter = StringProperty(required=True)
 	fetched = BooleanProperty(default=False)
 	last_fetch = DateTimeProperty(optional=True)
 	created = DateTimeProperty(default=datetime.now())
@@ -74,7 +79,7 @@ class Toon(StructuredNode):
 
 	@property
 	def url(self):
-		return f'https://webtoons.com/en/{self.gender.name}/{self.name}/{self.chapter}/viewer?title_no={self.titleno}&episode_no={self.epno}'
+		return f'https://webtoons.com/en/{self.gender.single().name}/{self.name}/{self.chapter}/viewer?title_no={self.titleno}&episode_no={self.epno}'
 
 	@staticmethod
 	def purge():
@@ -104,6 +109,7 @@ class Toon(StructuredNode):
 	def fetch_url(self, url, filepath):
 		response = requests.get(url, stream=True, headers=self.headers)
 		if response.status_code != 200:
+			print(url)
 			raise ValueError(response.status_code)
 		with open(filepath, 'wb') as fd:
 			for chunk in response.iter_content(8192):
@@ -117,6 +123,7 @@ class Toon(StructuredNode):
 	def get_soup(self):
 		page = requests.get(self.url)
 		if page.status_code != 200:
+			print('error: failed to fetch', self.url)
 			raise ValueError(page.status_code)
 		soup = BeautifulSoup.BeautifulSoup(page.text, 'lxml')
 		return soup
@@ -198,7 +205,8 @@ class ToonManager:
 def get_date(d):
 	if not d:
 		return ''
-	return d.ctime()
+	return d.strftime("%d/%m/%Y")
+	# return d.ctime()
 
 
 if __name__ == "__main__":
@@ -211,15 +219,16 @@ if __name__ == "__main__":
 	parser.add_argument('-r', '--redl')
 	parser.add_argument('-u', '--update')
 	parser.add_argument('-s', '--smart', action='store_true')
-
+	from pprint import pprint
 	args = parser.parse_args()
 	if args.list:
 		print('subscribed toons:')
 		for toon in Toon.iter():
-			print(f'{toon.name:30} {toon.chapter:30} {get_date(toon.last_fetch)}')
+			gender_name = toon.gender.single().name
+			print(f'{toon.name:30} {toon.chapter:30} {get_date(toon.last_fetch)} {gender_name}')
 
 	if args.add:
-		Toon.from_url(args.add)
+		toon = Toon.from_url(args.add)
 
 	if args.pullall:
 		ToonManager.pull_all(args.smart)
@@ -229,8 +238,9 @@ if __name__ == "__main__":
 
 	if args.delete:
 		try:
-			Toon.nodes.get(name=args.delete).delete()
-			print('deleted')
+			for toon in Toon.nodes.filter(name=args.delete):
+				print(toon.name, 'deleted')
+				toon.delete()
 		except Toon.DoesNotExist:
 			print(f'no such toon {args.delete}')
 
