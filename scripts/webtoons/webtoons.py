@@ -134,7 +134,12 @@ class Toon(StructuredNode):
 		self.delete()
 		return next_toon
 
-	def pull(self, force=False):
+	def pull(self, force=False, getnext=True):
+		"""Retrive the .jpgs and pack them into self.cbz
+		force: overwrite any existing.cbz file for this chapter
+		getnext: try to get the next page
+		return an instance of Toon
+		"""
 		if not os.path.exists(self.path):
 			os.mkdir(self.path)
 
@@ -164,7 +169,9 @@ class Toon(StructuredNode):
 
 		if not self.fetched:
 			leech()
-		return self.get_next_instance(soup)
+		if getnext:
+			return self.get_next_instance(soup)
+		return self
 
 
 class ToonManager:
@@ -248,7 +255,7 @@ if __name__ == "__main__":
 	if args.redl:
 		t = Toon.from_url(args.redl)
 		try:
-			t.pull().delete()
+			t.pull(getnext=False).delete()
 		except KeyboardInterrupt:
 			t.delete()
 		print('removed temporary toon.')
