@@ -7,7 +7,7 @@ import requests
 import bs4 as BeautifulSoup
 from tempfile import TemporaryDirectory
 import zipfile
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from neomodel import (
 	config, StructuredNode, StringProperty, IntegerProperty,
@@ -37,19 +37,16 @@ class Gender(StructuredNode):
 			return Gender(name=name).save()
 
 
-class GenderRel(StructuredRel):
-	name = StringProperty(unique=True)
-
-
 class Toon(StructuredNode):
 	name = StringProperty(required=True)
 	epno = IntegerProperty(required=True)
 	titleno = IntegerProperty(required=True)
-	gender = RelationshipTo('Gender', 'Genre', cardinality=One, model=GenderRel)
+	gender = RelationshipTo('Gender', 'Genre', cardinality=One)
 	chapter = StringProperty(required=True)
 	fetched = BooleanProperty(default=False)
 	last_fetch = DateTimeProperty(optional=True)
 	created = DateTimeProperty(default=datetime.now())
+	finished = BooleanProperty(default=False)
 
 	class exceptions:
 		class UrlInvalid(Exception):
@@ -88,7 +85,7 @@ class Toon(StructuredNode):
 
 	@staticmethod
 	def iter():
-		for toon in Toon.nodes.order_by('name').all():
+		for toon in Toon.nodes.order_by('name'):
 			yield toon
 
 	def index(self, soup: BeautifulSoup):
@@ -193,7 +190,13 @@ class ToonManager:
 
 	@classmethod
 	def pull_all(cls, smart):
-		qs = Toon.nodes
+		qs = Toon.nodes.exclude(finished=True)
+		if smart:
+			print('smart fetch')
+			last_week = datetime.today() - timedelta(days=7)
+			qs = qs.filter(
+				Q(last_fetch__lte=last_week) | (Q(last_fetch__isnull=True))
+			)
 		for toon in qs:
 			try:
 				cls.pull_toon(toon)
