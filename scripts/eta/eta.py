@@ -86,6 +86,7 @@ class Main:
 		self.updater.exit()
 		self.updater.join()
 		self.win.close()
+		self.app.quit()
 
 	def show(self):
 		self.win.show()
@@ -94,7 +95,7 @@ class Main:
 			self.app.exec()
 			self.updater.exit()
 		except KeyboardInterrupt:
-			self.updater.exit()
+			self.quit_button_clicked()
 
 
 if __name__ == '__main__':
