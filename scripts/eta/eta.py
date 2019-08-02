@@ -28,7 +28,7 @@ class Updater(Thread):
 		evening = morning + timedelta(hours=8)
 		total = int((evening - morning).total_seconds())
 		seconds = total - int(evening.timestamp() - now.timestamp())
-		percents = seconds / total * 100
+		percents = min(seconds / total * 100, 100)
 		self.parent.dailypbar.setValue(int(percents))
 		self.parent.win.setWindowTitle(f'Eta ({round(percents, 2)})')
 
