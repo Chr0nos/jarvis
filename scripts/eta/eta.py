@@ -18,6 +18,7 @@ class Updater(Thread):
 		self.total = (self.end - self.begin)
 		self.parent.pbar.setMinimum(0)
 		self.parent.pbar.setMaximum(self.total.days)
+		self.parent.dailypbar.setMaximum(1000)
 
 	def exit(self):
 		self.quit = True
@@ -28,9 +29,10 @@ class Updater(Thread):
 		evening = morning + timedelta(hours=8)
 		total = int((evening - morning).total_seconds())
 		seconds = total - int(evening.timestamp() - now.timestamp())
-		percents = min(seconds / total * 100, 100)
-		self.parent.dailypbar.setValue(int(percents))
-		self.parent.win.setWindowTitle(f'Eta ({round(percents, 2)})')
+		coef = min(seconds / total, 1.0)
+		percents = coef * 100
+		self.parent.dailypbar.setValue(int(coef * 1000))
+		# self.parent.win.setWindowTitle(f'Eta ({round(percents, 2)})')
 
 	@property
 	def remaining_time(self) -> int:
@@ -65,22 +67,34 @@ class Main:
 		self.label = QLabel('hello world')
 		self.pbar = QProgressBar(self.win)
 		self.dailypbar = QProgressBar(self.win)
+		self.quit_button = QPushButton('Quit')
+		self.quit_button.clicked.connect(self.quit_button_clicked)
 
 		# add elements to layout
 		self.layout = QVBoxLayout(self.win)
 		self.layout.addWidget(self.label)
 		self.layout.addWidget(self.pbar)
 		self.layout.addWidget(self.dailypbar)
+		self.layout.addWidget(self.quit_button)
 		self.win.setLayout(self.layout)
 		self.updater = Updater(self)
 
 	def __del__(self):
 		self.updater.exit()
 
+	def quit_button_clicked(self):
+		self.updater.exit()
+		self.updater.join()
+		self.win.close()
+
 	def show(self):
 		self.win.show()
 		self.updater.start()
-		self.app.exec()
+		try:
+			self.app.exec()
+			self.updater.exit()
+		except KeyboardInterrupt:
+			self.updater.exit()
 
 
 if __name__ == '__main__':
