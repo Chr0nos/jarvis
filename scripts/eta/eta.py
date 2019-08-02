@@ -27,9 +27,10 @@ class Updater(Thread):
 		morning = today + timedelta(hours=10)
 		evening = morning + timedelta(hours=8)
 		total = int((evening - morning).total_seconds())
-		seconds = int(now.timestamp() - today.timestamp())
-		percent_left = total / seconds * 100
-		self.parent.dailypbar.setValue(100 - int(percent_left))
+		seconds = total - int(evening.timestamp() - now.timestamp())
+		percents = seconds / total * 100
+		self.parent.dailypbar.setValue(int(percents))
+		self.parent.win.setWindowTitle(f'Eta ({round(percents, 2)})')
 
 	@property
 	def remaining_time(self) -> int:
