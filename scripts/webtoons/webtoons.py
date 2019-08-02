@@ -7,10 +7,12 @@ import requests
 import bs4 as BeautifulSoup
 from tempfile import TemporaryDirectory
 import zipfile
+from datetime import datetime, timedelta
 
 from neomodel import (
 	config, StructuredNode, StringProperty, IntegerProperty,
-	UniqueIdProperty, RelationshipTo, One, BooleanProperty
+	UniqueIdProperty, RelationshipTo, One, BooleanProperty,
+	DateTimeProperty, Q, UniqueIdProperty, StructuredRel
 )
 
 PASSWORD = os.getenv('PASSWORD')
@@ -21,19 +23,34 @@ config.DATABASE_URL = f'bolt://neo4j:{PASSWORD}@10.8.0.1:7687'
 
 
 class Gender(StructuredNode):
-	name = StringProperty(unique=True)
+	name = StringProperty(unique=True, required=True)
 
 	def post_create(self):
 		print('created a new gender', self.name)
 
+	@staticmethod
+	def get_or_create(name):
+		try:
+			return Gender.nodes.get(name=name)
+		except Gender.DoesNotExist:
+			print('creating a new gender', name)
+			return Gender(name=name).save()
+
 
 class Toon(StructuredNode):
-	name = StringProperty()
-	epno = IntegerProperty()
-	titleno = IntegerProperty()
+	name = StringProperty(required=True)
+	epno = IntegerProperty(required=True)
+	titleno = IntegerProperty(required=True)
 	gender = RelationshipTo('Gender', 'Genre', cardinality=One)
-	chapter = StringProperty()
+	chapter = StringProperty(required=True)
 	fetched = BooleanProperty(default=False)
+	last_fetch = DateTimeProperty(optional=True)
+	created = DateTimeProperty(default=datetime.now())
+	finished = BooleanProperty(default=False)
+
+	class exceptions:
+		class UrlInvalid(Exception):
+			pass
 
 	@staticmethod
 	def from_url(url):
@@ -41,15 +58,9 @@ class Toon(StructuredNode):
 		r = re.compile(r'^https:\/\/([\w\.]+)\/en\/([\w-]+)\/([\w-]+)\/([\w-]+)\/viewer\?title_no=(\d+)&episode_no=(\d+)')
 		m = r.match(url)
 		if not m:
-			raise ValueError(url)
+			raise Toon.exceptions.UrlInvalid(url)
 		site, gender_name, name, episode, title_no, episode_no = m.groups()
-
-		try:
-			gender = Gender.nodes.get(name=gender_name)
-		except Gender.DoesNotExist:
-			gender = Gender(name=gender_name)
-			gender.save()
-
+		gender = Gender.get_or_create(gender_name)
 		toon = Toon(name=name, epno=episode_no, chapter=episode, titleno=title_no)
 		toon.save()
 		toon.gender.connect(gender)
@@ -65,7 +76,7 @@ class Toon(StructuredNode):
 
 	@property
 	def url(self):
-		return f'https://webtoons.com/en/{self.gender.name}/{self.name}/{self.chapter}/viewer?title_no={self.titleno}&episode_no={self.epno}'
+		return f'https://webtoons.com/en/{self.gender.single().name}/{self.name}/{self.chapter}/viewer?title_no={self.titleno}&episode_no={self.epno}'
 
 	@staticmethod
 	def purge():
@@ -74,7 +85,7 @@ class Toon(StructuredNode):
 
 	@staticmethod
 	def iter():
-		for toon in Toon.nodes.order_by('name').all():
+		for toon in Toon.nodes.order_by('name'):
 			yield toon
 
 	def index(self, soup: BeautifulSoup):
@@ -95,6 +106,7 @@ class Toon(StructuredNode):
 	def fetch_url(self, url, filepath):
 		response = requests.get(url, stream=True, headers=self.headers)
 		if response.status_code != 200:
+			print(url)
 			raise ValueError(response.status_code)
 		with open(filepath, 'wb') as fd:
 			for chunk in response.iter_content(8192):
@@ -108,6 +120,7 @@ class Toon(StructuredNode):
 	def get_soup(self):
 		page = requests.get(self.url)
 		if page.status_code != 200:
+			print('error: failed to fetch', self.url)
 			raise ValueError(page.status_code)
 		soup = BeautifulSoup.BeautifulSoup(page.text, 'lxml')
 		return soup
@@ -118,13 +131,20 @@ class Toon(StructuredNode):
 		self.delete()
 		return next_toon
 
-	def pull(self, force=False):
+	def pull(self, force=False, getnext=True):
+		"""Retrive the .jpgs and pack them into self.cbz
+		force: overwrite any existing.cbz file for this chapter
+		getnext: try to get the next page
+		return an instance of Toon
+		"""
 		if not os.path.exists(self.path):
 			os.mkdir(self.path)
 
 		soup = self.get_soup()
 		if not force and os.path.exists(self.cbz_path):
 			print(f'{self.name} {self.chapter} : skiped, already present')
+			self.last_fetch = datetime.now()
+			self.save()
 			return self.get_next_instance(soup)
 
 		def leech():
@@ -139,15 +159,16 @@ class Toon(StructuredNode):
 					i += 1
 				cbz.close()
 			self.fetched = True
+			self.last_fetch = datetime.now()
 			self.save()
 			sys.stdout.write('\n')
 			sys.stdout.flush()
 
 		if not self.fetched:
 			leech()
-		else:
-			print('cbz:', self.cbz_path)
-		return self.get_next_instance(soup)
+		if getnext:
+			return self.get_next_instance(soup)
+		return self
 
 
 class ToonManager:
@@ -156,24 +177,46 @@ class ToonManager:
 		try:
 			while True:
 				toon = toon.pull()
-		except ValueError:
-			print('done')
+		except Toon.exceptions.UrlInvalid:
+			pass
 		except KeyboardInterrupt:
 			os.unlink(toon.cbz_path)
 			print('canceled, removed incomplete cbz', toon.cbz_path)
 			raise KeyboardInterrupt
+		except requests.exceptions.ConnectionError as err:
+			os.unlink(toon.cbz_path)
+			print('connection error, removed incomplete cbz', err)
+
 
 	@classmethod
-	def pull_all(cls):
-		for toon in Toon.nodes:
+	def pull_all(cls, smart):
+		qs = Toon.nodes.exclude(finished=True)
+		if smart:
+			print('smart fetch')
+			last_week = datetime.today() - timedelta(days=7)
+			qs = qs.filter(
+				Q(last_fetch__lte=last_week) | (Q(last_fetch__isnull=True))
+			)
+		for toon in qs:
 			try:
 				cls.pull_toon(toon)
 			except KeyboardInterrupt:
+				return
+			except requests.exceptions.ConnectionError as err:
+				os.unlink(toon.cbz_path)
+				print('connection error, removed incomplete cbz', err)
 				return
 
 	@classmethod
 	def pull(cls, name):
 		cls.pull_toon(Toon.nodes.get(name=name))
+
+
+def get_date(d):
+	if not d:
+		return ''
+	return d.strftime("%d/%m/%Y")
+	# return d.ctime()
 
 
 if __name__ == "__main__":
@@ -185,26 +228,29 @@ if __name__ == "__main__":
 	parser.add_argument('-d', '--delete')
 	parser.add_argument('-r', '--redl')
 	parser.add_argument('-u', '--update')
-
+	parser.add_argument('-s', '--smart', action='store_true')
+	from pprint import pprint
 	args = parser.parse_args()
 	if args.list:
 		print('subscribed toons:')
 		for toon in Toon.iter():
-			print(f'{toon.name:30} {toon.chapter}')
+			gender_name = toon.gender.single().name
+			print(f'{toon.name:30} {toon.chapter:30} {get_date(toon.last_fetch)} {gender_name}')
 
 	if args.add:
-		Toon.from_url(args.add)
+		toon = Toon.from_url(args.add)
 
 	if args.pullall:
-		ToonManager.pull_all()
+		ToonManager.pull_all(args.smart)
 
 	elif args.pull:
 		ToonManager.pull(args.pull)
 
 	if args.delete:
 		try:
-			Toon.nodes.get(name=args.delete).delete()
-			print('deleted')
+			for toon in Toon.nodes.filter(name=args.delete):
+				print(toon.name, 'deleted')
+				toon.delete()
 		except Toon.DoesNotExist:
 			print(f'no such toon {args.delete}')
 
@@ -212,9 +258,9 @@ if __name__ == "__main__":
 	if args.redl:
 		t = Toon.from_url(args.redl)
 		try:
-			t.pull()
+			t.pull(getnext=False).delete()
 		except KeyboardInterrupt:
-			pass
+			t.delete()
 		print('removed temporary toon.')
 
 	if args.update:
