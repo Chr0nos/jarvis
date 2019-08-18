@@ -44,7 +44,7 @@ class Toon(StructuredNode):
 	gender = RelationshipTo('Gender', 'Genre', cardinality=One)
 	chapter = StringProperty(required=True)
 	fetched = BooleanProperty(default=False)
-	last_fetch = DateTimeProperty(optional=True)
+	last_fetch = DateTimeProperty(optional=True, default=None)
 	created = DateTimeProperty(default=datetime.now())
 	finished = BooleanProperty(default=False)
 
@@ -84,8 +84,8 @@ class Toon(StructuredNode):
 			toon.delete()
 
 	@staticmethod
-	def iter():
-		for toon in Toon.nodes.order_by('name'):
+	def iter(order='name'):
+		for toon in Toon.nodes.order_by(order):
 			yield toon
 
 	def index(self, soup: BeautifulSoup):
@@ -128,6 +128,9 @@ class Toon(StructuredNode):
 	def get_next_instance(self, soup: BeautifulSoup):
 		next_page = soup.find_all("a", class_='pg_next')[0].get('href')
 		next_toon = Toon.from_url(next_page)
+		if self.last_fetch:
+			next_toon.last_fetch = self.last_fetch
+			next_toon.save()
 		self.delete()
 		return next_toon
 
@@ -143,8 +146,8 @@ class Toon(StructuredNode):
 		soup = self.get_soup()
 		if not force and os.path.exists(self.cbz_path):
 			print(f'{self.name} {self.chapter} : skiped, already present')
-			self.last_fetch = datetime.now()
-			self.save()
+			# self.last_fetch = datetime.now()
+			# self.save()
 			return self.get_next_instance(soup)
 
 		def leech():
@@ -164,11 +167,12 @@ class Toon(StructuredNode):
 			sys.stdout.write('\n')
 			sys.stdout.flush()
 
+		instance = self
 		if not self.fetched:
 			leech()
 		if getnext:
-			return self.get_next_instance(soup)
-		return self
+			instance = self.get_next_instance(soup)
+		return instance
 
 
 class ToonManager:
@@ -229,11 +233,12 @@ if __name__ == "__main__":
 	parser.add_argument('-r', '--redl')
 	parser.add_argument('-u', '--update')
 	parser.add_argument('-s', '--smart', action='store_true')
+	parser.add_argument('-t', '--time', action='store_true')
 	from pprint import pprint
 	args = parser.parse_args()
 	if args.list:
 		print('subscribed toons:')
-		for toon in Toon.iter():
+		for toon in Toon.iter('-last_fetch' if args.time else 'name'):
 			gender_name = toon.gender.single().name
 			print(f'{toon.name:30} {toon.chapter:30} {get_date(toon.last_fetch)} {gender_name}')
 
