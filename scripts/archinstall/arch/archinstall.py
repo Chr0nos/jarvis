@@ -102,7 +102,7 @@ class ArchInstall(CommandRunner):
             ('/etc/locale.conf', File.to_config({'LC_CTYPE': self.lang, 'LANG': self.lang})),
             ('/etc/locale.gen', self.locale_genfile()),
             ('/etc/vconsole.conf', File.to_config(vconsole)),
-            ('/etc/resolv.conf', File.to_config(self.dns, prepend='nameserver ')),
+            ('/etc/resolv.conf', File.to_config(self.dns, prepend='nameserver ', separator='')),
             ('/etc/sudoers.d/targetpw', 'Defaults targetpw\n')
         )
         for filepath, content in files_content:
