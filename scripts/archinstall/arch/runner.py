@@ -4,6 +4,7 @@ import subprocess
 from .tools import ArchChroot
 from .exceptions import CommandFail
 
+
 class CommandRunner():
     def __init__(self, mnt):
         if not os.path.exists(mnt):
@@ -17,9 +18,7 @@ class CommandRunner():
             print('running', ' '.join(command), kwargs)
         if capture:
             return subprocess.check_output(command, **kwargs).decode('utf-8')
-        ret = subprocess.run(command, **kwargs)
-        if ret.returncode != 0 and critical:
-            raise CommandFail(command)
+        return subprocess.run(command, **kwargs, check=critical)
 
     def run_in(self, command, user=None, **kwargs):
         with ArchChroot(self.mnt):
