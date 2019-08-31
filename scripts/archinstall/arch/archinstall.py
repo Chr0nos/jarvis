@@ -30,11 +30,11 @@ class File():
             fp.write('\n'.join(file_content))
 
     @staticmethod
-    def to_config(data, separator='=', prepend=''):
+    def to_config(data, separator='= ', prepend=''):
         if isinstance(data, dict):
             return '\n'.join(list(f'{key}{separator}{value}' for key, value in data.items()))
         if isinstance(data, list):
-            return '\n'.join(list(f'{prepend}{elem}' for elem in data))
+            return '\n'.join(list(f'{prepend}{separator}{elem}' for elem in data))
         raise TypeError(data)
 
 
