@@ -123,6 +123,7 @@ class ArchInstall(CommandRunner):
         with ArchChroot(self.mnt):
             self.setup(fstab, vconsole)
             self.run(['pacman', '-Sy'])
+            self.run(['pacman', '-S', 'archlinux-keyring', '--noconfirm'])
             self.pkg_install(packages)
             commands = (
                 # System has not been booted with systemd as init (PID 1). Can't operate.
