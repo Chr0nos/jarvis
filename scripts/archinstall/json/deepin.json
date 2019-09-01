@@ -20,6 +20,7 @@
 		"color": true
 	},
 	"packages": [
+		"mpv",
 		"fish",
 		"caja",
 		"deepin",
@@ -55,7 +56,7 @@
 				{
 					"env": {"HOME": "/home/adamaru"},
 					"cwd": "/tmp",
-					"cmd": ["trizen", "-S", "--noedit", "--noconfirm", "aur/spotify"]
+					"cmd": ["trizen", "-S", "--noedit", "--noconfirm", "aur/visual-studio-code-bin"]
 				}
 			]
 		},
