@@ -37,7 +37,7 @@ EXTRA = [
 FONTS = [
     'ttf-ubuntu-font-family',
     'ttf-dejavu',
-    'ttf-freefont',
+    # 'ttf-freefont',
     'ttf-liberation',
     'otf-font-awesome',
 	'ttf-croscore',

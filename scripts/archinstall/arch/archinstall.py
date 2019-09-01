@@ -30,11 +30,11 @@ class File():
             fp.write('\n'.join(file_content))
 
     @staticmethod
-    def to_config(data, separator='=', prepend=''):
+    def to_config(data, separator='= ', prepend=''):
         if isinstance(data, dict):
             return '\n'.join(list(f'{key}{separator}{value}' for key, value in data.items()))
         if isinstance(data, list):
-            return '\n'.join(list(f'{prepend}{elem}' for elem in data))
+            return '\n'.join(list(f'{prepend}{separator}{elem}' for elem in data))
         raise TypeError(data)
 
 
@@ -46,8 +46,7 @@ class FileFromHost(File):
 
 class ArchInstall(CommandRunner):
     def __init__(self, hostname, mnt='/mnt', lang='en_US.UTF-8'):
-        """
-        hostname: the machine hostname
+        """hostname: the machine hostname
         mnt: on wich mount point will you install arch ?
         this mountpoint must exists
         lang: a valid lang locale
@@ -103,7 +102,7 @@ class ArchInstall(CommandRunner):
             ('/etc/locale.conf', File.to_config({'LC_CTYPE': self.lang, 'LANG': self.lang})),
             ('/etc/locale.gen', self.locale_genfile()),
             ('/etc/vconsole.conf', File.to_config(vconsole)),
-            ('/etc/resolv.conf', File.to_config(self.dns, prepend='nameserver ')),
+            ('/etc/resolv.conf', File.to_config(self.dns, prepend='nameserver ', separator='')),
             ('/etc/sudoers.d/targetpw', 'Defaults targetpw\n')
         )
         for filepath, content in files_content:
@@ -120,6 +119,7 @@ class ArchInstall(CommandRunner):
             mirrors = FileFromHost('/etc/pacman.d/mirrorlist', self.mnt)
             mirrors.insert(File.to_config(custom_servers, prepend='Server '), line_index=3)
 
+        self.run(['pacman', '-Sy', 'archlinux-keyring', '--noconfirm'])
         with ArchChroot(self.mnt):
             self.setup(fstab, vconsole)
             self.run(['pacman', '-Sy'])
