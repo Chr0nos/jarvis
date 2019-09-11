@@ -5,7 +5,7 @@
 		"efi": "/EFI/refind/refind_x64.efi"
 	},
 	"packages": [
-		"community/deepin-icon-theme"
+		"community/deepin-icon-theme", "mpv", "clang", "cmake"
 	],
 	"meta": ["MATE", "PYTHON", "EXTRA", "BASE", "AUDIO", "FONTS"],
 	"services": [

@@ -45,7 +45,7 @@ FONTS = [
 ]
 
 MATE = [
-    'mate', 'mate-extra', 'mate-media', 'mate-power-manager', 'mate-menu'
+    'mate', 'mate-extra', 'mate-media', 'mate-power-manager', 'mate-menus'
 ]
 
 XFCE = ['xfce4']
