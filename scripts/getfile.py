@@ -1,5 +1,31 @@
 import requests
 import os
+from datetime import datetime
+
+
+class SpeedOMetter:
+    """Provides a easy way to monitor speed of a download
+    """
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.last_size = 0
+        self.last_date = datetime.now().timestamp()
+
+    def update(self, new_size) -> int:
+        """return the bytes per seconds since last upadte.
+        """
+        now = datetime.now().timestamp()
+        delta_time = now - self.last_date
+        delta_size = new_size - self.last_size
+
+        self.last_date = now
+        self.last_size = new_size
+        try:
+            return int(delta_size / delta_time)
+        except ZeroDivisionError:
+            return 0
 
 
 def hsize(size, factor=1024, precision=2) -> str:
@@ -38,7 +64,7 @@ def getfile(url, filepath, chunksize=15000, retries=5, bytes_range=None, **kwarg
     with requests.get(url, stream=True, headers=headers, **kwargs) as response:
         response.raise_for_status()
         current_size = 0 if not os.path.exists(filepath) else os.stat(filepath).st_size
-        total_size = response.headers.get('Content-Length')
+        total_size = int(response.headers.get('Content-Length', -1))
         with open(filepath, 'wb+') as file:
             for chunk in response.iter_content(chunk_size=chunksize):
                 current_size += file.write(chunk)
