@@ -1,15 +1,6 @@
 #!/usr/bin/python3
-"""The laptop MSI p63 modern does not support sleep mode in linux,
-so i made this script to remove the touchpad module before putting
-the sleep mode on, then reload the module at resume.
-
-the script relies on systemd
-copy this file into: /usr/lib/systemd/system-sleep
-"""
-
 from subprocess import run
 import sys
-
 
 MODULE = 'i2c_hid'
 
@@ -21,3 +12,11 @@ if __name__ == "__main__":
         run(['rmmod', MODULE], check=True)
     elif sys.argv[1] == 'post':
         run(['modprobe', MODULE], check=True)
+
+        # be able to see the screen could be nice
+        brightness = int(run(['xbacklight'], capture_output=True).decode('utf-8')[0:-1])
+        if brightness < 5:
+            run(['xbacklight', '-set', 35])
+
+        run(['setxkbmap', 'us_qwerty-fr'])
+
