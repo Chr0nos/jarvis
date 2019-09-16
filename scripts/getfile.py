@@ -64,8 +64,8 @@ def getfile(url, filepath, chunksize=15000, retries=5, bytes_range=None, **kwarg
     with requests.get(url, stream=True, headers=headers, **kwargs) as response:
         response.raise_for_status()
         current_size = 0 if not os.path.exists(filepath) else os.stat(filepath).st_size
-        total_size = int(response.headers.get('Content-Length', -1))
-        with open(filepath, 'wb+') as file:
+        total_size = int(response.headers.get('Content-Length', -1)) + current_size
+        with open(filepath, 'ab+') as file:
             for chunk in response.iter_content(chunk_size=chunksize):
                 current_size += file.write(chunk)
                 yield (current_size, total_size)
