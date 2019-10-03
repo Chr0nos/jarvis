@@ -234,3 +234,10 @@ class Redis(Service):
     packages = ['community/redis']
     service = 'redis.service'
     desc = 'cache/key-value database'
+
+
+class Tlp(Service):
+    name = 'tlp'
+    packages = ['tlp']
+    service = 'tlp.service'
+    dest = 'power management system for laptops'
