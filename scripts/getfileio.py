@@ -1,5 +1,6 @@
 import asyncio
 import aiohttp
+import aiofile
 import os
 
 
@@ -16,7 +17,7 @@ async def getfile(url: str, filepath, chunk_size=150000,
             return {}
         return {'Bytes-Range': f'{start}-{end}'}
 
-    async def fetch(fp) -> None:
+    async def fetch(afp) -> None:
         current_size = 0
         if os.path.exists(filepath):
             current_size = os.stat(filepath).st_size
@@ -25,24 +26,26 @@ async def getfile(url: str, filepath, chunk_size=150000,
         kwargs['headers'] = headers
         async with aiohttp.ClientSession(**kwargs) as session:
             async with session.get(url) as response:
-                total_size = int(response.headers.get('Content-Length', 0))
-                total_size += current_size
+                total_size = response.headers.get('Content-Length', None)
+                if total_size is not None:
+                    total_size = int(total_size) + current_size
                 async for chunk in response.content.iter_chunked(chunk_size):
-                    current_size += fp.write(chunk)
+                    current_size += len(await afp.write(chunk))
                     print(current_size, total_size)
-        if current_size != total_size:
+        if total_size is not None and current_size != total_size:
             raise ValueError(current_size)
 
     kwargs.setdefault('raise_for_status', True)
-    with open(filepath, 'ab+') as fp:
+    async with aiofile.AIOFile(filepath, 'ab+') as afp:
         for current_retry in range(retries):
             try:
                 if current_retry != 0:
                     print('retrying download of', url)
-                return await fetch(fp)
+                return await fetch(afp)
             except ValueError as error:
                 if current_retry == retries:
                     raise error
+        await afp.fsync()
 
 
 if __name__ == "__main__":
@@ -51,5 +54,6 @@ if __name__ == "__main__":
         os.unlink(filepath)
     except FileNotFoundError:
         pass
-    asyncio.run(getfile('https://thorin.me/static/cv.pdf', filepath))
+    asyncio.run(getfile('http://freebox/gen/100M', filepath))
+    # asyncio.run(getfile('https://thorin.me/static/cv.pdf', filepath))
     print('done')
