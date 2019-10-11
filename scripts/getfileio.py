@@ -41,11 +41,12 @@ async def getfile(url: str, filepath, chunk_size=150000,
             try:
                 if current_retry != 0:
                     print('retrying download of', url)
-                return await fetch(afp)
+                await fetch(afp)
+                await afp.fsync()
+                return
             except ValueError as error:
                 if current_retry == retries:
                     raise error
-        await afp.fsync()
 
 
 if __name__ == "__main__":
