@@ -2,6 +2,7 @@ import asyncio
 import aiohttp
 import aiofile
 import os
+from hsize import hsize
 
 
 async def getfile(url: str, filepath, chunk_size=150000,
@@ -14,6 +15,7 @@ async def getfile(url: str, filepath, chunk_size=150000,
     """
     callback = kwargs.pop('callback', None)
     userdata = kwargs.pop('userdata', None)
+    kwargs.setdefault('raise_for_status', True)
 
     def get_headers(file_size=None) -> dict:
         start, end = 0, ''
@@ -48,7 +50,6 @@ async def getfile(url: str, filepath, chunk_size=150000,
         if total_size is not None and current_size != total_size:
             raise ValueError(current_size)
 
-    kwargs.setdefault('raise_for_status', True)
     async with aiofile.AIOFile(filepath, 'ab+') as afp:
         for current_retry in range(retries):
             try:
@@ -70,7 +71,7 @@ def clean(*files):
 
 
 async def print_progression(filepath, current, total, _):
-    print(f'{filepath} -> {current} of {total}')
+    print(f'{filepath} -> {hsize(current)} of {hsize(total)}')
 
 
 if __name__ == "__main__":
