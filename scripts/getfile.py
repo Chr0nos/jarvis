@@ -50,7 +50,8 @@ def eta(size, speed) -> timedelta:
         return timedelta(seconds=0)
 
 
-def getfile(url, filepath, chunksize=15000, retries=5, bytes_range=None, **kwargs):
+def getfile(url, filepath, chunksize=15000, retries=5, bytes_range=None,
+            **kwargs):
     """Download the given url into filepath,
     if the filepath currently exists the function will atemp a resume
 
@@ -70,10 +71,13 @@ def getfile(url, filepath, chunksize=15000, retries=5, bytes_range=None, **kwarg
 
     headers = kwargs.pop('headers', {})
     headers.update(get_range_header())
+    kwargs['headers'] = headers
 
-    with requests.get(url, stream=True, headers=headers, **kwargs) as response:
+    with requests.get(url, stream=True, **kwargs) as response:
         response.raise_for_status()
-        current_size = 0 if not os.path.exists(filepath) else os.stat(filepath).st_size
+        current_size = 0
+        if os.path.exists(filepath):
+            current_size = os.stat(filepath).st_size
         total_size = int(response.headers.get('Content-Length', -1)) + current_size
         with open(filepath, 'ab+') as file:
             for chunk in response.iter_content(chunk_size=chunksize):
@@ -81,5 +85,6 @@ def getfile(url, filepath, chunksize=15000, retries=5, bytes_range=None, **kwarg
                 yield (current_size, total_size)
     if current_size != total_size:
         if retries > 0:
-            return getfile(url, filepath, chunksize, retries - 1, (current_size, total_size), **kwargs)
+            return getfile(url, filepath, chunksize, retries - 1,
+                           (current_size, total_size), **kwargs)
         raise ValueError(current_size)

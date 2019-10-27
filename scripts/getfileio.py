@@ -5,7 +5,15 @@ import os
 
 
 async def getfile(url: str, filepath, chunk_size=150000,
-                  bytes_range=None, retries=5, **kwargs):
+                  bytes_range=None, retries=5, nocheck=False, **kwargs):
+    """
+    in case of a non file you wan to use nocheck=True (like /dev/null)
+    valid kwargs:
+    callback : called on each chunk received after it was wrote to disk
+    userdata : sent to callback on each call, ignored if no callback.
+    """
+    callback = kwargs.pop('callback', None)
+    userdata = kwargs.pop('userdata', None)
 
     def get_headers(file_size=None) -> dict:
         start, end = 0, ''
@@ -31,7 +39,12 @@ async def getfile(url: str, filepath, chunk_size=150000,
                     total_size = int(total_size) + current_size
                 async for chunk in response.content.iter_chunked(chunk_size):
                     current_size += len(await afp.write(chunk))
-                    print(current_size, total_size)
+                    if callback:
+                        await callback(filepath, current_size, total_size,
+                                       userdata)
+                    # yield filepath, current_size, total_size
+        if nocheck:
+            return
         if total_size is not None and current_size != total_size:
             raise ValueError(current_size)
 
@@ -42,19 +55,34 @@ async def getfile(url: str, filepath, chunk_size=150000,
                 if current_retry != 0:
                     print('retrying download of', url)
                 await fetch(afp)
-                await afp.fsync()
                 return
             except ValueError as error:
                 if current_retry == retries:
-                    raise error
+                    raise error(f'{filepath}')
+
+
+def clean(*files):
+    for f in files:
+        try:
+            os.unlink(f)
+        except FileNotFoundError:
+            pass
+
+
+async def print_progression(filepath, current, total, _):
+    print(f'{filepath} -> {current} of {total}')
 
 
 if __name__ == "__main__":
-    filepath = '/dev/shm/test.pdf'
-    try:
-        os.unlink(filepath)
-    except FileNotFoundError:
-        pass
-    asyncio.run(getfile('http://freebox/gen/100M', filepath))
-    # asyncio.run(getfile('https://thorin.me/static/cv.pdf', filepath))
+    clean('/tmp/test', '/dev/shm/cv.pdf')
+
+    async def test():
+        alpha = getfile('http://freebox/gen/1M', '/tmp/test',
+                        callback=print_progression)
+        bravo = getfile('https://thorin.me/static/cv.pdf', '/dev/shm/cv.pdf',
+                        callback=print_progression)
+        tasks = asyncio.gather(alpha, bravo)
+        return await tasks
+
+    asyncio.run(test())
     print('done')

@@ -14,7 +14,7 @@ if __name__ == "__main__":
     times = []
     speeds = []
     try:
-        url = 'http://192.168.1.254/gen/100M'
+        url = 'http://192.168.1.254/gen/200M'
         monitor = SpeedOMetter()
         for current, total in getfile(url, '/dev/null', chunksize=1000000):
             speed = monitor.update(current)
