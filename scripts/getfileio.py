@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import asyncio
 import aiohttp
 import aiofile
@@ -5,8 +6,8 @@ import os
 from hsize import hsize
 
 
-async def getfile(url: str, filepath, chunk_size=150000,
-                  bytes_range=None, retries=5, nocheck=False, **kwargs):
+async def getfile(url: str, filepath, chunk_size=150000, bytes_range=None,
+                  retries=5, nocheck=False, **kwargs) -> None:
     """
     in case of a non file you wan to use nocheck=True (like /dev/null)
     valid kwargs:
@@ -27,7 +28,7 @@ async def getfile(url: str, filepath, chunk_size=150000,
             return {}
         return {'Bytes-Range': f'{start}-{end}'}
 
-    async def fetch(afp) -> None:
+    async def fetch(afp: aiofile.AIOFile) -> None:
         current_size = 0
         if os.path.exists(filepath):
             current_size = os.stat(filepath).st_size
@@ -72,6 +73,19 @@ def clean(*files):
 
 async def print_progression(filepath, current, total, _):
     print(f'{filepath} -> {hsize(current)} of {hsize(total)}')
+
+
+async def many_query(urls, method='get', asjson=True, verbose=False, **kwargs):
+    async def process_link(url, func):
+        if verbose:
+            print('getting', url)
+        content = await func(url, **kwargs)
+        return await getattr(content, 'json' if asjson else 'read')()
+
+    async with aiohttp.ClientSession() as session:
+        jobs = [process_link(url, getattr(session, method.lower()))
+                for url in urls]
+        return await asyncio.gather(*jobs)
 
 
 if __name__ == "__main__":
