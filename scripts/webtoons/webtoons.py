@@ -15,6 +15,7 @@ from neomodel import (
     RelationshipTo, One, BooleanProperty,
     DateTimeProperty, Q
 )
+from neomodel.core import db
 
 PASSWORD = os.getenv('PASSWORD')
 if not PASSWORD:
@@ -289,3 +290,4 @@ if __name__ == "__main__":
             old.delete()
         t.save()
         print('updated', t.name)
+    db.driver.close()
