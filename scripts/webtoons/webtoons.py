@@ -8,11 +8,12 @@ import bs4 as BeautifulSoup
 from tempfile import TemporaryDirectory
 import zipfile
 from datetime import datetime, timedelta
+from requests.cookies import cookiejar_from_dict
 
 from neomodel import (
     config, StructuredNode, StringProperty, IntegerProperty,
     RelationshipTo, One, BooleanProperty,
-    DateTimeProperty, Q, StructuredRel
+    DateTimeProperty, Q
 )
 
 PASSWORD = os.getenv('PASSWORD')
@@ -38,6 +39,7 @@ class Gender(StructuredNode):
 
 
 class Toon(StructuredNode):
+    session = None
     name = StringProperty(required=True)
     epno = IntegerProperty(required=True)
     titleno = IntegerProperty(required=True)
@@ -47,6 +49,18 @@ class Toon(StructuredNode):
     last_fetch = DateTimeProperty(optional=True, default=None)
     created = DateTimeProperty(default=datetime.now())
     finished = BooleanProperty(default=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.session = requests.Session()
+        self.session.headers = self.headers
+        self.session.cookies = cookiejar_from_dict({
+            'needGDPR': 'false',
+            'ageGatePass': 'true',
+            'allowedCookie': 'ga',
+            'contentLanguage': 'en',
+            'locale': 'en'
+        })
 
     class exceptions:
         class UrlInvalid(Exception):
@@ -68,7 +82,7 @@ class Toon(StructuredNode):
 
     @property
     def path(self):
-        return os.path.join('/home/adamaru/Downloads/', self.name)
+        return os.path.join('/home/adamaru/Downloads/webtoons/', self.name)
         # return os.path.join('/run/media/adamaru/Aiur/Scans/Webtoons/', self.name)
 
     @property
@@ -101,11 +115,11 @@ class Toon(StructuredNode):
     def headers(self):
         return {
             'Referer': 'www.webtoons.com',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3112.113 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3112.113 Safari/537.36',
         }
 
     def fetch_url(self, url, filepath):
-        response = requests.get(url, stream=True, headers=self.headers)
+        response = self.session.get(url, stream=True)
         if response.status_code != 200:
             print(url)
             raise ValueError(response.status_code)
@@ -119,7 +133,7 @@ class Toon(StructuredNode):
         return filepath
 
     def get_soup(self):
-        page = requests.get(self.url)
+        page = self.session.get(self.url)
         if page.status_code != 200:
             print('error: failed to fetch', self.url)
             raise ValueError(page.status_code)
@@ -127,6 +141,7 @@ class Toon(StructuredNode):
         return soup
 
     def get_next_instance(self, soup: BeautifulSoup):
+        # print(soup)
         next_page = soup.find_all("a", class_='pg_next')[0].get('href')
         next_toon = Toon.from_url(next_page)
         if self.last_fetch:
@@ -193,7 +208,6 @@ class ToonManager:
             os.unlink(toon.cbz_path)
             print('connection error, removed incomplete cbz', err)
 
-
     @classmethod
     def pull_all(cls, smart):
         qs = Toon.nodes.exclude(finished=True)
@@ -236,7 +250,6 @@ if __name__ == "__main__":
     parser.add_argument('-u', '--update')
     parser.add_argument('-s', '--smart', action='store_true')
     parser.add_argument('-t', '--time', action='store_true')
-    from pprint import pprint
     args = parser.parse_args()
     if args.list:
         print('subscribed toons:')
@@ -260,7 +273,6 @@ if __name__ == "__main__":
                 toon.delete()
         except Toon.DoesNotExist:
             print(f'no such toon {args.delete}')
-
 
     if args.redl:
         t = Toon.from_url(args.redl)
