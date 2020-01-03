@@ -37,6 +37,9 @@ class Toon(mongomodel.Document):
             'locale': 'en'
         })
 
+    def __repr__(self):
+        return f'<Toon {self.name}>'
+
     def __str__(self):
         def get_date(d):
             return d.strftime("%d/%m/%Y") if d else ''
@@ -119,9 +122,6 @@ class Toon(mongomodel.Document):
         next_toon = Toon.from_url(next_page)
         if self.last_fetch:
             next_toon.last_fetch = self.last_fetch
-            next_toon.save()
-        # self.delete()
-        # next_toon.save()
         return next_toon
 
     def pull(self, force=False, getnext=True):
@@ -270,11 +270,12 @@ def cli():
     pass
 
 
-cli.add_command(add)
-cli.add_command(display_list)
-cli.add_command(delete)
-cli.add_command(redl)
-cli.add_command(pull)
-cli.add_command(pullall)
-cli.add_command(update)
-cli()
+if __name__ == "__main__":
+    cli.add_command(add)
+    cli.add_command(display_list)
+    cli.add_command(delete)
+    cli.add_command(redl)
+    cli.add_command(pull)
+    cli.add_command(pullall)
+    cli.add_command(update)
+    cli()
