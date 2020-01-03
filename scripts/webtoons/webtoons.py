@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from requests.cookies import cookiejar_from_dict
 
 import mongomodel
+import click
 
 
 class Toon(mongomodel.Document):
@@ -37,6 +38,12 @@ class Toon(mongomodel.Document):
             'locale': 'en'
         })
 
+    def __str__(self):
+        def get_date(d):
+            return d.strftime("%d/%m/%Y") if d else ''
+
+        return f'{self.name:30} {self.chapter:40} {get_date(self.last_fetch)} {self.gender}'
+
     class exceptions:
         class UrlInvalid(Exception):
             pass
@@ -51,7 +58,7 @@ class Toon(mongomodel.Document):
         site, gender_name, name, episode, title_no, episode_no = m.groups()
         toon = Toon(name=name, epno=int(episode_no), chapter=episode,
                     titleno=int(title_no), gender=gender_name)
-        return toon.commit()
+        return toon
 
     @property
     def path(self):
@@ -114,7 +121,8 @@ class Toon(mongomodel.Document):
         if self.last_fetch:
             next_toon.last_fetch = self.last_fetch
             next_toon.save()
-        self.delete()
+        # self.delete()
+        # next_toon.save()
         return next_toon
 
     def pull(self, force=False, getnext=True):
@@ -148,7 +156,6 @@ class Toon(mongomodel.Document):
                 cbz.close()
             self.fetched = True
             self.last_fetch = datetime.now()
-            self.save()
             sys.stdout.write('\n')
             sys.stdout.flush()
 
@@ -165,7 +172,11 @@ class ToonManager:
     def pull_toon(toon):
         try:
             while True:
-                toon = toon.pull()
+                next_toon = toon.pull()
+                toon.epno = next_toon.epno
+                toon.chapter = next_toon.chapter
+                toon.fetched = False
+                toon.save()
         except Toon.exceptions.UrlInvalid:
             pass
         except KeyboardInterrupt:
@@ -198,61 +209,74 @@ class ToonManager:
         cls.pull_toon(Toon.objects.get(name=name))
 
 
-def get_date(d):
-    if not d:
-        return ''
-    return d.strftime("%d/%m/%Y")
-    # return d.ctime()
+@click.command('list')
+@click.option('--sort', default='name')
+def display_list(sort):
+    print('subscribed toons:')
+    for toon in Toon.objects.__iter__(sort=sort):
+        print(str(toon))
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-a', '--add')
-    parser.add_argument('-l', '--list', action='store_true')
-    parser.add_argument('-p', '--pull')
-    parser.add_argument('-P', '--pullall', action='store_true')
-    parser.add_argument('-d', '--delete')
-    parser.add_argument('-r', '--redl')
-    parser.add_argument('-u', '--update')
-    parser.add_argument('-s', '--smart', action='store_true')
-    parser.add_argument('-t', '--time', action='store_true')
-    args = parser.parse_args()
-    if args.list:
-        print('subscribed toons:')
-        qs = Toon.objects.__iter__(
-            sort=['last_fetch' if args.time else 'name'])
-        for toon in qs:
-            print(f'{toon.name:30} {toon.chapter:40} {get_date(toon.last_fetch)} {toon.gender}')
+@click.command('delete')
+@click.argument('name')
+def delete(name):
+    Toon.objects.get(name=name).delete()
 
-    if args.add:
-        toon = Toon.from_url(args.add)
 
-    if args.pullall:
-        ToonManager.pull_all(args.smart)
+@click.command('pull')
+@click.argument('name')
+def pull(name):
+    ToonManager.pull_toon(Toon.objects.get(name=name))
 
-    elif args.pull:
-        ToonManager.pull(args.pull)
 
-    if args.delete:
+@click.command('redl', help='Re-Download a chapter without telling to the db')
+@click.argument('url')
+def redl(url):
+    Toon.from_url(url).pull(getnext=False)
+
+
+@click.command('pullall')
+def pullall():
+    for toon in Toon.objects.exclude(finished=True):
         try:
-            for toon in Toon.objects.get(name=args.delete):
-                print(toon.name, 'deleted')
-                toon.delete()
-        except mongomodel.DocumentNotFoundError:
-            print(f'no such toon {args.delete}')
-
-    if args.redl:
-        t = Toon.from_url(args.redl)
-        try:
-            t.pull(getnext=False).delete()
+            ToonManager.pull_toon(toon)
         except KeyboardInterrupt:
-            t.delete()
-        print('removed temporary toon.')
+            return
+        except requests.exceptions.ConnectionError as err:
+            os.unlink(toon.cbz_path)
+            print('connection error, removed incomplete cbz', err)
+            return
 
-    if args.update:
-        t = Toon.from_url(args.update)
-        t.delete()
-        for old in Toon.objects.filter(name=t.name).all():
-            old.delete()
-        t.save()
-        print('updated', t.name)
+
+@click.command('update',
+               help='update a current subscribed toon to a previous state')
+@click.argument('url')
+def update(url):
+    toon = Toon.from_url(url)
+    Toon.objects.get(name=toon.name).delete()
+    toon.save()
+
+
+@click.command('add', help='Subscribe to a toon, give the url as parameter')
+@click.argument('url')
+def add(url):
+    toon = Toon.from_url(url)
+    if Toon.objects.filter(name=toon.name).count() > 0:
+        click.echo('This toon is already subscribed')
+        return
+    toon.save()
+
+
+@click.group()
+def cli():
+    pass
+
+
+cli.add_command(add)
+cli.add_command(display_list)
+cli.add_command(delete)
+cli.add_command(redl)
+cli.add_command(pull)
+cli.add_command(pullall)
+cli.add_command(update)
+cli()
