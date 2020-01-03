@@ -1,7 +1,6 @@
 #!./venv/bin/python
 import os
 import sys
-import argparse
 import re
 import requests
 import bs4 as BeautifulSoup
