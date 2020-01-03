@@ -136,8 +136,6 @@ class Toon(mongomodel.Document):
         soup = self.get_soup()
         if not force and os.path.exists(self.cbz_path):
             print(f'{self.name} {self.chapter} : skiped, already present')
-            # self.last_fetch = datetime.now()
-            # self.save()
             return self.get_next_instance(soup)
 
         def leech():
@@ -174,6 +172,7 @@ class ToonManager:
                 next_toon = toon.pull()
                 toon.epno = next_toon.epno
                 toon.chapter = next_toon.chapter
+                toon.titleno = next_toon.titleno
                 toon.fetched = False
                 toon.save()
         except Toon.exceptions.UrlInvalid:
