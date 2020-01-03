@@ -10,46 +10,20 @@ import zipfile
 from datetime import datetime, timedelta
 from requests.cookies import cookiejar_from_dict
 
-from neomodel import (
-    config, StructuredNode, StringProperty, IntegerProperty,
-    RelationshipTo, One, BooleanProperty,
-    DateTimeProperty, Q
-)
-from neomodel.core import db
-
-PASSWORD = os.getenv('PASSWORD')
-if not PASSWORD:
-    raise Exception
-
-config.DATABASE_URL = f'bolt://neo4j:{PASSWORD}@10.8.0.1:7687'
+import mongomodel
 
 
-class Gender(StructuredNode):
-    name = StringProperty(unique=True, required=True)
-
-    def post_create(self):
-        print('created a new gender', self.name)
-
-    @staticmethod
-    def get_or_create(name):
-        try:
-            return Gender.nodes.get(name=name)
-        except Gender.DoesNotExist:
-            print('creating a new gender', name)
-            return Gender(name=name).save()
-
-
-class Toon(StructuredNode):
-    session = None
-    name = StringProperty(required=True)
-    epno = IntegerProperty(required=True)
-    titleno = IntegerProperty(required=True)
-    gender = RelationshipTo('Gender', 'Genre', cardinality=One)
-    chapter = StringProperty(required=True)
-    fetched = BooleanProperty(default=False)
-    last_fetch = DateTimeProperty(optional=True, default=None)
-    created = DateTimeProperty(default=datetime.now())
-    finished = BooleanProperty(default=False)
+class Toon(mongomodel.Document):
+    collection = 'mongotoon'
+    name = mongomodel.StringField()
+    epno = mongomodel.IntegerField()
+    titleno = mongomodel.IntegerField()
+    gender = mongomodel.StringField(maxlen=200)
+    chapter = mongomodel.StringField()
+    fetched = mongomodel.BoolField(False)
+    last_fetch = mongomodel.DateTimeField(required=False)
+    created = mongomodel.DateTimeField(default=lambda: datetime.now())
+    finished = mongomodel.BoolField(False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -75,34 +49,26 @@ class Toon(StructuredNode):
         if not m:
             raise Toon.exceptions.UrlInvalid(url)
         site, gender_name, name, episode, title_no, episode_no = m.groups()
-        gender = Gender.get_or_create(gender_name)
-        toon = Toon(name=name, epno=episode_no, chapter=episode, titleno=title_no)
-        toon.save()
-        toon.gender.connect(gender)
-        return toon
+        toon = Toon(name=name, epno=int(episode_no), chapter=episode,
+                    titleno=int(title_no), gender=gender_name)
+        return toon.commit()
 
     @property
     def path(self):
+        if not self.name:
+            return None
         return os.path.join('/home/adamaru/Downloads/webtoons/', self.name)
         # return os.path.join('/run/media/adamaru/Aiur/Scans/Webtoons/', self.name)
 
     @property
     def cbz_path(self):
+        if not self.chapter or not self.path:
+            return None
         return os.path.join(self.path, f'{self.chapter}.cbz')
 
     @property
     def url(self):
-        return f'https://webtoons.com/en/{self.gender.single().name}/{self.name}/{self.chapter}/viewer?title_no={self.titleno}&episode_no={self.epno}'
-
-    @staticmethod
-    def purge():
-        for toon in Toon.nodes.all():
-            toon.delete()
-
-    @staticmethod
-    def iter(order='name'):
-        for toon in Toon.nodes.order_by(order):
-            yield toon
+        return f'https://webtoons.com/en/{self.gender}/{self.name}/{self.chapter}/viewer?title_no={self.titleno}&episode_no={self.epno}'
 
     def index(self, soup: BeautifulSoup):
         for img in soup.find_all('img', class_="_images"):
@@ -173,6 +139,7 @@ class Toon(StructuredNode):
                 os.chdir(tmpd)
                 i = 0
                 cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
+                sys.stdout.flush()
                 for url in self.index(soup):
                     filepath = self.fetch_url(
                         url, os.path.join(tmpd, f'{i:03}.jpg'))
@@ -211,13 +178,11 @@ class ToonManager:
 
     @classmethod
     def pull_all(cls, smart):
-        qs = Toon.nodes.exclude(finished=True)
+        qs = Toon.objects.exclude(finished=True)
         if smart:
             print('smart fetch')
             last_week = datetime.today() - timedelta(days=7)
-            qs = qs.filter(
-                Q(last_fetch__lte=last_week) | (Q(last_fetch__isnull=True))
-            )
+            qs = qs.filter(last_fetch__lte=last_week)
         for toon in qs:
             try:
                 cls.pull_toon(toon)
@@ -230,7 +195,7 @@ class ToonManager:
 
     @classmethod
     def pull(cls, name):
-        cls.pull_toon(Toon.nodes.get(name=name))
+        cls.pull_toon(Toon.objects.get(name=name))
 
 
 def get_date(d):
@@ -254,9 +219,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.list:
         print('subscribed toons:')
-        for toon in Toon.iter('-last_fetch' if args.time else 'name'):
-            gender_name = toon.gender.single().name
-            print(f'{toon.name:30} {toon.chapter:30} {get_date(toon.last_fetch)} {gender_name}')
+        qs = Toon.objects.__iter__(
+            sort=['last_fetch' if args.time else 'name'])
+        for toon in qs:
+            print(f'{toon.name:30} {toon.chapter:40} {get_date(toon.last_fetch)} {toon.gender}')
 
     if args.add:
         toon = Toon.from_url(args.add)
@@ -269,10 +235,10 @@ if __name__ == "__main__":
 
     if args.delete:
         try:
-            for toon in Toon.nodes.filter(name=args.delete):
+            for toon in Toon.objects.get(name=args.delete):
                 print(toon.name, 'deleted')
                 toon.delete()
-        except Toon.DoesNotExist:
+        except mongomodel.DocumentNotFoundError:
             print(f'no such toon {args.delete}')
 
     if args.redl:
@@ -286,8 +252,7 @@ if __name__ == "__main__":
     if args.update:
         t = Toon.from_url(args.update)
         t.delete()
-        for old in Toon.nodes.filter(name=t.name).all():
+        for old in Toon.objects.filter(name=t.name).all():
             old.delete()
         t.save()
         print('updated', t.name)
-    db.driver.close()
