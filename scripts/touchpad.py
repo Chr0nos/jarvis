@@ -14,9 +14,9 @@ if __name__ == "__main__":
         run(['modprobe', MODULE], check=True)
 
         # be able to see the screen could be nice
-        brightness = int(run(['xbacklight'], capture_output=True).decode('utf-8')[0:-1])
+        brightness = int(run(['xbacklight'], capture_output=True)
+                         .decode('utf-8')[0:-1])
         if brightness < 5:
             run(['xbacklight', '-set', 35])
 
         run(['setxkbmap', 'us_qwerty-fr'])
-

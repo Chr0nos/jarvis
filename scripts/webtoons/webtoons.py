@@ -211,7 +211,7 @@ class ToonManager:
 @click.option('--sort', default='name')
 def display_list(sort):
     print('subscribed toons:')
-    for toon in Toon.objects.__iter__(sort=sort):
+    for toon in Toon.objects.sort([sort]):
         print(str(toon))
 
 
@@ -224,7 +224,8 @@ def delete(name):
 @click.command('pull')
 @click.argument('name')
 def pull(name):
-    ToonManager.pull_toon(Toon.objects.get(name=name))
+    toon = Toon.objects.get(name=name)
+    ToonManager.pull_toon(toon)
 
 
 @click.command('redl', help='Re-Download a chapter without telling to the db')

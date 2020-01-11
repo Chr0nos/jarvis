@@ -17,7 +17,8 @@ if __name__ == "__main__":
     speeds = []
     try:
         url = 'http://192.168.1.254/gen/200M'
-        #url = 'http://test-debit.free.fr/image.iso'
+        # url = 'http://freebox/gen/200M'
+        # url = 'http://test-debit.free.fr/image.iso'
         monitor = SpeedOMetter()
         for current, total in getfile(url, '/dev/null', chunksize=150000, headers={'Bytes-Range': '0-10000'}):
             speed = monitor.update(current)

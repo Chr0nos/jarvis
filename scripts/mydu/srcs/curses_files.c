@@ -128,7 +128,7 @@ static int  curses_files_init(struct curses_window *win)
     if (!dir)
     {
         // TODO : display error window here
-        win->flags |= WIN_QUIT;
+        // win->flags |= WIN_QUIT;
         return (-1);
     }
     statfs(path, &files->fs);

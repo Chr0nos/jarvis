@@ -5,7 +5,7 @@ chardet==3.0.4
 Click==7.0
 idna==2.8
 lxml==4.4.1
-mongomodel==0.2.4
+mongomodel==0.2.5
 pymongo==3.10.0
 pytz==2019.3
 requests==2.22.0
