@@ -251,6 +251,13 @@ def pullall():
             return
 
 
+@click.command('pullable')
+def pullable():
+    one_week_ago = datetime.now() - timedelta(days=7)
+    qs = Toon.objects.exclude(last_fetch__gt=one_week_ago, finished=True)
+    print(*sorted(qs.distinct('name')), sep='\n')
+
+
 @click.command('update',
                help='update a current subscribed toon to a previous state')
 @click.argument('url')
@@ -282,5 +289,6 @@ if __name__ == "__main__":
     cli.add_command(redl)
     cli.add_command(pull)
     cli.add_command(pullall)
+    cli.add_command(pullable)
     cli.add_command(update)
     cli()
