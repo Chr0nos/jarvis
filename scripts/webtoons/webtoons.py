@@ -175,6 +175,7 @@ class ToonManager:
         try:
             while True:
                 next_toon = toon.pull()
+                toon.last_fetch = datetime.now()
                 toon.epno = next_toon.epno
                 toon.chapter = next_toon.chapter
                 toon.titleno = next_toon.titleno
@@ -241,7 +242,10 @@ def redl(url):
 
 @click.command('pullall')
 def pullall():
-    for toon in Toon.objects.exclude(finished=True):
+    one_week_ago = datetime.now() - timedelta(days=7)
+    qs = Toon.objects.exclude(finished=True) \
+        .filter(last_fetch__lte=one_week_ago)
+    for toon in qs:
         try:
             ToonManager.pull_toon(toon)
         except KeyboardInterrupt:
@@ -250,6 +254,13 @@ def pullall():
             os.unlink(toon.cbz_path)
             print('connection error, removed incomplete cbz', err)
             return
+
+
+@click.command('pullable')
+def pullable():
+    one_week_ago = datetime.now() - timedelta(days=7)
+    qs = Toon.objects.exclude(last_fetch__gt=one_week_ago, finished=True)
+    print(*sorted(qs.distinct('name')), sep='\n')
 
 
 @click.command('update',
@@ -283,5 +294,6 @@ if __name__ == "__main__":
     cli.add_command(redl)
     cli.add_command(pull)
     cli.add_command(pullall)
+    cli.add_command(pullable)
     cli.add_command(update)
     cli()
