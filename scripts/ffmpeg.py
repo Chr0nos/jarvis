@@ -69,12 +69,14 @@ class VideoXvid(VideoPreset):
         super().__init__(vcodec='libxvid')
 
 
-def encode_file(vp, ap, source, dest):
+def encode_file(vp, ap, source, dest: str):
+    if dest.endswith('.webm'):
+        dest = dest[0:-4] + '.mkv'
     cmd = [
         '/usr/bin/ffmpeg',
         '-i', source
     ] + ap.getCmd() + vp.getCmd() + [
-        '-map', '0',
+        # '-map', '0',
         # '-loglevel', 'debug',
         dest
     ]

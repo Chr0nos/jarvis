@@ -24,6 +24,7 @@ class Toon(mongomodel.Document):
     last_fetch = mongomodel.DateTimeField(required=False)
     created = mongomodel.DateTimeField(default=lambda: datetime.now())
     finished = mongomodel.BoolField(False)
+    soup = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -66,8 +67,8 @@ class Toon(mongomodel.Document):
     def path(self):
         if not self.name:
             return None
-        return os.path.join('/home/adamaru/Downloads/webtoons/', self.name)
-        # return os.path.join('/run/media/adamaru/Aiur/Scans/Webtoons/', self.name)
+        # return os.path.join('/home/adamaru/Downloads/webtoons/', self.name)
+        return os.path.join('/run/media/adamaru/Aiur/Scans/Webtoons/', self.name)
 
     @property
     def cbz_path(self):
@@ -79,13 +80,18 @@ class Toon(mongomodel.Document):
     def url(self):
         return f'https://webtoons.com/en/{self.gender}/{self.name}/{self.chapter}/viewer?title_no={self.titleno}&episode_no={self.epno}'
 
-    def index(self, soup: BeautifulSoup):
-        for img in soup.find_all('img', class_="_images"):
+    def index(self):
+        if not self.soup:
+            self.get_soup()
+        for img in self.soup.find_all('img', class_="_images"):
             url = img['data-url']
             if 'jpg' not in url and 'JPG' not in url and 'png' not in url:
                 # print('i', url)
                 continue
             yield url
+
+    def pages(self):
+        return list(self.index())
 
     @property
     def headers(self):
@@ -113,12 +119,11 @@ class Toon(mongomodel.Document):
         if page.status_code != 200:
             print('error: failed to fetch', self.url)
             raise ValueError(page.status_code)
-        soup = BeautifulSoup.BeautifulSoup(page.text, 'lxml')
-        return soup
+        self.soup = BeautifulSoup.BeautifulSoup(page.text, 'lxml')
+        return self.soup
 
-    def get_next_instance(self, soup: BeautifulSoup):
-        # print(soup)
-        next_page = soup.find_all("a", class_='pg_next')[0].get('href')
+    def get_next_instance(self):
+        next_page = self.soup.find_all("a", class_='pg_next')[0].get('href')
         next_toon = Toon.from_url(next_page)
         if self.last_fetch:
             next_toon.last_fetch = self.last_fetch
@@ -136,7 +141,7 @@ class Toon(mongomodel.Document):
         soup = self.get_soup()
         if not force and os.path.exists(self.cbz_path):
             print(f'{self.name} {self.chapter} : skiped, already present')
-            return self.get_next_instance(soup)
+            return self.get_next_instance()
 
         def leech():
             print(f'{self.name} {self.chapter} : ', end='')
@@ -145,7 +150,7 @@ class Toon(mongomodel.Document):
                 i = 0
                 cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
                 sys.stdout.flush()
-                for url in self.index(soup):
+                for url in self.index():
                     filepath = self.fetch_url(
                         url, os.path.join(tmpd, f'{i:03}.jpg'))
                     cbz.write(filepath, os.path.basename(filepath))
@@ -160,7 +165,7 @@ class Toon(mongomodel.Document):
         if not self.fetched:
             leech()
         if getnext:
-            instance = self.get_next_instance(soup)
+            instance = self.get_next_instance()
         return instance
 
 
