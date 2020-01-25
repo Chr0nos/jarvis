@@ -29,6 +29,7 @@ class ToonBase(mongomodel.Document):
     lang = mongomodel.StringField(maxlen=2)
     domain = mongomodel.StringField(maxlen=255)
     episode = mongomodel.IntegerField()
+    finished = mongomodel.BoolField(default=lambda: False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -73,7 +74,6 @@ class ToonBase(mongomodel.Document):
             print('no pages')
             return
 
-        cwd = os.getcwd()
         with TemporaryDirectory() as tmpd:
             with Chdir(tmpd):
                 cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
