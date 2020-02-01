@@ -1,10 +1,10 @@
 #!env python
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QScrollArea,
-    QPushButton, QSizePolicy
+    QPushButton
 )
 
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap, QKeyEvent
 from PyQt5.QtCore import Qt
 
 import sys
@@ -12,6 +12,12 @@ import os
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile
 from typing import List
+
+
+KEY_ESCAPE = 16777216
+KEY_F = 70
+KEY_LEFT = 65
+KEY_RIGHT = 68
 
 
 class Viewer(QWidget):
@@ -24,6 +30,7 @@ class Viewer(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
         self.open_index(0)
+        self.resize(self.maxw + 20, 720)
 
     def open_index(self, index):
         if index < 0 or index >= len(self.files_list):
@@ -34,7 +41,6 @@ class Viewer(QWidget):
         self.filepath = self.files_list[index]
         layout.addWidget(self.get_scroller())
         self.setWindowTitle(f'Maloread: {self.filepath}')
-        self.resize(self.maxw + 15, 720)
         self.index = index
 
     def get_scroller(self):
@@ -60,6 +66,7 @@ class Viewer(QWidget):
         for _ in range(layout.count()):
             widget = layout.takeAt(0).widget()
             layout.removeWidget(widget)
+            widget.deleteLater()
 
     def get_footer(self) -> QWidget:
         button_quit = QPushButton('Quit')
@@ -109,6 +116,22 @@ class Viewer(QWidget):
         with TemporaryDirectory() as folder:
             self.unpack_cbz(filepath, folder)
             self.load_folder(layout, folder)
+
+    def keyPressEvent(self, event):
+        if type(event) == QKeyEvent:
+            key = event.key()
+            if key == KEY_F:
+                if not self.isFullScreen():
+                    self.showFullScreen()
+                else:
+                    self.showNormal()
+            elif key == KEY_ESCAPE:
+                self.deleteLater()
+            elif key == KEY_LEFT:
+                self.open_index(self.index - 1)
+            elif key == KEY_RIGHT:
+                self.open_index(self.index + 1)
+        super().keyPressEvent(event)
 
 
 if __name__ == "__main__":
