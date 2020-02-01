@@ -19,6 +19,8 @@ KEY_F = 70
 KEY_O = 79
 KEY_LEFT = 65
 KEY_RIGHT = 68
+KEY_HOME = 16777232
+KEY_END = 16777233
 
 
 class Viewer(QWidget):
@@ -27,6 +29,7 @@ class Viewer(QWidget):
         self.setWindowTitle('Maloread')
         self.maxw = 600
         self.index = -1
+        self.scroller = None
         self.files_list = filespath
         self.setWindowIcon(QIcon('icon.png'))
         layout = QVBoxLayout()
@@ -35,10 +38,13 @@ class Viewer(QWidget):
         self.setLayout(layout)
         if self.open_index(0) is None:
             layout.addWidget(self.get_footer())
+            self.next.setEnabled(False)
+            self.prev.setEnabled(False)
         self.resize(self.maxw + 20, 720)
 
     def open_index(self, index):
-        if index < 0 or index >= len(self.files_list):
+        index_len = len(self.files_list)
+        if index < 0 or index >= index_len:
             return
         layout = self.layout()
         self.clear(layout)
@@ -47,6 +53,8 @@ class Viewer(QWidget):
         layout.addWidget(self.get_scroller())
         self.setWindowTitle(f'Maloread: {self.filepath}')
         self.index = index
+        self.prev.setEnabled(index > 0)
+        self.next.setEnabled(index < index_len - 1)
         return index
 
     def get_scroller(self):
@@ -66,6 +74,7 @@ class Viewer(QWidget):
         scroller_area.setWidget(scroller_content)
         scroller_area.setWidgetResizable(True)
         scroller_area.verticalScrollBar().setSingleStep(30)
+        self.scroller = scroller_area
         return scroller_area
 
     def clear(self, layout):
@@ -94,6 +103,8 @@ class Viewer(QWidget):
         layout.addWidget(button_next)
         widget = QWidget()
         widget.setLayout(layout)
+        self.prev = button_prev
+        self.next = button_next
         return widget
 
     def load_folder(self, layout, path):
@@ -157,6 +168,11 @@ class Viewer(QWidget):
                 self.open_index(self.index + 1)
             elif key == KEY_O:
                 self.toggle_file_opening()
+            elif key == KEY_HOME and self.scroller:
+                self.scroller.verticalScrollBar().setValue(0)
+            elif key == KEY_END and self.scroller:
+                vsb = self.scroller.verticalScrollBar()
+                vsb.setValue(vsb.maximum())
             else:
                 print(key)
         super().keyPressEvent(event)
