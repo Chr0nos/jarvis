@@ -14,16 +14,6 @@ from zipfile import ZipFile
 from typing import List
 
 
-KEY_ESCAPE = 16777216
-KEY_F = 70
-KEY_O = 79
-KEY_Q = 81
-KEY_LEFT = 65
-KEY_RIGHT = 68
-KEY_HOME = 16777232
-KEY_END = 16777233
-
-
 class Viewer(QWidget):
     def __init__(self, filespath: List[str]):
         super().__init__()
@@ -156,22 +146,22 @@ class Viewer(QWidget):
     def keyPressEvent(self, event):
         if type(event) == QKeyEvent:
             key = event.key()
-            if key == KEY_F:
+            if key == Qt.Key_F:
                 if not self.isFullScreen():
                     self.showFullScreen()
                 else:
                     self.showNormal()
-            elif key in (KEY_ESCAPE, KEY_Q):
+            elif key in (Qt.Key_Escape, Qt.Key_Q):
                 self.deleteLater()
-            elif key == KEY_LEFT:
+            elif key == Qt.Key_A:
                 self.open_index(self.index - 1)
-            elif key == KEY_RIGHT:
+            elif key == Qt.Key_D:
                 self.open_index(self.index + 1)
-            elif key == KEY_O:
+            elif key == Qt.Key_O:
                 self.toggle_file_opening()
-            elif key == KEY_HOME and self.scroller:
+            elif key == Qt.Key_Home and self.scroller:
                 self.scroller.verticalScrollBar().setValue(0)
-            elif key == KEY_END and self.scroller:
+            elif key == Qt.Key_End and self.scroller:
                 vsb = self.scroller.verticalScrollBar()
                 vsb.setValue(vsb.maximum())
             else:
