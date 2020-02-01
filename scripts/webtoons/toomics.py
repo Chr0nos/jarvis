@@ -1,4 +1,3 @@
-import requests
 import bs4 as BeautifulSoup
 from urllib.parse import quote as urlquote
 from datetime import datetime, timedelta
@@ -6,7 +5,6 @@ from datetime import datetime, timedelta
 import mongomodel
 import re
 import os
-import sys
 
 from selenium import webdriver
 from selenium.common.exceptions import UnexpectedAlertPresentException
@@ -39,7 +37,6 @@ class ToomicSelenium:
         if not self.driver:
             self.driver = webdriver.Firefox()
         return self.driver
-
 
     def get_html(self):
         if self.html:
@@ -74,17 +71,20 @@ class ToomicSelenium:
 
         # go back to the toon page
         driver.get(self.url)
+        return self
 
     def go(self):
+        """Open the current chapter on the selenium navigator
+        """
         driver = self.get_driver()
         if driver.current_url != self.url:
             driver.get(self.url)
 
     def get_pagination(self):
-        previous, current, next_chapter = \
-        self.get_driver() \
-                .find_element_by_tag_name('footer') \
-                .find_elements_by_tag_name('a')
+        footer_links = self.get_driver() \
+            .find_element_by_tag_name('footer') \
+            .find_elements_by_tag_name('a')
+        previous, current, next_chapter = footer_links
         return (previous, current, next_chapter)
 
     def move(self, to_next=True):
@@ -112,12 +112,20 @@ class ToomicSelenium:
         return self.move(to_next=False)
 
     def leech(self):
-        instance = self
-        while instance:
-            if not os.path.exists(self.cbz_path):
-                instance.pull()
-                instance.save()
-            instance = instance.inc()
+        try:
+            return super().leech()
+        except UnexpectedAlertPresentException:
+            return self
+
+        # instance = self
+        # while instance:
+        #     if not os.path.exists(self.cbz_path):
+        #         try:
+        #             instance.pull()
+        #         except UnexpectedAlertPresentException:
+        #             return
+        #         instance.save()
+        #     instance = instance.inc()
 
 
 class Toomic(ToonBase, ToomicSelenium):
@@ -152,7 +160,6 @@ class Toomic(ToonBase, ToomicSelenium):
             'GTOOMICSlogin_attempt': '1',
             'GTOOMICSpidIntro': '1',
             'first_open_episode': 'Y',
-            'GTOOMICSlogin_chk_his': 'Y',
             'GTOOMICSslave': 'sdb5',
             'content_lang': self.lang,
             'GTOOMICSvip_chk': 'email'
@@ -160,7 +167,8 @@ class Toomic(ToonBase, ToomicSelenium):
 
     @classmethod
     def from_url(cls, url, driver=None):
-        m = re.compile(r'^https://([\w.]+)/(\w+)/webtoon/detail/code/(\d+)/ep/(\d+)/toon/(\d+)')
+        m = re.compile(r'^https://([\w.]+)/(\w+)/webtoon/detail/code/(\d+)/'
+                       r'ep/(\d+)/toon/(\d+)')
         match = m.match(url)
         assert match
 
@@ -216,15 +224,12 @@ def pullall(user_id, password):
             finished=True,
             last_fetch__gt=datetime.now() - timedelta(hours=24)
         ).sort(['name'])
-    print('pullables toons: ', qs.count())
+    print('pullables toons:', qs.count(), qs.distinct('name'))
     for toon in qs:
         print(toon.name)
         if not driver:
             toon.auth(user_id, password)
             driver = toon.driver
         toon.driver = driver
-        try:
-            toon.leech()
-        except UnexpectedAlertPresentException:
-            continue
+        toon.leech()
     return driver

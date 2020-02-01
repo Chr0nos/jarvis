@@ -9,6 +9,10 @@ from tempfile import TemporaryDirectory
 import zipfile
 
 
+class ToonBaseUrlInvalidError(Exception):
+    pass
+
+
 class Chdir:
     def __init__(self, path):
         self.dir = path
@@ -36,6 +40,9 @@ class ToonBase(mongomodel.Document):
         self.session = requests.Session()
         self.session.headers = self.get_headers()
         self.session.cookies = cookiejar_from_dict(self.get_cookies())
+
+    def pre_save(self, data, is_new=False):
+        self.created = data.get('created')
 
     def get_cookies(self):
         return {}
@@ -93,3 +100,25 @@ class ToonBase(mongomodel.Document):
             print('\n', end='')
         self.last_fetch = datetime.now()
         self.fetched = True
+
+    def exists(self):
+        return os.path.exists(self.cbz_path)
+
+    def inc(self):
+        raise NotImplementedError
+
+    def auth(self, username, password) -> 'ToonBase':
+        """Override this method to perform authentication on the scrapped site
+        return None if the autentication failed.
+        """
+        return self
+
+    def leech(self, **kwargs) -> 'ToonBase':
+        try:
+            while True:
+                if not self.exists():
+                    self.pull()
+                    self.save()
+                self.inc(**kwargs)
+        except (StopIteration, ToonBaseUrlInvalidError):
+            return self

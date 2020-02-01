@@ -1,42 +1,39 @@
 #!./venv/bin/python
 import os
-import sys
 import re
 import requests
 import bs4 as BeautifulSoup
-from tempfile import TemporaryDirectory
-import zipfile
-from datetime import datetime, timedelta
-from requests.cookies import cookiejar_from_dict
 
+from datetime import datetime, timedelta
+
+from toonbase import ToonBase, ToonBaseUrlInvalidError
 import mongomodel
 import click
 
 
-class Toon(mongomodel.Document):
+class Toon(ToonBase):
     collection = 'mongotoon'
-    name = mongomodel.StringField()
-    epno = mongomodel.IntegerField()
     titleno = mongomodel.IntegerField()
     gender = mongomodel.StringField(maxlen=200)
     chapter = mongomodel.StringField()
-    fetched = mongomodel.BoolField(False)
-    last_fetch = mongomodel.DateTimeField(required=False)
-    created = mongomodel.DateTimeField(default=lambda: datetime.now())
-    finished = mongomodel.BoolField(False)
     soup = None
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.session = requests.Session()
-        self.session.headers = self.headers
-        self.session.cookies = cookiejar_from_dict({
+    def get_cookies(self):
+        return {
             'needGDPR': 'false',
             'ageGatePass': 'true',
             'allowedCookie': 'ga',
             'contentLanguage': 'en',
             'locale': 'en'
-        })
+        }
+
+    def get_headers(self):
+        return {
+            'Referer': 'www.webtoons.com',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                          'AppleWebKit/537.36 (KHTML, like Gecko) '
+                          'Chrome/61.0.3112.113 Safari/537.36',
+        }
 
     def __repr__(self):
         return f'<Toon {self.name}>'
@@ -47,20 +44,23 @@ class Toon(mongomodel.Document):
 
         return f'{self.name:30} {self.chapter:40} {get_date(self.last_fetch)} {self.gender}'
 
-    class exceptions:
-        class UrlInvalid(Exception):
-            pass
-
     @staticmethod
     def from_url(url):
         # print('parsing ', url)
         r = re.compile(r'^https:\/\/([\w\.]+)\/en\/([\w-]+)\/([\w-]+)\/([\w-]+)\/viewer\?title_no=(\d+)&episode_no=(\d+)')
         m = r.match(url)
         if not m:
-            raise Toon.exceptions.UrlInvalid(url)
+            raise ToonBaseUrlInvalidError(url)
         site, gender_name, name, episode, title_no, episode_no = m.groups()
-        toon = Toon(name=name, epno=int(episode_no), chapter=episode,
-                    titleno=int(title_no), gender=gender_name)
+        toon = Toon(
+            name=name,
+            episode=int(episode_no),
+            chapter=episode,
+            titleno=int(title_no),
+            gender=gender_name,
+            lang='en',
+            domain='webtoon.com'
+        )
         return toon
 
     @property
@@ -68,7 +68,8 @@ class Toon(mongomodel.Document):
         if not self.name:
             return None
         # return os.path.join('/home/adamaru/Downloads/webtoons/', self.name)
-        return os.path.join('/run/media/adamaru/Aiur/Scans/Webtoons/', self.name)
+        return os.path.join('/run/media/adamaru/Aiur/Scans/Webtoons/',
+                            self.name)
 
     @property
     def cbz_path(self):
@@ -78,7 +79,11 @@ class Toon(mongomodel.Document):
 
     @property
     def url(self):
-        return f'https://webtoons.com/en/{self.gender}/{self.name}/{self.chapter}/viewer?title_no={self.titleno}&episode_no={self.epno}'
+        return ''.join(
+            f'https://webtoons.com/en/{self.gender}/{self.name}/'
+            f'{self.chapter}/viewer?title_no={self.titleno}'
+            f'&episode_no={self.episode}'
+        )
 
     def index(self):
         if not self.soup:
@@ -93,27 +98,6 @@ class Toon(mongomodel.Document):
     def pages(self):
         return list(self.index())
 
-    @property
-    def headers(self):
-        return {
-            'Referer': 'www.webtoons.com',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3112.113 Safari/537.36',
-        }
-
-    def fetch_url(self, url, filepath):
-        response = self.session.get(url, stream=True)
-        if response.status_code != 200:
-            print(url)
-            raise ValueError(response.status_code)
-        with open(filepath, 'wb') as fd:
-            for chunk in response.iter_content(8192):
-                fd.write(chunk)
-            fd.close()
-        sys.stdout.write('.')
-        sys.stdout.flush()
-        # print('->', filepath)
-        return filepath
-
     def get_soup(self):
         page = self.session.get(self.url)
         if page.status_code != 200:
@@ -122,50 +106,17 @@ class Toon(mongomodel.Document):
         self.soup = BeautifulSoup.BeautifulSoup(page.text, 'lxml')
         return self.soup
 
-    def get_next_instance(self):
-        next_page = self.soup.find_all("a", class_='pg_next')[0].get('href')
-        next_toon = Toon.from_url(next_page)
-        if self.last_fetch:
-            next_toon.last_fetch = self.last_fetch
-        return next_toon
-
-    def pull(self, force=False, getnext=True):
-        """Retrive the .jpgs and pack them into self.cbz
-        force: overwrite any existing.cbz file for this chapter
-        getnext: try to get the next page
-        return an instance of Toon
-        """
-        if not os.path.exists(self.path):
-            os.mkdir(self.path)
-
-        soup = self.get_soup()
-        if not force and os.path.exists(self.cbz_path):
-            print(f'{self.name} {self.chapter} : skiped, already present')
-            return self.get_next_instance()
-
-        def leech():
-            print(f'{self.name} {self.chapter} : ', end='')
-            with TemporaryDirectory() as tmpd:
-                os.chdir(tmpd)
-                i = 0
-                cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
-                sys.stdout.flush()
-                for url in self.index():
-                    filepath = self.fetch_url(
-                        url, os.path.join(tmpd, f'{i:03}.jpg'))
-                    cbz.write(filepath, os.path.basename(filepath))
-                    i += 1
-                cbz.close()
-            self.fetched = True
-            self.last_fetch = datetime.now()
-            sys.stdout.write('\n')
-            sys.stdout.flush()
-
-        instance = self
-        if not self.fetched:
-            leech()
-        if getnext:
-            instance = self.get_next_instance()
+    def inc(self):
+        try:
+            next_page = self.soup.find_all("a", class_='pg_next')[0].get('href')
+        except AttributeError as err:
+            raise ToonBaseUrlInvalidError from err
+        instance = Toon.from_url(next_page)
+        self.episode = instance.episode
+        self.chapter = instance.chapter
+        self.lang = instance.lang
+        self.domain = instance.domain
+        self.soup = None
         return instance
 
 
@@ -173,16 +124,7 @@ class ToonManager:
     @staticmethod
     def pull_toon(toon):
         try:
-            while True:
-                next_toon = toon.pull()
-                toon.last_fetch = datetime.now()
-                toon.epno = next_toon.epno
-                toon.chapter = next_toon.chapter
-                toon.titleno = next_toon.titleno
-                toon.fetched = False
-                toon.save()
-        except Toon.exceptions.UrlInvalid:
-            pass
+            toon.leech()
         except KeyboardInterrupt:
             os.unlink(toon.cbz_path)
             print('canceled, removed incomplete cbz', toon.cbz_path)
@@ -200,7 +142,7 @@ class ToonManager:
             qs = qs.filter(last_fetch__lte=last_week)
         for toon in qs:
             try:
-                cls.pull_toon(toon)
+                toon.leech()
             except KeyboardInterrupt:
                 return
             except requests.exceptions.ConnectionError as err:
