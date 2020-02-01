@@ -23,6 +23,8 @@ KEY_RIGHT = 68
 class Viewer(QWidget):
     def __init__(self, filespath: List[str]):
         super().__init__()
+        self.setWindowTitle('Maloread')
+        self.maxw = 600
         self.files_list = filespath
         self.setWindowIcon(QIcon('icon.png'))
         layout = QVBoxLayout()
