@@ -17,6 +17,7 @@ from typing import List
 KEY_ESCAPE = 16777216
 KEY_F = 70
 KEY_O = 79
+KEY_Q = 81
 KEY_LEFT = 65
 KEY_RIGHT = 68
 KEY_HOME = 16777232
@@ -160,7 +161,7 @@ class Viewer(QWidget):
                     self.showFullScreen()
                 else:
                     self.showNormal()
-            elif key == KEY_ESCAPE:
+            elif key in (KEY_ESCAPE, KEY_Q):
                 self.deleteLater()
             elif key == KEY_LEFT:
                 self.open_index(self.index - 1)
