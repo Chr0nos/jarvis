@@ -1,7 +1,7 @@
 #!env python
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QScrollArea,
-    QPushButton
+    QPushButton, QFileDialog
 )
 
 from PyQt5.QtGui import QIcon, QPixmap, QKeyEvent
@@ -16,6 +16,7 @@ from typing import List
 
 KEY_ESCAPE = 16777216
 KEY_F = 70
+KEY_O = 79
 KEY_LEFT = 65
 KEY_RIGHT = 68
 
@@ -25,13 +26,15 @@ class Viewer(QWidget):
         super().__init__()
         self.setWindowTitle('Maloread')
         self.maxw = 600
+        self.index = -1
         self.files_list = filespath
         self.setWindowIcon(QIcon('icon.png'))
         layout = QVBoxLayout()
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
-        self.open_index(0)
+        if self.open_index(0) is None:
+            layout.addWidget(self.get_footer())
         self.resize(self.maxw + 20, 720)
 
     def open_index(self, index):
@@ -44,6 +47,7 @@ class Viewer(QWidget):
         layout.addWidget(self.get_scroller())
         self.setWindowTitle(f'Maloread: {self.filepath}')
         self.index = index
+        return index
 
     def get_scroller(self):
         scroller_area = QScrollArea(self)
@@ -75,14 +79,17 @@ class Viewer(QWidget):
         button_quit.setToolTip('Exit the window')
         button_quit.clicked.connect(lambda: sys.exit(0))
 
+        button_open = QPushButton('Open')
         button_prev = QPushButton('Previous')
         button_next = QPushButton('Next')
 
         button_next.clicked.connect(lambda: self.open_index(self.index + 1))
         button_prev.clicked.connect(lambda: self.open_index(self.index - 1))
+        button_open.clicked.connect(lambda: self.toggle_file_opening())
 
         layout = QHBoxLayout()
         layout.addWidget(button_prev)
+        layout.addWidget(button_open)
         layout.addWidget(button_quit)
         layout.addWidget(button_next)
         widget = QWidget()
@@ -90,13 +97,13 @@ class Viewer(QWidget):
         return widget
 
     def load_folder(self, layout, path):
-        files = os.listdir(path)
-        files.sort()
-        for f in files:
-            if f.startswith('.'):
-                continue
-            fullpath = os.path.join(path, f)
-            layout.addWidget(self.load_picture(fullpath))
+        for root, dirs, files in os.walk(path):
+            files.sort()
+            for f in files:
+                if f.startswith('.'):
+                    continue
+                fullpath = os.path.join(root, f)
+                layout.addWidget(self.load_picture(fullpath))
         return layout
 
     def load_picture(self, path):
@@ -119,6 +126,21 @@ class Viewer(QWidget):
             self.unpack_cbz(filepath, folder)
             self.load_folder(layout, folder)
 
+    def toggle_file_opening(self):
+        w = QFileDialog(self)
+        w.setNameFilters(('*.cbz', '*.zip'))
+        w.setWindowTitle('Please select files to open')
+        w.setModal(True)
+        w.setFileMode(QFileDialog.ExistingFiles)
+        if w.exec():
+            files = w.selectedFiles()
+            if files:
+                self.files_list = files
+                self.open_index(0)
+                self.resize(self.maxw + 20, self.height())
+                return True
+        return False
+
     def keyPressEvent(self, event):
         if type(event) == QKeyEvent:
             key = event.key()
@@ -133,6 +155,10 @@ class Viewer(QWidget):
                 self.open_index(self.index - 1)
             elif key == KEY_RIGHT:
                 self.open_index(self.index + 1)
+            elif key == KEY_O:
+                self.toggle_file_opening()
+            else:
+                print(key)
         super().keyPressEvent(event)
 
 
