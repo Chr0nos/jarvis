@@ -11,22 +11,31 @@ import sys
 import os
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile
+from typing import List
 
 
 class Viewer(QWidget):
-    def __init__(self, filespath):
+    def __init__(self, filespath: List[str]):
         super().__init__()
-        self.index = 0
-        self.filepath = filespath[self.index]
-        self.maxw = 0
-        self.setWindowTitle(f'CBZ reader {self.filepath}')
+        self.files_list = filespath
         self.setWindowIcon(QIcon('icon.png'))
         layout = QVBoxLayout()
         layout.setSpacing(0)
-        layout.addWidget(self.get_scroller())
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
+        self.open_index(0)
+
+    def open_index(self, index):
+        if index < 0 or index >= len(self.files_list):
+            return
+        layout = self.layout()
+        self.clear(layout)
+        self.maxw = 0
+        self.filepath = self.files_list[index]
+        layout.addWidget(self.get_scroller())
+        self.setWindowTitle(f'Maloread: {self.filepath}')
         self.resize(self.maxw + 15, 720)
+        self.index = index
 
     def get_scroller(self):
         scroller_area = QScrollArea(self)
@@ -39,16 +48,37 @@ class Viewer(QWidget):
         scroller_layout.setStretch(0, 1)
         self.load_cbz(scroller_layout, self.filepath)
 
-        button = QPushButton('Quit')
-        button.setToolTip('Exit the window')
-        button.clicked.connect(lambda: sys.exit(0))
-        scroller_layout.addWidget(button)
+        scroller_layout.addWidget(self.get_footer())
         scroller_layout.setContentsMargins(0, 0, 0, 0)
         scroller_content.setLayout(scroller_layout)
         scroller_area.setWidget(scroller_content)
         scroller_area.setWidgetResizable(True)
         scroller_area.verticalScrollBar().setSingleStep(30)
         return scroller_area
+
+    def clear(self, layout):
+        for _ in range(layout.count()):
+            widget = layout.takeAt(0).widget()
+            layout.removeWidget(widget)
+
+    def get_footer(self) -> QWidget:
+        button_quit = QPushButton('Quit')
+        button_quit.setToolTip('Exit the window')
+        button_quit.clicked.connect(lambda: sys.exit(0))
+
+        button_prev = QPushButton('Previous')
+        button_next = QPushButton('Next')
+
+        button_next.clicked.connect(lambda: self.open_index(self.index + 1))
+        button_prev.clicked.connect(lambda: self.open_index(self.index - 1))
+
+        layout = QHBoxLayout()
+        layout.addWidget(button_prev)
+        layout.addWidget(button_quit)
+        layout.addWidget(button_next)
+        widget = QWidget()
+        widget.setLayout(layout)
+        return widget
 
     def load_folder(self, layout, path):
         files = os.listdir(path)
