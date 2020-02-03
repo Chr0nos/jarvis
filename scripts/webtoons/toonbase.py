@@ -7,6 +7,7 @@ from datetime import datetime
 from requests.cookies import cookiejar_from_dict
 from tempfile import TemporaryDirectory
 import zipfile
+from selenium.common.exceptions import UnexpectedAlertPresentException
 
 
 class ToonBaseUrlInvalidError(Exception):
@@ -122,3 +123,5 @@ class ToonBase(mongomodel.Document):
                 self.inc(**kwargs)
         except (StopIteration, ToonBaseUrlInvalidError):
             return self
+        # except UnexpectedAlertPresentException:
+        #     return
