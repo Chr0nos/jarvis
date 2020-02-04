@@ -52,6 +52,11 @@ class Viewer(QWidget):
         scroller_area = QScrollArea(self)
         scroller_area.setVisible(True)
         scroller_area.setWidgetResizable(True)
+        try:
+            with open('scroller.css', 'r') as css:
+                scroller_area.setStyleSheet(css.read())
+        except OSError:
+            pass
 
         scroller_content = QWidget()
         scroller_layout = QVBoxLayout()

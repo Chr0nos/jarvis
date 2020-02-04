@@ -89,10 +89,7 @@ class Toomic(ToonBase):
 
     def parse(self):
         self.get_html()
-        return self.soup.find_all(
-            'img',
-            {'class': 'img-responsive center-block lazy_detail'}
-        )
+        return self.soup.find('div', {'id': 'viewer-img'}).find_all('img')
 
     def pages(self):
         return list([img.get('data-original') for img in self.parse()])
@@ -197,16 +194,6 @@ class Toomic(ToonBase):
             return super().leech()
         except UnexpectedAlertPresentException:
             return self
-
-        # instance = self
-        # while instance:
-        #     if not os.path.exists(self.cbz_path):
-        #         try:
-        #             instance.pull()
-        #         except UnexpectedAlertPresentException:
-        #             return
-        #         instance.save()
-        #     instance = instance.inc()
 
 
 def pullall(user_id, password):
