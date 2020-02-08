@@ -123,5 +123,3 @@ class ToonBase(mongomodel.Document):
                 self.inc(**kwargs)
         except (StopIteration, ToonBaseUrlInvalidError):
             return self
-        # except UnexpectedAlertPresentException:
-        #     return

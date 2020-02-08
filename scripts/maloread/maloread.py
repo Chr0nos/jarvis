@@ -142,6 +142,7 @@ class Viewer(QWidget):
         if w.exec():
             files = w.selectedFiles()
             if files:
+                files.sort()
                 self.files_list = files
                 self.open_index(0)
                 self.resize(self.maxw + 20, self.height())

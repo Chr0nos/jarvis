@@ -89,7 +89,10 @@ class Toomic(ToonBase):
 
     def parse(self):
         self.get_html()
-        return self.soup.find('div', {'id': 'viewer-img'}).find_all('img')
+        container = self.soup.find('div', {'id': 'viewer-img'})
+        if not container:
+            return []
+        return container.find_all('img')
 
     def pages(self):
         return list([img.get('data-original') for img in self.parse()])
@@ -196,12 +199,13 @@ class Toomic(ToonBase):
             return self
 
 
-def pullall(user_id, password):
+def pullall(user_id, password, **kwargs):
     driver = None
     qs = Toomic.objects \
+        .filter(**kwargs) \
         .exclude(
             finished=True,
-            last_fetch__gt=datetime.now() - timedelta(hours=24)
+            last_fetch__gt=datetime.now() - timedelta(days=3)
         ).sort(['name'])
     print('pullables toons:', qs.count(), qs.distinct('name'))
     for toon in qs:
