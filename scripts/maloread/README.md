@@ -26,3 +26,11 @@ pip install -r requirements.txt
 
 python ./maloread [path to cbz files]
 ```
+
+# Controls
+- A : previous chapter
+- D : next chapter
+- Home : go on top
+- End : go on bottom
+- Q : Quit
+- O : Open files

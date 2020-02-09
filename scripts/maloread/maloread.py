@@ -111,6 +111,7 @@ class Viewer(QWidget):
     def load_picture(self, path):
         # print('loading', path)
         pix = QPixmap(path)
+        # pix = pix.scaledToWidth(self.width(), Qt.SmoothTransformation)
         self.maxw = max(pix.width(), self.maxw)
         # pix.scaledToWidth(6)
         label = QLabel('test', self)
