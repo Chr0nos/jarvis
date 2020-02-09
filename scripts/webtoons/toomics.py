@@ -24,14 +24,96 @@ class Chdir:
         os.chdir(self.previous_dir)
 
 
-class ToomicSelenium:
+class Toomic(ToonBase):
+    identifier = mongomodel.IntegerField()
+    code = mongomodel.IntegerField()
+    corporate = mongomodel.BoolField(value=True)
     soup = None
     html = None
     driver = None
 
+    def copy(self):
+        instance = Toomic(
+            code=self.code,
+            name=self.name,
+            episode=self.episode,
+            domain=self.domain,
+            lang=self.lang,
+            identifier=self.identifier
+        )
+        instance.html = self.html
+        instance.soup = self.soup
+        driver = getattr(self, 'driver', None)
+        if driver:
+            instance.driver = driver
+        return instance
+
+    def __repr__(self):
+        return f'<Toomic: {self.name}> episode: {self.episode}'
+
+    def get_cookies(self) -> dict:
+        return {
+            'cp': '928%7C134',
+            # 'backurl': urlquote(self.url),
+            'GTOOMICSlogin_chk_his': '1',
+            'GTOOMICSlogin_attempt': '1',
+            'GTOOMICSpidIntro': '1',
+            'first_open_episode': 'Y',
+            'GTOOMICSslave': 'sdb5',
+            'content_lang': self.lang,
+            'GTOOMICSvip_chk': 'email'
+        }
+
+    @classmethod
+    def from_url(cls, url, driver=None):
+        m = re.compile(r'^https://([\w.]+)/(\w+)/webtoon/detail/code/(\d+)/'
+                       r'ep/(\d+)/toon/(\d+)')
+        match = m.match(url)
+        assert match
+
+        domain, lang, code, ep, identifier = match.groups()
+        instance = cls(
+            lang=lang,
+            code=int(code),
+            identifier=int(identifier),
+            episode=int(ep),
+            domain=domain
+        )
+        instance.driver = driver
+        return instance
+
     @property
     def url(self):
-        pass
+        return f'https://toomics.com/{self.lang}/webtoon/detail/code/' \
+               f'{self.code}/ep/{self.episode}/toon/{self.identifier}'
+
+    def parse(self):
+        self.get_html()
+        container = self.soup.find('div', {'id': 'viewer-img'})
+        if not container:
+            return []
+        return container.find_all('img')
+
+    def pages(self):
+        return list([img.get('data-original') for img in self.parse()])
+
+    @property
+    def path(self):
+        return f'/run/media/adamaru/Aiur/Scans/Toomics/{self.name}'
+
+    def __iadd__(self, x: int):
+        self.code += x
+        self.episode += x
+        self.soup = None
+        self.html = None
+        return self
+
+    def __isub__(self, x: int):
+        self.code -= x
+        self.episode -= x
+        self.soup = None
+        self.html = None
+        return self
 
     def get_driver(self):
         if not self.driver:
@@ -93,9 +175,8 @@ class ToomicSelenium:
             next_chapter = self.get_pagination()[2 if to_next else 0]
             next_chapter_url = next_chapter.get_property('href')
             instance = self.from_url(next_chapter_url)
-        except (AssertionError, ValueError):
-            # print('move impossible')
-            return
+        except (AssertionError, ValueError) as err:
+            raise StopIteration from err
 
         self.code = instance.code
         self.episode = instance.episode
@@ -117,112 +198,14 @@ class ToomicSelenium:
         except UnexpectedAlertPresentException:
             return self
 
-        # instance = self
-        # while instance:
-        #     if not os.path.exists(self.cbz_path):
-        #         try:
-        #             instance.pull()
-        #         except UnexpectedAlertPresentException:
-        #             return
-        #         instance.save()
-        #     instance = instance.inc()
 
-
-class Toomic(ToonBase, ToomicSelenium):
-    identifier = mongomodel.IntegerField()
-    code = mongomodel.IntegerField()
-    corporate = mongomodel.BoolField(value=True)
-
-    def copy(self):
-        instance = Toomic(
-            code=self.code,
-            name=self.name,
-            episode=self.episode,
-            domain=self.domain,
-            lang=self.lang,
-            identifier=self.identifier
-        )
-        instance.html = self.html
-        instance.soup = self.soup
-        driver = getattr(self, 'driver', None)
-        if driver:
-            instance.driver = driver
-        return instance
-
-    def __repr__(self):
-        return f'<Toomic: {self.name}> episode: {self.episode}'
-
-    def get_cookies(self) -> dict:
-        return {
-            'cp': '928%7C134',
-            'backurl': urlquote(self.url),
-            'GTOOMICSlogin_chk_his': '1',
-            'GTOOMICSlogin_attempt': '1',
-            'GTOOMICSpidIntro': '1',
-            'first_open_episode': 'Y',
-            'GTOOMICSslave': 'sdb5',
-            'content_lang': self.lang,
-            'GTOOMICSvip_chk': 'email'
-        }
-
-    @classmethod
-    def from_url(cls, url, driver=None):
-        m = re.compile(r'^https://([\w.]+)/(\w+)/webtoon/detail/code/(\d+)/'
-                       r'ep/(\d+)/toon/(\d+)')
-        match = m.match(url)
-        assert match
-
-        domain, lang, code, ep, identifier = match.groups()
-        instance = cls(
-            lang=lang,
-            code=int(code),
-            identifier=int(identifier),
-            episode=int(ep),
-            domain=domain
-        )
-        instance.driver = driver
-        return instance
-
-    @property
-    def url(self):
-        return f'https://toomics.com/{self.lang}/webtoon/detail/code/' \
-               f'{self.code}/ep/{self.episode}/toon/{self.identifier}'
-
-    def parse(self):
-        self.get_html()
-        return self.soup.find_all(
-            'img',
-            {'class': 'img-responsive center-block lazy_detail'}
-        )
-
-    def pages(self):
-        return list([img.get('data-original') for img in self.parse()])
-
-    @property
-    def path(self):
-        return f'/run/media/adamaru/Aiur/Scans/Toomics/{self.name}'
-
-    def __iadd__(self, x: int):
-        self.code += x
-        self.episode += x
-        self.soup = None
-        self.html = None
-        return self
-
-    def __isub__(self, x: int):
-        self.code -= x
-        self.episode -= x
-        self.soup = None
-        self.html = None
-        return self
-
-
-def pullall(user_id, password):
+def pullall(user_id, password, **kwargs):
     driver = None
     qs = Toomic.objects \
+        .filter(**kwargs) \
         .exclude(
             finished=True,
-            last_fetch__gt=datetime.now() - timedelta(hours=24)
+            last_fetch__gt=datetime.now() - timedelta(days=3)
         ).sort(['name'])
     print('pullables toons:', qs.count(), qs.distinct('name'))
     for toon in qs:

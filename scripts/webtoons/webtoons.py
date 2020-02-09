@@ -107,6 +107,8 @@ class Toon(ToonBase):
         return self.soup
 
     def inc(self):
+        if not self.soup:
+            self.get_soup()
         try:
             next_page = self.soup.find_all("a", class_='pg_next')[0].get('href')
         except AttributeError as err:

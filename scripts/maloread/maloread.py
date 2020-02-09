@@ -52,6 +52,11 @@ class Viewer(QWidget):
         scroller_area = QScrollArea(self)
         scroller_area.setVisible(True)
         scroller_area.setWidgetResizable(True)
+        try:
+            with open('scroller.css', 'r') as css:
+                scroller_area.setStyleSheet(css.read())
+        except OSError:
+            pass
 
         scroller_content = QWidget()
         scroller_layout = QVBoxLayout()
@@ -130,6 +135,14 @@ class Viewer(QWidget):
             self.load_folder(layout, folder)
 
     def toggle_file_opening(self):
+        def smart_sort(item):
+            """Allow sorting of integer named files like 1.jpg, 10.jpg etc
+            """
+            try:
+                return int(''.join(os.path.basename(item).split('.')[0:-1]))
+            except (TypeError, ValueError, AttributeError):
+                return item
+
         w = QFileDialog(self)
         w.setNameFilters(('*.cbz', '*.zip'))
         w.setWindowTitle('Please select files to open')
@@ -138,7 +151,7 @@ class Viewer(QWidget):
         if w.exec():
             files = w.selectedFiles()
             if files:
-                self.files_list = files
+                self.files_list = sorted(files, key=smart_sort)
                 self.open_index(0)
                 self.resize(self.maxw + 20, self.height())
                 return True
