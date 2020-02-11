@@ -36,7 +36,7 @@ class Toon(ToonBase):
         }
 
     def __repr__(self):
-        return f'<Toon {self.name}>'
+        return f'<Toon {self.name}> {self.chapter}'
 
     def __str__(self):
         def get_date(d):

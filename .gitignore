@@ -3,4 +3,3 @@ __pycache__
 .gdb*
 venv
 scripts/listdisk
-*.lock
