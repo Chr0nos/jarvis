@@ -1,0 +1,170 @@
+#!env python
+
+from PyQt5 import QtWidgets
+from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtCore import Qt
+
+import sys
+import os
+import re
+
+
+class MainWindow(QtWidgets.QWidget):
+    def __init__(self, folder='.'):
+        self.folder = os.path.realpath(folder)
+        super().__init__()
+        self.setWindowTitle('Bwarg')
+        self.resize(600, 400)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addLayout(self._get_controll_section())
+        layout.addLayout(self._get_replace_section())
+        layout.addWidget(self._get_files_section())
+
+        self.pbar = QtWidgets.QProgressBar()
+        layout.addWidget(self.pbar)
+        self.setLayout(layout)
+        self.scan_folder()
+        self.refreshFilesList()
+
+    def scan_folder(self):
+        if not os.path.exists(self.folder):
+            return
+
+        def hiden(filename) -> bool:
+            if filename[0] == '.':
+                return True
+            fullpath = os.path.join(self.folder, filename)
+            return not os.path.isfile(fullpath)
+
+        self.files_lst = sorted(
+            [f for f in os.listdir(self.folder) if not hiden(f)])
+
+    def get_renaming_pair(self) -> tuple:
+        try:
+            fmt = self.by_edit.text()
+            regex = re.compile(self.replace_edit.text())
+            return fmt, regex
+        except re.error:
+            return (None, None)
+
+    def refreshFilesList(self):
+        fmt, regex = self.get_renaming_pair()
+
+        def put_filename(filename):
+            x = QtWidgets.QListWidgetItem()
+            x.setToolTip(filename)
+            if fmt and regex:
+                try:
+                    m = regex.match(filename)
+                    x.setText(fmt.format(*m.groups(), **m.groupdict()))
+                except (Exception) as e:
+                    # print(type(e), e)
+                    x.setText(filename)
+            else:
+                x.setText(filename)
+            self.files.addItem(x)
+
+        self.files.clear()
+        self.pbar.setValue(0)
+        self.pbar.setMaximum(len(self.files_lst) - 1)
+        for i, name in enumerate(self.files_lst):
+            put_filename(name)
+            self.pbar.setValue(i)
+
+    def _get_controll_section(self):
+        layout = QtWidgets.QHBoxLayout()
+        left = QtWidgets.QVBoxLayout()
+        left.addWidget(self._folder_section())
+
+        layout.addLayout(left)
+        layout.addWidget(self._get_actions())
+        return layout
+
+    def _folder_section(self) -> QtWidgets.QGroupBox:
+        def browse_folder():
+            w = QtWidgets.QFileDialog(self)
+            w.setWindowTitle('Choose a folder to open')
+            w.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
+            w.show()
+            if not w.exec():
+                return
+            self.folder = w.selectedFiles()[0]
+            self.scan_folder()
+            self.refreshFilesList()
+            self.folder_edit.setText(self.folder)
+
+        folder_section = QtWidgets.QGroupBox('Folder')
+        layout = QtWidgets.QHBoxLayout()
+
+        self.folder_edit = QtWidgets.QLineEdit()
+        self.folder_edit.setText(self.folder)
+        browse_btn = QtWidgets.QPushButton()
+        browse_btn.setText('...')
+        browse_btn.clicked.connect(browse_folder)
+        refresh_btn = QtWidgets.QPushButton()
+        refresh_btn.setText('Refresh')
+
+        layout.addWidget(self.folder_edit)
+        layout.addWidget(browse_btn)
+        folder_section.setLayout(layout)
+        return folder_section
+
+    def _get_actions(self):
+        actions = QtWidgets.QGroupBox('Actions')
+        layout = QtWidgets.QVBoxLayout()
+        btn_rename = QtWidgets.QPushButton()
+        btn_rename.setText('Rename')
+        layout.addWidget(btn_rename)
+        actions.setLayout(layout)
+        return actions
+
+    def _get_files_section(self):
+        files_group = QtWidgets.QGroupBox('Files')
+        layout = QtWidgets.QVBoxLayout(files_group)
+        files_list = QtWidgets.QListWidget()
+        self.files = files_list
+        layout.addWidget(files_list)
+        return files_group
+
+    def _get_replace_section(self):
+        def update_file_list():
+            self.refreshFilesList()
+
+        replace = QtWidgets.QGroupBox('Replace')
+        self.replace_edit = QtWidgets.QLineEdit()
+        self.replace_edit.setPlaceholderText('Type a regex to rename files')
+        self.replace_edit.textEdited.connect(update_file_list)
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.replace_edit)
+        replace.setLayout(layout)
+
+        by = QtWidgets.QGroupBox('by')
+        self.by_edit = QtWidgets.QLineEdit()
+        self.by_edit.setPlaceholderText('Enter a format string')
+        self.by_edit.textEdited.connect(update_file_list)
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.by_edit)
+        by.setLayout(layout)
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(replace)
+        layout.addWidget(by)
+        return layout
+
+    def keyPressEvent(self, event):
+        if type(event) == QKeyEvent:
+            key = event.key()
+            if key == Qt.Key_Escape:
+                self.deleteLater()
+        return super().keyPressEvent(event)
+
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    try:
+        window = MainWindow(sys.argv[1] if len(sys.argv) > 1 else '.')
+        window.show()
+    except IndexError:
+        sys.exit(1)
+    sys.exit(app.exec_())
