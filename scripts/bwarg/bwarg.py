@@ -80,7 +80,7 @@ class MainWindow(QtWidgets.QWidget):
         self.pbar = QtWidgets.QProgressBar()
         layout.addWidget(self.pbar)
         self.setLayout(layout)
-        self.replace_edit.setText('.+(S\d+E\d+).+\.(\w+)')
+        self.replace_edit.setText(r'.+(S\d+E\d+).+\.(\w+)')
         self.scan_folder()
         self.refreshFilesList()
 
@@ -189,7 +189,8 @@ class MainWindow(QtWidgets.QWidget):
 
         by = QtWidgets.QGroupBox('by')
         self.by_edit = QtWidgets.QLineEdit()
-        self.by_edit.setPlaceholderText('Enter a format string, {} for capture groups')
+        self.by_edit.setPlaceholderText(
+            'Enter a format string, {} for capture groups')
         self.by_edit.textEdited.connect(update_file_list)
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.by_edit)

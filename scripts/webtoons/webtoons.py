@@ -122,41 +122,6 @@ class Toon(ToonBase):
         return instance
 
 
-class ToonManager:
-    @staticmethod
-    def pull_toon(toon):
-        try:
-            toon.leech()
-        except KeyboardInterrupt:
-            os.unlink(toon.cbz_path)
-            print('canceled, removed incomplete cbz', toon.cbz_path)
-            raise KeyboardInterrupt
-        except requests.exceptions.ConnectionError as err:
-            os.unlink(toon.cbz_path)
-            print('connection error, removed incomplete cbz', err)
-
-    @classmethod
-    def pull_all(cls, smart):
-        qs = Toon.objects.exclude(finished=True)
-        if smart:
-            print('smart fetch')
-            last_week = datetime.today() - timedelta(days=7)
-            qs = qs.filter(last_fetch__lte=last_week)
-        for toon in qs:
-            try:
-                toon.leech()
-            except KeyboardInterrupt:
-                return
-            except requests.exceptions.ConnectionError as err:
-                os.unlink(toon.cbz_path)
-                print('connection error, removed incomplete cbz', err)
-                return
-
-    @classmethod
-    def pull(cls, name):
-        cls.pull_toon(Toon.objects.get(name=name))
-
-
 @click.command('list')
 @click.option('--sort', default='name')
 def display_list(sort):
@@ -175,7 +140,7 @@ def delete(name):
 @click.argument('name')
 def pull(name):
     toon = Toon.objects.get(name=name)
-    ToonManager.pull_toon(toon)
+    toon.leech()
 
 
 @click.command('redl', help='Re-Download a chapter without telling to the db')
@@ -186,12 +151,10 @@ def redl(url):
 
 @click.command('pullall')
 def pullall():
-    one_week_ago = datetime.now() - timedelta(days=7)
-    qs = Toon.objects.exclude(finished=True) \
-        .filter(last_fetch__lte=one_week_ago)
+    qs = Toon.objects.exclude(finished=True)
     for toon in qs:
         try:
-            ToonManager.pull_toon(toon)
+            toon.leech()
         except KeyboardInterrupt:
             return
         except requests.exceptions.ConnectionError as err:

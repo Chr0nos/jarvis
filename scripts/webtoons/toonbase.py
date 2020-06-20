@@ -9,6 +9,9 @@ from tempfile import TemporaryDirectory
 import zipfile
 
 
+mongomodel.setup_database('10.8.1.1')
+
+
 class ToonBaseUrlInvalidError(Exception):
     pass
 
