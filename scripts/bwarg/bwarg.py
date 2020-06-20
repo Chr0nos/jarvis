@@ -7,6 +7,62 @@ from PyQt5.QtCore import Qt
 import sys
 import os
 import re
+from typing import List
+
+
+class File:
+    def __init__(self, filename: str):
+        self.filepath = filename
+
+    @property
+    def basename(self) -> str:
+        return os.path.basename(self.filepath)
+
+    def get_newname(self, fmt, regex):
+        if fmt and regex:
+            try:
+                m = regex.match(self.basename)
+                return fmt.format(*m.groups(), **m.groupdict())
+            except (Exception) as e:
+                # print(type(e), e)
+                return None
+
+    def get_filename(self, fmt, regex) -> str:
+        new_filename = self.get_newname(fmt, regex)
+        return new_filename if new_filename else self.basename
+
+    def rename(self, fmt, regex) -> bool:
+        new_name = self.get_filename(fmt, regex)
+        if not new_name:
+            return False
+        root = os.path.dirname(self.filepath)
+        new_filepath = os.path.join(root, new_name)
+        try:
+            os.rename(self.filepath, new_filepath)
+            self.filepath = new_filepath
+            return True
+        except OSError:
+            return False
+
+    def __str__(self):
+        return self.filepath
+
+    @classmethod
+    def get_files_from_dir(cls, folder) -> List['File']:
+        if not os.path.exists(folder):
+            return []
+
+        def hiden(filename) -> bool:
+            if filename[0] == '.':
+                return True
+            fullpath = os.path.join(folder, filename)
+            return not os.path.isfile(fullpath)
+
+        lst = list(
+            [cls(os.path.join(folder, f)) for f in os.listdir(folder)
+             if not hiden(f)])
+        lst.sort(key=lambda x: x.basename)
+        return lst
 
 
 class MainWindow(QtWidgets.QWidget):
@@ -14,7 +70,7 @@ class MainWindow(QtWidgets.QWidget):
         self.folder = os.path.realpath(folder)
         super().__init__()
         self.setWindowTitle('Bwarg')
-        self.resize(600, 400)
+        self.resize(700, 400)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addLayout(self._get_controll_section())
@@ -24,21 +80,12 @@ class MainWindow(QtWidgets.QWidget):
         self.pbar = QtWidgets.QProgressBar()
         layout.addWidget(self.pbar)
         self.setLayout(layout)
+        self.replace_edit.setText('.+(S\d+E\d+).+\.(\w+)')
         self.scan_folder()
         self.refreshFilesList()
 
     def scan_folder(self):
-        if not os.path.exists(self.folder):
-            return
-
-        def hiden(filename) -> bool:
-            if filename[0] == '.':
-                return True
-            fullpath = os.path.join(self.folder, filename)
-            return not os.path.isfile(fullpath)
-
-        self.files_lst = sorted(
-            [f for f in os.listdir(self.folder) if not hiden(f)])
+        self.files_list = File.get_files_from_dir(self.folder)
 
     def get_renaming_pair(self) -> tuple:
         try:
@@ -51,26 +98,22 @@ class MainWindow(QtWidgets.QWidget):
     def refreshFilesList(self):
         fmt, regex = self.get_renaming_pair()
 
-        def put_filename(filename):
-            x = QtWidgets.QListWidgetItem()
-            x.setToolTip(filename)
-            if fmt and regex:
-                try:
-                    m = regex.match(filename)
-                    x.setText(fmt.format(*m.groups(), **m.groupdict()))
-                except (Exception) as e:
-                    # print(type(e), e)
-                    x.setText(filename)
-            else:
-                x.setText(filename)
-            self.files.addItem(x)
-
         self.files.clear()
         self.pbar.setValue(0)
-        self.pbar.setMaximum(len(self.files_lst) - 1)
-        for i, name in enumerate(self.files_lst):
-            put_filename(name)
+        self.pbar.setMaximum(len(self.files_list) - 1)
+        for i, file in enumerate(self.files_list):
+            x = QtWidgets.QListWidgetItem()
+            x.setText(file.get_filename(fmt, regex))
+            x.setToolTip(file.basename)
+            self.files.addItem(x)
             self.pbar.setValue(i)
+
+    def perform_rename(self):
+        fmt, regex = self.get_renaming_pair()
+        if not fmt or not regex:
+            return
+        for file in self.files_list:
+            file.rename(fmt, regex)
 
     def _get_controll_section(self):
         layout = QtWidgets.QHBoxLayout()
@@ -111,10 +154,15 @@ class MainWindow(QtWidgets.QWidget):
         return folder_section
 
     def _get_actions(self):
+        def rename():
+            self.perform_rename()
+            self.refreshFilesList()
+
         actions = QtWidgets.QGroupBox('Actions')
         layout = QtWidgets.QVBoxLayout()
         btn_rename = QtWidgets.QPushButton()
         btn_rename.setText('Rename')
+        btn_rename.clicked.connect(rename)
         layout.addWidget(btn_rename)
         actions.setLayout(layout)
         return actions
@@ -141,7 +189,7 @@ class MainWindow(QtWidgets.QWidget):
 
         by = QtWidgets.QGroupBox('by')
         self.by_edit = QtWidgets.QLineEdit()
-        self.by_edit.setPlaceholderText('Enter a format string')
+        self.by_edit.setPlaceholderText('Enter a format string, {} for capture groups')
         self.by_edit.textEdited.connect(update_file_list)
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.by_edit)
