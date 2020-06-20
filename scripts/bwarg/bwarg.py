@@ -125,6 +125,12 @@ class MainWindow(QtWidgets.QWidget):
         return layout
 
     def _folder_section(self) -> QtWidgets.QGroupBox:
+        def update_folder(folder):
+            self.folder = folder
+            self.scan_folder()
+            self.refreshFilesList()
+            self.folder_edit.setText(folder)
+
         def browse_folder():
             w = QtWidgets.QFileDialog(self)
             w.setWindowTitle('Choose a folder to open')
@@ -132,16 +138,15 @@ class MainWindow(QtWidgets.QWidget):
             w.show()
             if not w.exec():
                 return
-            self.folder = w.selectedFiles()[0]
-            self.scan_folder()
-            self.refreshFilesList()
-            self.folder_edit.setText(self.folder)
+            update_folder(w.selectedFiles()[0])
 
         folder_section = QtWidgets.QGroupBox('Folder')
         layout = QtWidgets.QHBoxLayout()
 
         self.folder_edit = QtWidgets.QLineEdit()
         self.folder_edit.setText(self.folder)
+        self.folder_edit.editingFinished.connect(
+            lambda: update_folder(self.folder_edit.text()))
         browse_btn = QtWidgets.QPushButton()
         browse_btn.setText('...')
         browse_btn.clicked.connect(browse_folder)
