@@ -76,7 +76,6 @@ class MainWindow(QtWidgets.QWidget):
         layout.addLayout(self._get_controll_section())
         layout.addLayout(self._get_replace_section())
         layout.addWidget(self._get_files_section())
-
         self.pbar = QtWidgets.QProgressBar()
         layout.addWidget(self.pbar)
         self.setLayout(layout)
@@ -86,6 +85,10 @@ class MainWindow(QtWidgets.QWidget):
 
     def scan_folder(self):
         self.files_list = File.get_files_from_dir(self.folder)
+
+    def setRegexValidity(self, valid: bool):
+        color = '#ff5050' if not valid else '#ffffff'
+        self.replace_edit.setStyleSheet(f'background-color: {color};')
 
     def get_renaming_pair(self) -> tuple:
         try:
@@ -182,6 +185,13 @@ class MainWindow(QtWidgets.QWidget):
 
     def _get_replace_section(self):
         def update_file_list():
+            try:
+                re.compile(self.replace_edit.text())
+                self.setRegexValidity(True)
+                self.replace_edit.setToolTip('')
+            except Exception as e:
+                self.replace_edit.setToolTip(f'Invalid because: {e}')
+                self.setRegexValidity(False)
             self.refreshFilesList()
 
         replace = QtWidgets.QGroupBox('Replace')
