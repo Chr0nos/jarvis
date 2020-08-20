@@ -125,3 +125,12 @@ class ToonBase(mongomodel.Document):
                 self.inc(**kwargs)
         except (StopIteration, ToonBaseUrlInvalidError):
             return self
+
+    def rename(self, newname):
+        if newname == self.name:
+            return
+        folder = os.path.join('/', *self.path.split('/')[0:-1])
+        new_folder = os.path.join(folder, newname)
+        os.rename(self.path, new_folder)
+        self.name = newname
+        return self.save()

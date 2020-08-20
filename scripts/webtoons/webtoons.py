@@ -157,6 +157,9 @@ def pullall():
             toon.leech()
         except KeyboardInterrupt:
             return
+        except ValueError as err:
+            print(f'WARNING: failed to fetch {toon.name}, error: {err}')
+            continue
         except requests.exceptions.ConnectionError as err:
             os.unlink(toon.cbz_path)
             print('connection error, removed incomplete cbz', err)
