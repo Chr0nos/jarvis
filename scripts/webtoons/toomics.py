@@ -95,7 +95,7 @@ class Toomic(ToonBase):
         return container.find_all('img')
 
     def pages(self):
-        return list([img.get('data-original') for img in self.parse()])
+        return list([img.get('src') for img in self.parse()])
 
     @property
     def path(self):
