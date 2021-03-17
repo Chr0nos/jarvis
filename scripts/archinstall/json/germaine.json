@@ -1,0 +1,28 @@
+{
+	"hostname": "linux",
+	"loader": {
+        "name": "grub",
+        "device": "/dev/sda"
+	},
+	"packages": ["mpv", "terminator", "extra/system-config-printer"],
+	"meta": ["MATE", "PYTHON", "EXTRA", "BASE", "AUDIO", "FONTS"],
+	"services": [
+        "iptables", "acpid", "xorg", "lightdm", "mlocate", "fail2ban",
+        "networkmanager", "udisks2", "bluetooth", "cups"
+	],
+	"users": [
+		{
+			"login": "germaine",
+			"groups": [
+				"audio", "video", "wheel", "input", "games", "lp"
+			],
+			"shell": "/bin/zsh",
+            "autologin": true
+		}
+	],
+	"sudo": {
+		"present": true,
+		"targetpw": true,
+		"nopasswd": false
+	}
+}
