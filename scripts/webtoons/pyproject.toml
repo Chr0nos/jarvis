@@ -7,7 +7,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-mongomodel = "^0.3.2"
+mongomodel = "0.5.2"
 requests = "^2.22.0"
 beautifulsoup4 = "^4.8.2"
 ipython = "^7.12.0"

@@ -68,7 +68,7 @@ class Toon(ToonBase):
         if not self.name:
             return None
         # return os.path.join('/home/adamaru/Downloads/webtoons/', self.name)
-        return os.path.join('/run/media/adamaru/Aiur/Scans/Webtoons/',
+        return os.path.join('/mnt/aiur/Scans/Webtoons/',
                             self.name)
 
     @property
