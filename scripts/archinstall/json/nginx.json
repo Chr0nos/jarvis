@@ -1,9 +1,0 @@
-{
-    "hostname": "webserver",
-    "loader": {
-        "name": "grub",
-        "device": "/dev/sda"
-    },
-    "packages": ["base", "vim", "git"],
-    "services": ["nginx", "iptables", "fail2ban", "networkmanager"]
-}
