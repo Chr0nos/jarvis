@@ -7,13 +7,16 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-mongomodel = "^0.3.2"
 requests = "^2.22.0"
 beautifulsoup4 = "^4.8.2"
 ipython = "^7.12.0"
 selenium = "^3.141.0"
 click = "^7.0"
 lxml = "^4.5.0"
+aiofile = "^3.5.0"
+aiohttp = "^3.7.4"
+asyncio-pool = "^0.5.2"
+mongomodel = "^0.5.2"
 
 [tool.poetry.dev-dependencies]
 

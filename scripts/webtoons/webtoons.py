@@ -6,12 +6,33 @@ import bs4 as BeautifulSoup
 
 from datetime import datetime, timedelta
 
-from toonbase import ToonBase, ToonBaseUrlInvalidError
+from toonbase import ToonBase, ToonBaseUrlInvalidError, AsyncToonMixin
 import mongomodel
 import click
 
 
-class Toon(ToonBase):
+class ToonManager(mongomodel.queryset.QuerySet):
+    def from_url(self, url: str):
+        # print('parsing ', url)
+        r = re.compile(r'^https:\/\/([\w\.]+)\/en\/([\w-]+)\/([\w-]+)\/([\w-]+)\/viewer\?title_no=(\d+)&episode_no=(\d+)')
+        m = r.match(url)
+        if not m:
+            raise ToonBaseUrlInvalidError(url)
+        site, gender_name, name, episode, title_no, episode_no = m.groups()
+        toon = self.model(
+            name=name,
+            episode=int(episode_no),
+            chapter=episode,
+            titleno=int(title_no),
+            gender=gender_name,
+            lang='en',
+            domain='webtoon.com'
+        )
+        return toon
+
+
+class Toon(AsyncToonMixin, ToonBase):
+    manager_class = ToonManager
     collection = 'mongotoon'
     titleno = mongomodel.IntegerField()
     gender = mongomodel.StringField(maxlen=200)
@@ -24,7 +45,8 @@ class Toon(ToonBase):
             'ageGatePass': 'true',
             'allowedCookie': 'ga',
             'contentLanguage': 'en',
-            'locale': 'en'
+            'locale': 'en',
+            'countryCode': 'US'
         }
 
     def get_headers(self):
@@ -43,33 +65,6 @@ class Toon(ToonBase):
             return d.strftime("%d/%m/%Y") if d else ''
 
         return f'{self.name:30} {self.chapter:40} {get_date(self.last_fetch)} {self.gender}'
-
-    @staticmethod
-    def from_url(url):
-        # print('parsing ', url)
-        r = re.compile(r'^https:\/\/([\w\.]+)\/en\/([\w-]+)\/([\w-]+)\/([\w-]+)\/viewer\?title_no=(\d+)&episode_no=(\d+)')
-        m = r.match(url)
-        if not m:
-            raise ToonBaseUrlInvalidError(url)
-        site, gender_name, name, episode, title_no, episode_no = m.groups()
-        toon = Toon(
-            name=name,
-            episode=int(episode_no),
-            chapter=episode,
-            titleno=int(title_no),
-            gender=gender_name,
-            lang='en',
-            domain='webtoon.com'
-        )
-        return toon
-
-    @property
-    def path(self):
-        if not self.name:
-            return None
-        # return os.path.join('/home/adamaru/Downloads/webtoons/', self.name)
-        return os.path.join('/run/media/adamaru/Aiur/Scans/Webtoons/',
-                            self.name)
 
     @property
     def cbz_path(self):
@@ -113,7 +108,7 @@ class Toon(ToonBase):
             next_page = self.soup.find_all("a", class_='pg_next')[0].get('href')
         except AttributeError as err:
             raise ToonBaseUrlInvalidError from err
-        instance = Toon.from_url(next_page)
+        instance = Toon.objects.from_url(next_page)
         self.episode = instance.episode
         self.chapter = instance.chapter
         self.lang = instance.lang

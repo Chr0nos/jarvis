@@ -7,9 +7,13 @@ from datetime import datetime
 from requests.cookies import cookiejar_from_dict
 from tempfile import TemporaryDirectory
 import zipfile
+from asyncio_pool import AioPool
+import aiohttp
+import aiofile
+from typing import Tuple, List
 
 
-mongomodel.setup_database('10.8.1.1')
+mongomodel.database.connect(host='10.8.1.1')
 
 
 class ToonBaseUrlInvalidError(Exception):
@@ -63,7 +67,7 @@ class ToonBase(mongomodel.Document):
 
     @property
     def path(self):
-        return f'/run/media/adamaru/Aiur/Scans/Toomics/{self.name}'
+        return f'/mnt/aiur/Users/snicolet/Scans/Toons/{self.name}'
 
     @property
     def cbz_path(self):
@@ -134,3 +138,61 @@ class ToonBase(mongomodel.Document):
         os.rename(self.path, new_folder)
         self.name = newname
         return self.save()
+
+
+class AsyncToonMixin:
+    """Transform the pull & leech methods to be asyncio capables
+    """
+    async def leech(self, **kwargs):
+        try:
+            while True:
+                if not self.exists():
+                    await self.pull()
+                    self.save()
+                self.inc(**kwargs)
+        except (StopIteration, ToonBaseUrlInvalidError):
+            return self
+
+    async def pull(self, pool_size=3) -> None:
+        assert self.name
+        if not os.path.exists(self.path):
+            os.mkdir(self.path)
+        print(self.name, self.episode, end=': ')
+        cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
+
+        def pack_pages_and_destinations(tmpd: str) -> List[Tuple[str, str]]:
+            pages = self.pages()
+
+            def get_output_filename(index: int, page: str) -> str:
+                return os.path.join(tmpd, f'{index:03}.jpg')
+
+            return list([
+                (get_output_filename(i, page), page)
+                for i, page in enumerate(pages)
+            ])
+
+        async def download_coroutine(pair) -> None:
+            output_filepath, url = pair
+            request = aiohttp.request(
+                url=url,
+                method='get',
+                headers=self.get_headers(),
+                cookies=cookiejar_from_dict(self.get_cookies())
+            )
+            async with request as response:
+                page_data = await response.read()
+                async with aiofile.async_open(output_filepath, 'wb') as fp:
+                    await fp.write(page_data)
+                    cbz.write(output_filepath, os.path.basename(output_filepath))
+                    print('.', end='')
+                    sys.stdout.flush()
+
+
+        pool = AioPool(size=pool_size)
+        with TemporaryDirectory() as tmpd:
+            with Chdir(tmpd):
+                pair_list = pack_pages_and_destinations(tmpd)
+                await pool.map(download_coroutine, pair_list)
+            print('\n', end='')
+        self.last_fetch = datetime.now()
+        self.fetched = True
