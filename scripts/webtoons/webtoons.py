@@ -141,15 +141,16 @@ def pull(name):
 @click.command('redl', help='Re-Download a chapter without telling to the db')
 @click.argument('url')
 def redl(url):
-    Toon.from_url(url).pull(getnext=False)
+    Toon.objects.from_url(url).pull(getnext=False)
 
 
-@click.command('pullall')
-def pullall():
+# @click.command('pullall')
+async def pullall():
     qs = Toon.objects.exclude(finished=True)
     for toon in qs:
         try:
-            toon.leech()
+            print(toon.name)
+            await toon.leech()
         except KeyboardInterrupt:
             return
         except ValueError as err:
@@ -198,7 +199,7 @@ if __name__ == "__main__":
     cli.add_command(delete)
     cli.add_command(redl)
     cli.add_command(pull)
-    cli.add_command(pullall)
+    # cli.add_command(pullall)
     cli.add_command(pullable)
     cli.add_command(update)
     cli()

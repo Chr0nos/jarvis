@@ -1,7 +1,7 @@
 NAME=mydu
 CC=clang
 OS=$(shell uname -s)
-CFLAGS=-Wall -Werror -Wextra -Weverything -Wpedantic -Ofast
+CFLAGS=-Wall -Werror -Wextra -Wpedantic -Ofast
 LINKER=-lft -lcursed -lpthread
 
 LIBFT_DIR=./libs/libft

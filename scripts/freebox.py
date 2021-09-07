@@ -6,7 +6,6 @@ i use it to benchmark wifi setup and optimise them
 from getfile import getfile
 from hsize import hsize
 from speedometter import SpeedOMetter
-import matplotlib.pyplot as plt
 import numpy as np
 from time import time
 

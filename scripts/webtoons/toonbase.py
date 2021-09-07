@@ -73,6 +73,13 @@ class ToonBase(mongomodel.Document):
     def cbz_path(self):
         return f'{self.path}/{self.episode}.cbz'
 
+    def state(self) -> str:
+        if self.finished:
+            return 'finished'
+        if os.path.exists(self.cbz_path):
+            return 'fetched'
+        return 'ready-for-next-chapter'
+
     def pages(self):
         return []
 
@@ -98,6 +105,7 @@ class ToonBase(mongomodel.Document):
                     assert page_response.status_code == 200, \
                         page_response.status_code
                     page_data = page_response.content
+                    self.check_page_content(page_data)
                     with open(filepath, 'wb') as fp:
                         fp.write(page_data)
                     print('.', end='')
@@ -107,6 +115,12 @@ class ToonBase(mongomodel.Document):
             print('\n', end='')
         self.last_fetch = datetime.now()
         self.fetched = True
+
+    def check_page_content(self, page_data: bytes) -> None:
+        """Receive the actual data from the page after the fetch
+        this function is here to be overided by custom checks
+        """
+        pass
 
     def exists(self):
         return os.path.exists(self.cbz_path)
@@ -143,33 +157,36 @@ class ToonBase(mongomodel.Document):
 class AsyncToonMixin:
     """Transform the pull & leech methods to be asyncio capables
     """
-    async def leech(self, **kwargs):
+    async def leech(self, pool_size=3, **kwargs):
         try:
             while True:
                 if not self.exists():
-                    await self.pull()
+                    await self.pull(pool_size=pool_size)
                     self.save()
+                # else:
+                #     print(f'{self.cbz_path} already exists, skipping')
                 self.inc(**kwargs)
         except (StopIteration, ToonBaseUrlInvalidError):
+            self.save()
             return self
+
+    def get_page_and_destination_pairs(self, folder: str) -> List[Tuple[str, str]]:
+        pages = self.pages()
+
+        def get_output_filename(index: int, page: str) -> str:
+            return os.path.join(folder, f'{index:03}.jpg')
+
+        return list([
+            (get_output_filename(i, page), page)
+            for i, page in enumerate(pages)
+        ])
 
     async def pull(self, pool_size=3) -> None:
         assert self.name
         if not os.path.exists(self.path):
             os.mkdir(self.path)
         print(self.name, self.episode, end=': ')
-        cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
-
-        def pack_pages_and_destinations(tmpd: str) -> List[Tuple[str, str]]:
-            pages = self.pages()
-
-            def get_output_filename(index: int, page: str) -> str:
-                return os.path.join(tmpd, f'{index:03}.jpg')
-
-            return list([
-                (get_output_filename(i, page), page)
-                for i, page in enumerate(pages)
-            ])
+        cbz = None
 
         async def download_coroutine(pair) -> None:
             output_filepath, url = pair
@@ -181,17 +198,18 @@ class AsyncToonMixin:
             )
             async with request as response:
                 page_data = await response.read()
+                self.check_page_content(page_data)
                 async with aiofile.async_open(output_filepath, 'wb') as fp:
                     await fp.write(page_data)
                     cbz.write(output_filepath, os.path.basename(output_filepath))
                     print('.', end='')
                     sys.stdout.flush()
 
-
         pool = AioPool(size=pool_size)
         with TemporaryDirectory() as tmpd:
             with Chdir(tmpd):
-                pair_list = pack_pages_and_destinations(tmpd)
+                pair_list = self.get_page_and_destination_pairs(tmpd)
+                cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
                 await pool.map(download_coroutine, pair_list)
             print('\n', end='')
         self.last_fetch = datetime.now()
