@@ -87,9 +87,9 @@ class ToonBase(mongomodel.Document):
         if not self.name:
             print('setup a name first !')
             return
+        pages = self.pages()
         if not os.path.exists(self.path):
             os.mkdir(self.path)
-        pages = self.pages()
         print(self.name, self.episode, end=': ')
         if not pages:
             print('no pages')
@@ -170,8 +170,8 @@ class AsyncToonMixin:
             self.save()
             return self
 
-    def get_page_and_destination_pairs(self, folder: str) -> List[Tuple[str, str]]:
-        pages = self.pages()
+    async def get_page_and_destination_pairs(self, folder: str) -> List[Tuple[str, str]]:
+        pages = await self.pages()
 
         def get_output_filename(index: int, page: str) -> str:
             return os.path.join(folder, f'{index:03}.jpg')
@@ -181,10 +181,13 @@ class AsyncToonMixin:
             for i, page in enumerate(pages)
         ])
 
-    async def pull(self, pool_size=3) -> None:
-        assert self.name
+    async def create_folder(self):
         if not os.path.exists(self.path):
             os.mkdir(self.path)
+
+    async def pull(self, pool_size=3) -> None:
+        assert self.name
+        await self.create_folder()
         print(self.name, self.episode, end=': ')
         cbz = None
 
@@ -208,9 +211,25 @@ class AsyncToonMixin:
         pool = AioPool(size=pool_size)
         with TemporaryDirectory() as tmpd:
             with Chdir(tmpd):
-                pair_list = self.get_page_and_destination_pairs(tmpd)
+                pair_list = await self.get_page_and_destination_pairs(tmpd)
                 cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
                 await pool.map(download_coroutine, pair_list)
             print('\n', end='')
         self.last_fetch = datetime.now()
         self.fetched = True
+
+    async def get_page_content(self) -> str:
+        """return the source code of the main page and cache it into the `cache_content` attribute
+        of this instance.
+        """
+        if getattr(self, 'page_content', None):
+            return self.page_content
+        request = aiohttp.request(
+            url=self.url,
+            method='get',
+            headers=self.get_headers()
+        )
+        async with request as response:
+            page_content = await response.read()
+        self.page_content = page_content
+        return page_content

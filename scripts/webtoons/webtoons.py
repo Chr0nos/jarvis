@@ -114,6 +114,7 @@ class Toon(AsyncToonMixin, ToonBase):
         self.lang = instance.lang
         self.domain = instance.domain
         self.soup = None
+        self.page_content = None
         return instance
 
 
