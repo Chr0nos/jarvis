@@ -90,7 +90,7 @@ class Toon(AsyncToonMixin, ToonBase):
                 continue
             yield url
 
-    def pages(self):
+    async def pages(self):
         return list(self.index())
 
     def get_soup(self):

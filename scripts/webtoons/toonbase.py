@@ -211,7 +211,7 @@ class AsyncToonMixin:
         pool = AioPool(size=pool_size)
         with TemporaryDirectory() as tmpd:
             with Chdir(tmpd):
-                pair_list = await self.get_page_and_destination_pairs(tmpd)
+                pair_list = (await self.get_page_and_destination_pairs(tmpd))
                 cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
                 await pool.map(download_coroutine, pair_list)
             print('\n', end='')

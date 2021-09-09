@@ -12,9 +12,8 @@ class LelScan(AsyncToonMixin, ToonBase):
     def url(self) -> str:
         return f'https://lelscan-vf.co/manga/{self.name}/{self.episode}'
 
-    def pages(self) -> List[str]:
-        page = requests.get(self.url)
-        soup = BeautifulSoup.BeautifulSoup(page.text, 'lxml')
+    async def pages(self) -> List[str]:
+        soup = BeautifulSoup.BeautifulSoup(await self.get_page_content(), 'lxml')
         parent = soup.find('div', id='all')
         urls = [img['data-src'] for img in parent.find_all('img')]
 
@@ -25,6 +24,7 @@ class LelScan(AsyncToonMixin, ToonBase):
 
     def inc(self):
         self.episode += 1
+        self.page_content = None
         return self
 
     def save(self) -> None:
