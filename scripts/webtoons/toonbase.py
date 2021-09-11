@@ -200,6 +200,7 @@ class AsyncToonMixin:
                 cookies=cookiejar_from_dict(self.get_cookies())
             )
             async with request as response:
+                response.raise_for_status()
                 page_data = await response.read()
                 self.check_page_content(page_data)
                 async with aiofile.async_open(output_filepath, 'wb') as fp:
@@ -221,6 +222,9 @@ class AsyncToonMixin:
     async def get_page_content(self) -> str:
         """return the source code of the main page and cache it into the `cache_content` attribute
         of this instance.
+
+        raises:
+        - asyncio.exceptions.ClientResponseError
         """
         if getattr(self, 'page_content', None):
             return self.page_content
@@ -230,6 +234,7 @@ class AsyncToonMixin:
             headers=self.get_headers()
         )
         async with request as response:
+            response.raise_for_status()
             page_content = await response.read()
         self.page_content = page_content
         return page_content

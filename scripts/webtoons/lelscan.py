@@ -1,6 +1,4 @@
 import bs4 as BeautifulSoup
-import mongomodel
-import requests
 from typing import List
 
 from toonbase import ToonBase, AsyncToonMixin
@@ -13,7 +11,10 @@ class LelScan(AsyncToonMixin, ToonBase):
         return f'https://lelscan-vf.co/manga/{self.name}/{self.episode}'
 
     async def pages(self) -> List[str]:
-        soup = BeautifulSoup.BeautifulSoup(await self.get_page_content(), 'lxml')
+        try:
+            soup = BeautifulSoup.BeautifulSoup(await self.get_page_content(), 'lxml')
+        except asyncio.exceptions.ClientResponseError:
+            raise StopIteration
         parent = soup.find('div', id='all')
         urls = [img['data-src'] for img in parent.find_all('img')]
 
