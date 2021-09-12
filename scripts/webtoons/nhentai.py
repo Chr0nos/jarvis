@@ -80,6 +80,7 @@ async def get_scan_list(sauce_list: List[int]) -> None:
 if __name__ == "__main__":
     try:
         sauce_list = [int(sauce) for sauce in sys.argv[1:]]
-        asyncio.run(get_scan_list(sauce_list))
     except (IndexError, ValueError):
         print(f'usage: ./{sys.argv[0]} [sauce_code]')
+        sys.exit(1)
+    asyncio.run(get_scan_list(sauce_list))

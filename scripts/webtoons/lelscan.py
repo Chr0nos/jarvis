@@ -2,6 +2,7 @@ import bs4 as BeautifulSoup
 from typing import List
 
 from toonbase import ToonBase, AsyncToonMixin
+import aiohttp
 import asyncio
 
 
@@ -13,8 +14,11 @@ class LelScan(AsyncToonMixin, ToonBase):
     async def pages(self) -> List[str]:
         try:
             soup = BeautifulSoup.BeautifulSoup(await self.get_page_content(), 'lxml')
-        except asyncio.exceptions.ClientResponseError:
-            raise StopIteration
+        except aiohttp.ClientResponseError as response_error:
+            # with lelscan if the pages does not exists the server returns a 500 instead of a 404
+            if response_error.status == 500:
+                raise StopIteration
+            raise response_error
         parent = soup.find('div', id='all')
         urls = [img['data-src'] for img in parent.find_all('img')]
 
@@ -58,7 +62,9 @@ async def main():
         'otherworldly-sword-kings-survival-records',
         {'name': 'one-punch-man', 'episode': 4},
         {'name': 'one-piece', 'episode': 389},
-        {'name': 'samayoeru-tenseishatachi-no-revival-game', 'episode': 2}
+        {'name': 'samayoeru-tenseishatachi-no-revival-game', 'episode': 2},
+        'time-stop-brave',
+        'bug-player'
     ]
 
     for scan_name in subs:
