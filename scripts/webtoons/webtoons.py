@@ -150,7 +150,7 @@ async def pullall():
     qs = Toon.objects.exclude(finished=True)
     for toon in qs:
         try:
-            print(toon.name)
+            print(toon.name, end=': ')
             await toon.leech()
         except KeyboardInterrupt:
             return

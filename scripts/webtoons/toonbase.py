@@ -20,6 +20,10 @@ class ToonBaseUrlInvalidError(Exception):
     pass
 
 
+class ToonNotAvailableError(Exception):
+    pass
+
+
 class Chdir:
     def __init__(self, path):
         self.dir = path
@@ -166,7 +170,8 @@ class AsyncToonMixin:
                 # else:
                 #     print(f'{self.cbz_path} already exists, skipping')
                 self.inc(**kwargs)
-        except (StopIteration, ToonBaseUrlInvalidError):
+        except (StopIteration, ToonBaseUrlInvalidError, ToonNotAvailableError):
+            print('Not available')
             self.save()
             return self
 
@@ -206,8 +211,7 @@ class AsyncToonMixin:
                 async with aiofile.async_open(output_filepath, 'wb') as fp:
                     await fp.write(page_data)
                     cbz.write(output_filepath, os.path.basename(output_filepath))
-                    print('.', end='')
-                    sys.stdout.flush()
+                    await self._progress()
 
         pool = AioPool(size=pool_size)
         with TemporaryDirectory() as tmpd:
@@ -218,6 +222,12 @@ class AsyncToonMixin:
             print('\n', end='')
         self.last_fetch = datetime.now()
         self.fetched = True
+
+    async def _progress(self):
+        """Called each time a page has been downloaded successfully
+        """
+        print('.', end='')
+        sys.stdout.flush()
 
     async def get_page_content(self) -> str:
         """return the source code of the main page and cache it into the `cache_content` attribute
