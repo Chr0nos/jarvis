@@ -15,7 +15,9 @@ class NHentaiToon(AsyncToonMixin, ToonBase):
     async def resolve_name(self) -> str:
         soup = BeautifulSoup.BeautifulSoup(await self.get_page_content(), 'lxml')
         title = soup.find('meta', {'itemprop': 'name'})['content']
-        return title.replace(' | ', ' ').replace('~', '')
+        for replacement in (' | ', '~', '|', ':', '?'):
+            title = title.replace(replacement, '')
+        return title
 
     async def pages(self) -> List[str]:
         soup = BeautifulSoup.BeautifulSoup(await self.get_page_content(), 'lxml')

@@ -1,12 +1,37 @@
 import bs4 as BeautifulSoup
-from typing import List
+from typing import List, Optional
+from bs4.dammit import chardet_dammit
 
+from mongomodel import QuerySet
 from toonbase import ToonBase, AsyncToonMixin, ToonNotAvailableError
 import aiohttp
 import asyncio
 
 
+class LelScanManager(QuerySet):
+    def from_name(self, name: str, episode: int = 1) -> 'LelScan':
+        instance = LelScan(
+            domain='https://lelscan-vf.co',
+            lang='fr',
+            name=name,
+            episode=episode
+        )
+        return instance
+
+    async def chapters(self, name: str) -> List[str]:
+        url = f'https://lelscan-vf.co/manga/{name}'
+        async with aiohttp.request('get', url, headers={'Referer': url}) as response:
+            response.raise_for_status()
+            page_content = await response.read()
+        page = BeautifulSoup.BeautifulSoup(page_content, 'lxml')
+        h5s = page.find_all('h5', {'class': 'chapter-title-rtl'})
+        chapters = [h5.find('a')['href'].split('/')[-1] for h5 in h5s]
+        return chapters
+
+
 class LelScan(AsyncToonMixin, ToonBase):
+    manager_class = LelScanManager
+
     @property
     def url(self) -> str:
         return f'https://lelscan-vf.co/manga/{self.name}/{self.episode}'
@@ -40,14 +65,29 @@ class LelScan(AsyncToonMixin, ToonBase):
         pass
 
 
-async def get_scan(name: str, episode: int = 1) -> None:
-    instance = LelScan(
-        domain='https://lelscan-vf.co',
-        lang='fr',
-        name=name,
-        episode=episode
-    )
-    await instance.leech(pool_size=8)
+def sorter(x):
+    try:
+        return float(x)
+    except ValueError:
+        return x
+
+
+async def get_from_chapters(name: str, chapters: Optional[List[str]] = None) -> None:
+    chapters: List[str] = await LelScan.objects.chapters(name) if not chapters else chapters
+    chapters.sort(key=sorter)
+
+    for chapter in chapters:
+        instance = LelScan(
+            domain='https://lelscan-vf.co',
+            lang='fr',
+            name=name,
+            episode=chapter
+        )
+        if not instance.exists():
+            try:
+                await instance.pull(pool_size=8)
+            except ToonNotAvailableError:
+                await instance.log('Not available', end='\n')
 
 
 async def main():
@@ -60,20 +100,19 @@ async def main():
         'boku-no-kanojo-sensei',
         'bijin-onna-joushi-takizawasan',
         'otherworldly-sword-kings-survival-records',
-        {'name': 'one-punch-man', 'episode': 4},
-        {'name': 'one-piece', 'episode': 389},
-        {'name': 'samayoeru-tenseishatachi-no-revival-game', 'episode': 2},
+        'one-punch-man',
+        'one-piece',
+        'samayoeru-tenseishatachi-no-revival-game',
         'time-stop-brave',
         'bug-player',
         'dragon-ball-super',
-        'my-harem-grew-so-large-i-was-forced-to-ascend'
+        'my-harem-grew-so-large-i-was-forced-to-ascend',
+        'i-picked-up-a-demon-lord-as-a-maid',
+        'solo-leveling',
     ]
 
     for scan_name in subs:
-        if isinstance(scan_name, dict):
-            await get_scan(**scan_name)
-        else:
-            await get_scan(scan_name)
+        await get_from_chapters(scan_name)
 
 
 if __name__ == "__main__":
