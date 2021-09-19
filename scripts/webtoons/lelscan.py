@@ -20,7 +20,10 @@ class LelScan(AsyncToonMixin, ToonBase):
                 raise ToonNotAvailableError from response_error
             raise response_error
         parent = soup.find('div', id='all')
-        urls = [img['data-src'] for img in parent.find_all('img')]
+        try:
+            urls = [img['data-src'] for img in parent.find_all('img')]
+        except AttributeError as error:
+            raise ToonNotAvailableError from error
 
         def fix_url(url: str) -> str:
             return ('https://lelscan-vf.co/' + '/'.join(url.split('/', 3)[3:])).strip()
@@ -44,10 +47,7 @@ async def get_scan(name: str, episode: int = 1) -> None:
         name=name,
         episode=episode
     )
-    try:
-        await instance.leech(pool_size=8)
-    except (AttributeError, StopIteration):
-        print('Unavailable')
+    await instance.leech(pool_size=8)
 
 
 async def main():
@@ -65,7 +65,8 @@ async def main():
         {'name': 'samayoeru-tenseishatachi-no-revival-game', 'episode': 2},
         'time-stop-brave',
         'bug-player',
-        'dragon-ball-super'
+        'dragon-ball-super',
+        'my-harem-grew-so-large-i-was-forced-to-ascend'
     ]
 
     for scan_name in subs:

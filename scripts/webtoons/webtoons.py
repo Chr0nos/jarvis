@@ -60,12 +60,6 @@ class Toon(AsyncToonMixin, ToonBase):
     def __repr__(self):
         return f'<Toon {self.name}> {self.chapter}'
 
-    def __str__(self):
-        def get_date(d):
-            return d.strftime("%d/%m/%Y") if d else ''
-
-        return f'{self.name:30} {self.chapter:40} {get_date(self.last_fetch)} {self.gender}'
-
     @property
     def cbz_path(self):
         if not self.chapter or not self.path:
@@ -117,6 +111,10 @@ class Toon(AsyncToonMixin, ToonBase):
         self.page_content = None
         return instance
 
+    async def leech(self, *args, **kwargs):
+        await self.log(f'{self}: ')
+        return await super().leech(*args, **kwargs)
+
 
 @click.command('list')
 @click.option('--sort', default='name')
@@ -147,20 +145,8 @@ def redl(url):
 
 # @click.command('pullall')
 async def pullall():
-    qs = Toon.objects.exclude(finished=True)
-    for toon in qs:
-        try:
-            print(toon.name, end=': ')
-            await toon.leech()
-        except KeyboardInterrupt:
-            return
-        except ValueError as err:
-            print(f'WARNING: failed to fetch {toon.name}, error: {err}')
-            continue
-        except requests.exceptions.ConnectionError as err:
-            os.unlink(toon.cbz_path)
-            print('connection error, removed incomplete cbz', err)
-            return
+    for toon in Toon.objects.exclude(finished=True):
+        await toon.leech()
 
 
 @click.command('pullable')

@@ -69,6 +69,9 @@ class ToonBase(mongomodel.Document):
     def __repr__(self):
         return f'<Toon {self.name}>'
 
+    def __str__(self):
+        return f'{self.name} {self.episode}'
+
     @property
     def path(self):
         return f'/mnt/aiur/Users/snicolet/Scans/Toons/{self.name}'
@@ -145,7 +148,7 @@ class ToonBase(mongomodel.Document):
                     self.pull()
                     self.save()
                 self.inc(**kwargs)
-        except (StopIteration, ToonBaseUrlInvalidError):
+        except (StopIteration, ToonBaseUrlInvalidError, ToonNotAvailableError):
             return self
 
     def rename(self, newname):
@@ -161,17 +164,23 @@ class ToonBase(mongomodel.Document):
 class AsyncToonMixin:
     """Transform the pull & leech methods to be asyncio capables
     """
-    async def leech(self, pool_size=3, **kwargs):
+    async def log(self, message: str, flush=True, **kwargs) -> None:
+        kwargs.setdefault('end', '')
+        print(message, **kwargs)
+        if flush:
+            sys.stdout.flush()
+
+    async def leech(self, pool_size=3, verbose=False, **kwargs):
         try:
             while True:
                 if not self.exists():
                     await self.pull(pool_size=pool_size)
                     self.save()
-                # else:
-                #     print(f'{self.cbz_path} already exists, skipping')
+                elif verbose:
+                    print(f'{self.cbz_path} already exists, skipping')
                 self.inc(**kwargs)
-        except (StopIteration, ToonBaseUrlInvalidError, ToonNotAvailableError):
-            print('Not available')
+        except (ToonBaseUrlInvalidError, ToonNotAvailableError):
+            await self.log('Not available', end='\n')
             self.save()
             return self
 
@@ -193,7 +202,7 @@ class AsyncToonMixin:
     async def pull(self, pool_size=3) -> None:
         assert self.name
         await self.create_folder()
-        print(self.name, self.episode, end=': ')
+        await self.log(f'{self}: ')
         cbz = None
 
         async def download_coroutine(pair) -> None:
@@ -219,7 +228,7 @@ class AsyncToonMixin:
                 pair_list = (await self.get_page_and_destination_pairs(tmpd))
                 cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
                 await pool.map(download_coroutine, pair_list)
-            print('\n', end='')
+            await self.log('\n')
         self.last_fetch = datetime.now()
         self.fetched = True
 
