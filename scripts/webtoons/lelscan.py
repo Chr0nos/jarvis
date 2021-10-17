@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from motorized import Document, QuerySet
 from pydantic import Field
-from toonbase import AsyncToonMixin, ToonNotAvailableError
+from toonbase import AsyncToon, ToonNotAvailableError
 import aiohttp
 import asyncio
 
@@ -29,17 +29,16 @@ class LelScanManager(QuerySet):
         return chapters
 
 
-class LelScan(AsyncToonMixin, Document):
+class LelScan(AsyncToon, Document):
     name: str
     episode: str
     domain: str = 'https://lelscan-vf.co'
     created: datetime = Field(default_factory=datetime.now)
+    page_content: Optional[str] = None
 
     class Mongo:
         manager_class = LelScanManager
-
-    class Toon:
-        page_content: str = None
+        local_fields = ('page_content',)
 
     @property
     def url(self) -> str:
@@ -114,6 +113,7 @@ async def main():
         'my-harem-grew-so-large-i-was-forced-to-ascend',
         'i-picked-up-a-demon-lord-as-a-maid',
         'solo-leveling',
+        'dandadan',
     ]
 
     for scan_name in subs:

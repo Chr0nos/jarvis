@@ -152,20 +152,21 @@ class ToonBase(mongomodel.Document):
         except (StopIteration, ToonBaseUrlInvalidError, ToonNotAvailableError):
             return self
 
-    def rename(self, newname, save=True):
+    def rename(self, newname):
         if newname == self.name:
             return
         folder = os.path.join('/', *self.path.split('/')[0:-1])
         new_folder = os.path.join(folder, newname)
         os.rename(self.path, new_folder)
         self.name = newname
-        if self:
-            return self.save()
+        return self.save()
 
 
-class AsyncToonMixin:
-    """Transform the pull & leech methods to be asyncio capables
-    """
+class AsyncToon:
+    name: str
+    episode: str
+    domain: str
+
     def __str__(self):
         return f'{self.name} {self.episode}'
 
@@ -262,8 +263,6 @@ class AsyncToonMixin:
                     os.unlink(cbz.filename)
                     self.log('removed incomplete cbz', end='\n')
             await self.log('\n')
-        self.last_fetch = datetime.now()
-        self.fetched = True
 
     async def _progress(self):
         """Called each time a page has been downloaded successfully
@@ -278,8 +277,8 @@ class AsyncToonMixin:
         raises:
         - asyncio.exceptions.ClientResponseError
         """
-        if self.Toon.page_content:
-            return self.Toon.page_content
+        if self.page_content:
+            return self.page_content
         request = aiohttp.request(
             url=self.url,
             method='get',
@@ -288,5 +287,11 @@ class AsyncToonMixin:
         async with request as response:
             response.raise_for_status()
             page_content = await response.read()
-        self.Toon.page_content = page_content
+        self.page_content = page_content
         return page_content
+
+    def check_page_content(self, page_data: bytes) -> None:
+        """Receive the actual data from the page after the fetch
+        this function is here to be overided by custom checks
+        """
+        pass
