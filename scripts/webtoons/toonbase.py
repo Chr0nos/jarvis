@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sys
 
@@ -151,19 +152,45 @@ class ToonBase(mongomodel.Document):
         except (StopIteration, ToonBaseUrlInvalidError, ToonNotAvailableError):
             return self
 
-    def rename(self, newname):
+    def rename(self, newname, save=True):
         if newname == self.name:
             return
         folder = os.path.join('/', *self.path.split('/')[0:-1])
         new_folder = os.path.join(folder, newname)
         os.rename(self.path, new_folder)
         self.name = newname
-        return self.save()
+        if self:
+            return self.save()
 
 
 class AsyncToonMixin:
     """Transform the pull & leech methods to be asyncio capables
     """
+    def __str__(self):
+        return f'{self.name} {self.episode}'
+
+    @property
+    def path(self) -> str:
+        return f'/mnt/aiur/Users/snicolet/Scans/Toons/{self.name}'
+
+    @property
+    def cbz_path(self) -> str:
+        return f'{self.path}/{self.episode}.cbz'
+
+    def exists(self) -> bool:
+        return os.path.exists(self.cbz_path)
+
+    def get_cookies(self):
+        return {}
+
+    def get_headers(self):
+        return {
+            'Referer': self.domain,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                          'AppleWebKit/537.36 (KHTML, like Gecko) '
+                          'Chrome/61.0.3112.113 Safari/537.36',
+        }
+
     async def log(self, message: str, flush=True, **kwargs) -> None:
         kwargs.setdefault('end', '')
         print(message, **kwargs)
@@ -227,7 +254,13 @@ class AsyncToonMixin:
             with Chdir(tmpd):
                 pair_list = (await self.get_page_and_destination_pairs(tmpd))
                 cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
-                await pool.map(download_coroutine, pair_list)
+                try:
+                    await pool.map(download_coroutine, pair_list)
+                    cbz.close()
+                except (KeyboardInterrupt, asyncio.exceptions.CancelledError):
+                    cbz.close()
+                    os.unlink(cbz.filename)
+                    self.log('removed incomplete cbz', end='\n')
             await self.log('\n')
         self.last_fetch = datetime.now()
         self.fetched = True
@@ -245,8 +278,8 @@ class AsyncToonMixin:
         raises:
         - asyncio.exceptions.ClientResponseError
         """
-        if getattr(self, 'page_content', None):
-            return self.page_content
+        if self.Toon.page_content:
+            return self.Toon.page_content
         request = aiohttp.request(
             url=self.url,
             method='get',
@@ -255,5 +288,5 @@ class AsyncToonMixin:
         async with request as response:
             response.raise_for_status()
             page_content = await response.read()
-        self.page_content = page_content
+        self.Toon.page_content = page_content
         return page_content

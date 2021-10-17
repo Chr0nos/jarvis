@@ -1,9 +1,10 @@
+from datetime import datetime
 import bs4 as BeautifulSoup
 from typing import List, Optional
-from bs4.dammit import chardet_dammit
 
-from mongomodel import QuerySet
-from toonbase import ToonBase, AsyncToonMixin, ToonNotAvailableError
+from motorized import Document, QuerySet
+from pydantic import Field
+from toonbase import AsyncToonMixin, ToonNotAvailableError
 import aiohttp
 import asyncio
 
@@ -11,7 +12,6 @@ import asyncio
 class LelScanManager(QuerySet):
     def from_name(self, name: str, episode: int = 1) -> 'LelScan':
         instance = LelScan(
-            domain='https://lelscan-vf.co',
             lang='fr',
             name=name,
             episode=episode
@@ -29,8 +29,17 @@ class LelScanManager(QuerySet):
         return chapters
 
 
-class LelScan(AsyncToonMixin, ToonBase):
-    manager_class = LelScanManager
+class LelScan(AsyncToonMixin, Document):
+    name: str
+    episode: str
+    domain: str = 'https://lelscan-vf.co'
+    created: datetime = Field(default_factory=datetime.now)
+
+    class Mongo:
+        manager_class = LelScanManager
+
+    class Toon:
+        page_content: str = None
 
     @property
     def url(self) -> str:
@@ -59,10 +68,6 @@ class LelScan(AsyncToonMixin, ToonBase):
         self.episode += 1
         self.page_content = None
         return self
-
-    def save(self) -> None:
-        # don't save it for now...
-        pass
 
 
 def sorter(x):

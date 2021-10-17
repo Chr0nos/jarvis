@@ -1,7 +1,6 @@
 #!./venv/bin/python
 import os
 import re
-import requests
 import bs4 as BeautifulSoup
 
 from datetime import datetime, timedelta
@@ -112,7 +111,7 @@ class Toon(AsyncToonMixin, ToonBase):
         return instance
 
     async def leech(self, *args, **kwargs):
-        await self.log(f'{self}: ')
+        await self.log(f'leeching {self}', end='\n')
         return await super().leech(*args, **kwargs)
 
 
