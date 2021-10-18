@@ -1,13 +1,18 @@
-from typing import List
+from typing import List, Optional
 import bs4 as BeautifulSoup
 import asyncio
-
-from toonbase import ToonBase, AsyncToonMixin
+from motorized import Document
+from toonbase import ToonBase, AsyncToon
 import sys
 from glob import glob
 
 
-class NHentaiToon(AsyncToonMixin, ToonBase):
+class NHentaiToon(AsyncToon, Document):
+    name: Optional[str]
+    episode: str
+    domain: str = 'https://nhentai.xxx'
+    page_content: Optional[str] = None
+
     @property
     def url(self) -> str:
         return f'https://nhentai.net/g/{self.episode}'
@@ -28,13 +33,10 @@ class NHentaiToon(AsyncToonMixin, ToonBase):
             parts = thumb_url.split('/')
             sauce_code = parts[4]
             filename = parts[-1].replace('t', '')
-            return f'https://cdn.nhentai.xxx/g/{sauce_code}/{filename}'
+            return f'{self.domain}/g/{sauce_code}/{filename}'
 
         imgs = [thumb_to_img(img['data-src']) for img in img_find]
         return imgs
-
-    def save(self):
-        pass
 
     @property
     def path(self):
@@ -60,11 +62,7 @@ async def get_scan(sauce_code: int, name: str = None) -> bool:
     """Perform the download of sauce_code if not present,
     return True is a request has been performed, Flase otherwise
     """
-    instance = NHentaiToon(
-        name=name,
-        episode=sauce_code,
-        domain='https://nhentai.xxx'
-    )
+    instance = NHentaiToon(name=name, episode=sauce_code)
     if instance.exists():
         return False
     if not name:

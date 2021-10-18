@@ -96,24 +96,25 @@ async def get_from_chapters(name: str, chapters: Optional[List[str]] = None) -> 
 
 async def main():
     subs = [
-        'shinigami-bocchan-to-kuro-maid',
+        'bijin-onna-joushi-takizawasan',
+        'boku-no-kanojo-sensei',
+        'bug-player',
+        'dandadan',
+        'dragon-ball-super',
+        'i-picked-up-a-demon-lord-as-a-maid',
+        'my-harem-grew-so-large-i-was-forced-to-ascend',
         'my-wife-is-a-man',
         'nana-to-kaoru-kokosei-no-sm-gokko',
         'nana-to-kaoru-last-year',
-        'touch-on',
-        'boku-no-kanojo-sensei',
-        'bijin-onna-joushi-takizawasan',
-        'otherworldly-sword-kings-survival-records',
-        'one-punch-man',
         'one-piece',
+        'one-punch-man',
+        'otherworldly-sword-kings-survival-records',
         'samayoeru-tenseishatachi-no-revival-game',
-        'time-stop-brave',
-        'bug-player',
-        'dragon-ball-super',
-        'my-harem-grew-so-large-i-was-forced-to-ascend',
-        'i-picked-up-a-demon-lord-as-a-maid',
+        'sentouin-haken-shimasu',
+        'shinigami-bocchan-to-kuro-maid',
         'solo-leveling',
-        'dandadan',
+        'time-stop-brave',
+        'touch-on',
     ]
 
     for scan_name in subs:
