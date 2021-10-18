@@ -5,23 +5,24 @@ import bs4 as BeautifulSoup
 
 from toonbase import ToonBase, ToonBaseUrlInvalidError, AsyncToon
 import mongomodel
+from mongomodel.queryset import QuerySet
 
 
-class ToonManager(mongomodel.queryset.QuerySet):
+class ToonManager(QuerySet):
     def from_url(self, url: str):
         # print('parsing ', url)
-        r = re.compile(r'^https:\/\/([\w\.]+)\/en\/([\w-]+)\/([\w-]+)\/([\w-]+)\/viewer\?title_no=(\d+)&episode_no=(\d+)')
+        r = re.compile(r'^https:\/\/([\w\.]+)\/(en|fr)\/([\w-]+)\/([\w-]+)\/([\w-]+)\/viewer\?title_no=(\d+)&episode_no=(\d+)')
         m = r.match(url)
         if not m:
             raise ToonBaseUrlInvalidError(url)
-        site, gender_name, name, episode, title_no, episode_no = m.groups()
+        site, lang, gender_name, name, episode, title_no, episode_no = m.groups()
         toon = self.model(
             name=name,
             episode=int(episode_no),
             chapter=episode,
             titleno=int(title_no),
             gender=gender_name,
-            lang='en',
+            lang=lang,
             domain='webtoon.com'
         )
         return toon
@@ -34,6 +35,10 @@ class Toon(AsyncToon, ToonBase):
     gender = mongomodel.StringField(maxlen=200)
     chapter = mongomodel.StringField()
     soup = None
+
+    class Mongo:
+        manager_class = ToonManager
+        collection = 'mongotoon'
 
     def get_cookies(self):
         return {
