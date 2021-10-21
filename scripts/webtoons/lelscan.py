@@ -29,12 +29,11 @@ class LelScanManager(QuerySet):
         return chapters
 
 
-class LelScan(AsyncToon, Document):
+class LelScan(AsyncToon):
     name: str
     episode: str
     domain: str = 'https://lelscan-vf.co'
     created: datetime = Field(default_factory=datetime.now)
-    page_content: Optional[str] = None
 
     class Mongo:
         manager_class = LelScanManager

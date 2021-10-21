@@ -1,14 +1,17 @@
 #!./venv/bin/python
 import os
+
 import re
+from typing import Generator, Optional, Any
 import bs4 as BeautifulSoup
 
-from toonbase import ToonBase, ToonBaseUrlInvalidError, AsyncToon
-import mongomodel
-from mongomodel.queryset import QuerySet
+from toonbase import ToonBaseUrlInvalidError, AsyncToon, ToonManager
+from motorized import Document, QuerySet
 
 
-class ToonManager(QuerySet):
+class ToonManager(ToonManager):
+    lasts_ordering_selector = ['-episode', '-chapter']
+
     def from_url(self, url: str):
         # print('parsing ', url)
         r = re.compile(r'^https:\/\/([\w\.]+)\/(en|fr)\/([\w-]+)\/([\w-]+)\/([\w-]+)\/viewer\?title_no=(\d+)&episode_no=(\d+)')
@@ -27,14 +30,18 @@ class ToonManager(QuerySet):
         )
         return toon
 
+    async def last(self, name: str) -> Optional['Document']:
+        return await self.filter(name=name).sort(["name", '-created', '-chapter']).first()
 
-class Toon(AsyncToon, ToonBase):
-    manager_class = ToonManager
-    collection = 'mongotoon'
-    titleno = mongomodel.IntegerField()
-    gender = mongomodel.StringField(maxlen=200)
-    chapter = mongomodel.StringField()
-    soup = None
+
+
+class WebToon(AsyncToon):
+    titleno: int
+    gender: str
+    chapter: str
+    lang: str
+
+    _soup: Optional[BeautifulSoup.BeautifulSoup] = None
 
     class Mongo:
         manager_class = ToonManager
@@ -58,9 +65,6 @@ class Toon(AsyncToon, ToonBase):
                           'Chrome/61.0.3112.113 Safari/537.36',
         }
 
-    def __repr__(self):
-        return f'<Toon {self.name}> {self.chapter}'
-
     @property
     def cbz_path(self):
         if not self.chapter or not self.path:
@@ -75,10 +79,10 @@ class Toon(AsyncToon, ToonBase):
             f'&episode_no={self.episode}'
         )
 
-    def index(self):
-        if not self.soup:
-            self.get_soup()
-        for img in self.soup.find_all('img', class_="_images"):
+    async def index(self):
+        if not self._soup:
+            await self.get_soup()
+        for img in self._soup.find_all('img', class_="_images"):
             url = img['data-url']
             if 'jpg' not in url and 'JPG' not in url and 'png' not in url:
                 # print('i', url)
@@ -86,37 +90,23 @@ class Toon(AsyncToon, ToonBase):
             yield url
 
     async def pages(self):
-        return list(self.index())
+        return list([url async for url in self.index()])
 
-    def get_soup(self):
-        page = self.session.get(self.url)
-        if page.status_code != 200:
-            print('error: failed to fetch', self.url)
-            raise ValueError(page.status_code)
-        self.soup = BeautifulSoup.BeautifulSoup(page.text, 'lxml')
-        return self.soup
+    async def get_soup(self):
+        page = await self.get_page_content()
+        self._soup = BeautifulSoup.BeautifulSoup(page.decode(), 'lxml')
+        return self._soup
 
-    def inc(self):
-        if not self.soup:
-            self.get_soup()
+    async def get_next(self) -> Optional["WebToon"]:
+        if not self._soup:
+            await self.get_soup()
         try:
-            next_page = self.soup.find_all("a", class_='pg_next')[0].get('href')
-        except AttributeError as err:
-            raise ToonBaseUrlInvalidError from err
-        instance = Toon.objects.from_url(next_page)
-        self.episode = instance.episode
-        self.chapter = instance.chapter
-        self.lang = instance.lang
-        self.domain = instance.domain
-        self.soup = None
-        self.page_content = None
-        return instance
-
-    async def leech(self, *args, **kwargs):
-        await self.log(f'leeching {self}', end='\n')
-        return await super().leech(*args, **kwargs)
+            next_page = self._soup.find_all("a", class_='pg_next')[0].get('href')
+            return WebToon.objects.from_url(next_page)
+        except (AttributeError, ToonBaseUrlInvalidError):
+            return None
 
 
 async def pullall():
-    for toon in Toon.objects.exclude(finished=True):
+    async for toon in WebToon.objects.filter(finished=False).lasts():
         await toon.leech()

@@ -19,7 +19,8 @@ asyncio-pool = "^0.5.2"
 mongomodel = "^0.5.2"
 pydantic = "^1.8.2"
 motor = "^2.5.1"
-motorized = "^0.1.1"
+bs4 = "^0.0.1"
+motorized = "^0.2.4"
 
 [tool.poetry.dev-dependencies]
 

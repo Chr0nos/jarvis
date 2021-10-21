@@ -1,5 +1,5 @@
+from typing import Optional
 import bs4 as BeautifulSoup
-from urllib.parse import quote as urlquote
 from datetime import datetime, timedelta
 
 import mongomodel
@@ -9,7 +9,7 @@ import os
 from selenium import webdriver
 from selenium.common.exceptions import UnexpectedAlertPresentException
 
-from toonbase import ToonBase
+from toonbase import AsyncToon
 
 
 class Chdir:
@@ -24,13 +24,13 @@ class Chdir:
         os.chdir(self.previous_dir)
 
 
-class Toomic(ToonBase):
-    identifier = mongomodel.IntegerField()
-    code = mongomodel.IntegerField()
-    corporate = mongomodel.BoolField(value=True)
-    soup = None
-    html = None
-    driver = None
+class Toomic(AsyncToon):
+    identifier: int
+    code: int
+    corporate: bool = True
+    _soup = None
+    _html = None
+    _driver = None
 
     def copy(self):
         instance = Toomic(
@@ -41,11 +41,11 @@ class Toomic(ToonBase):
             lang=self.lang,
             identifier=self.identifier
         )
-        instance.html = self.html
-        instance.soup = self.soup
-        driver = getattr(self, 'driver', None)
+        instance._html = self._html
+        instance._soup = self._soup
+        driver = getattr(self, '_driver', None)
         if driver:
-            instance.driver = driver
+            instance._driver = driver
         return instance
 
     def __repr__(self):
@@ -89,12 +89,12 @@ class Toomic(ToonBase):
 
     def parse(self):
         self.get_html()
-        container = self.soup.find('div', {'id': 'viewer-img'})
+        container = self._soup.find('div', {'id': 'viewer-img'})
         if not container:
             return []
         return container.find_all('img')
 
-    def pages(self):
+    async def pages(self):
         return list([img.get('src') for img in self.parse()])
 
     @property
@@ -104,15 +104,15 @@ class Toomic(ToonBase):
     def __iadd__(self, x: int):
         self.code += x
         self.episode += x
-        self.soup = None
-        self.html = None
+        self._soup = None
+        self._html = None
         return self
 
     def __isub__(self, x: int):
         self.code -= x
         self.episode -= x
-        self.soup = None
-        self.html = None
+        self._soup = None
+        self._html = None
         return self
 
     def get_driver(self):
@@ -121,12 +121,12 @@ class Toomic(ToonBase):
         return self.driver
 
     def get_html(self):
-        if self.html:
+        if self._html:
             return self
         driver = self.get_driver()
         self.go()
-        self.html = driver.page_source
-        self.soup = BeautifulSoup.BeautifulSoup(self.html, 'lxml')
+        self._html = driver.page_source
+        self._soup = BeautifulSoup.BeautifulSoup(self._html, 'lxml')
         return self
 
     def auth(self, username, password):
@@ -182,8 +182,8 @@ class Toomic(ToonBase):
         self.episode = instance.episode
         self.domain = instance.domain
         self.lang = instance.lang
-        self.html = None
-        self.soup = None
+        self._html = None
+        self._soup = None
         return self
 
     def inc(self):
@@ -192,27 +192,23 @@ class Toomic(ToonBase):
     def dec(self):
         return self.move(to_next=False)
 
-    def leech(self):
+    async def next(self) -> "Toomic":
+        instance = self.copy()
+        instance.move(to_next=True)
+        return instance
+
+    async def leech(self):
         try:
             return super().leech()
         except UnexpectedAlertPresentException:
-            return self
+            return None
 
 
-def pullall(user_id, password, **kwargs):
-    driver = None
-    qs = Toomic.objects \
-        .filter(**kwargs) \
-        .exclude(
-            finished=True,
-            last_fetch__gt=datetime.now() - timedelta(days=3)
-        ).sort(['name'])
-    print('pullables toons:', qs.count(), qs.distinct('name'))
-    for toon in qs:
-        print(toon.name)
+async def pullall(user_id, password, **kwargs):
+    driver: Optional[webdriver.Firefox] = None
+    async for toon in Toomic.objects.lasts():
         if not driver:
             toon.auth(user_id, password)
             driver = toon.driver
-        toon.driver = driver
-        toon.leech()
+        await toon.leech()
     return driver
