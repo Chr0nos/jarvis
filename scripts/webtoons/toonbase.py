@@ -3,7 +3,8 @@ from datetime import datetime
 import os
 import sys
 
-from typing import Optional, Any, Generator
+from typing import Dict, Optional, Any, Generator, Union
+from aiohttp.http_writer import HttpVersion
 from attr import astuple
 from bson.objectid import ObjectId
 from motorized.types import PydanticObjectId
@@ -15,6 +16,7 @@ from asyncio_pool import AioPool
 import aiohttp
 import aiofile
 from typing import Tuple, List
+from enum import Enum
 
 from motorized import Document, QuerySet
 from pydantic import Field
@@ -26,6 +28,11 @@ class ToonBaseUrlInvalidError(Exception):
 
 class ToonNotAvailableError(Exception):
     pass
+
+
+class UserAgent(Enum):
+    FIREFOX = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0'
+    CHROME = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36'
 
 
 class Chdir:
@@ -58,12 +65,18 @@ class AsyncToon(Document):
     next: Optional[PydanticObjectId]
 
     _page_content: Optional[str] = None
+    _cookies: aiohttp.CookieJar
 
     class Mongo:
         manager_class = ToonManager
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        cookies = self.get_cookies()
+        if cookies:
+            self._cookies = cookiejar_from_dict(cookies)
+        else:
+            self._cookies = aiohttp.CookieJar()
 
     def __str__(self):
         return f'{self.name} {self.episode}'
@@ -82,16 +95,21 @@ class AsyncToon(Document):
     def exists(self) -> bool:
         return os.path.exists(self.cbz_path)
 
-    def get_cookies(self):
-        return {}
+    def get_cookies(self) -> Optional[Dict]:
+        return None
 
     def get_headers(self):
-        return {
+        headers = {
             'Referer': self.domain,
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                          'AppleWebKit/537.36 (KHTML, like Gecko) '
-                          'Chrome/61.0.3112.113 Safari/537.36',
+            'User-Agent': UserAgent.CHROME.value,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+            'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6',
+            'Accept-Encoding': 'gzip, deflate',
+            'Cache-Control': 'max-age=0'
         }
+        if getattr(self, '_lowerize_headers', False):
+            headers = dict({k.lower(): v for k, v in headers.items()})
+        return headers
 
     async def log(self, message: str, flush=True, **kwargs) -> None:
         kwargs.setdefault('end', '')
@@ -126,7 +144,7 @@ class AsyncToon(Document):
                 url=url,
                 method='get',
                 headers=self.get_headers(),
-                cookies=cookiejar_from_dict(self.get_cookies())
+                cookies=self._cookies
             )
             async with request as response:
                 response.raise_for_status()
@@ -166,15 +184,11 @@ class AsyncToon(Document):
         """
         if self._page_content:
             return self._page_content
-        request = aiohttp.request(
-            url=self.url,
-            method='get',
-            headers=self.get_headers(),
-            cookies=self.get_cookies()
-        )
-        async with request as response:
-            response.raise_for_status()
-            page_content = await response.read()
+        async with aiohttp.ClientSession(headers=self.get_headers(), cookies=self._cookies) as session:
+            request = session.get(url=self.url)
+            async with request as response:
+                response.raise_for_status()
+                page_content = await response.read()
         self._page_content = page_content
         return page_content
 
@@ -190,7 +204,6 @@ class AsyncToon(Document):
         while toon:
             # if the toon does not exists on disk we pull it and save it in db
             if not toon.exists():
-                await self.log(f"{toon}: ")
                 await toon.pull(pool_size=pool_size)
                 if not await toon.objects.filter(name=toon.name, episode=toon.episode).exists():
                     await toon.save()
@@ -198,7 +211,7 @@ class AsyncToon(Document):
             next_toon: Optional[AsyncToon] = await toon.get_next()
             if next_toon:
                 # look in the db if we already know the next toon, if so we use it directly
-                next_toon_in_db = await self.objects.filter(name=next_toon.name, episode=next_toon.episode).first()
+                next_toon_in_db: Optional[AsyncToon] = await self.objects.filter(name=next_toon.name, episode=next_toon.episode).first()
                 if next_toon_in_db:
                     next_toon = next_toon_in_db
                 # otherwise save the new one

@@ -3,6 +3,7 @@ import os
 
 import re
 from typing import Generator, Optional, Any
+import aiohttp
 import bs4 as BeautifulSoup
 
 from toonbase import ToonBaseUrlInvalidError, AsyncToon, ToonManager
@@ -34,7 +35,6 @@ class ToonManager(ToonManager):
         return await self.filter(name=name).sort(["name", '-created', '-chapter']).first()
 
 
-
 class WebToon(AsyncToon):
     titleno: int
     gender: str
@@ -55,14 +55,6 @@ class WebToon(AsyncToon):
             'contentLanguage': 'en',
             'locale': 'en',
             'countryCode': 'US'
-        }
-
-    def get_headers(self):
-        return {
-            'Referer': 'www.webtoons.com',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
-                          'AppleWebKit/537.36 (KHTML, like Gecko) '
-                          'Chrome/61.0.3112.113 Safari/537.36',
         }
 
     @property

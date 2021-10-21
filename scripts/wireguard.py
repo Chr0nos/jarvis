@@ -3,11 +3,10 @@ from subprocess import run
 from typing import List
 
 
-mongomodel.setup_database('10.8.1.1', 'test')
+mongomodel.database.connect(host='mongodb://192.168.1.12/test')
 
 
 class WgClient(mongomodel.Document):
-    db = mongomodel.db
     name = mongomodel.StringField()
     public_key = mongomodel.StringField()
     address = mongomodel.StringField(required=False)

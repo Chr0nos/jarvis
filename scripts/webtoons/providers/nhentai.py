@@ -2,7 +2,7 @@ from typing import List, Optional
 import bs4 as BeautifulSoup
 import asyncio
 from motorized import Document
-from toonbase import ToonBase, AsyncToon
+from toonbase import AsyncToon
 import sys
 from glob import glob
 

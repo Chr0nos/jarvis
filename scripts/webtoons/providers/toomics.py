@@ -1,8 +1,6 @@
 from typing import Optional
 import bs4 as BeautifulSoup
-from datetime import datetime, timedelta
 
-import mongomodel
 import re
 import os
 
