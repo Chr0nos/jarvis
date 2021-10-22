@@ -92,7 +92,7 @@ class Toomic(AsyncToon):
             return []
         return container.find_all('img')
 
-    async def pages(self):
+    async def get_pages(self):
         return list([img.get('src') for img in self.parse()])
 
     @property

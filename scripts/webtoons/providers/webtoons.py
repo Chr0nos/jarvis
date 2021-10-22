@@ -83,7 +83,7 @@ class WebToon(AsyncToon):
                 continue
             yield url
 
-    async def pages(self):
+    async def get_pages(self):
         return list([url async for url in self.index()])
 
     async def get_soup(self):
