@@ -1,5 +1,6 @@
 import re
-from toonbase import AsyncToon, ToonManager, UserAgent
+from typing import Optional
+from toonbase import AsyncToon, ToonManager, UserAgent, SoupMixin
 
 
 class MangaOriginmManager(ToonManager):
@@ -9,7 +10,7 @@ class MangaOriginmManager(ToonManager):
         return self.model(name=name, episode=chapter)
 
 
-class MangaOriginToon(AsyncToon):
+class MangaOriginToon(SoupMixin, AsyncToon):
     domain: str = 'mangas-origines.fr'
     lang: str = 'fr'
     episode: str
@@ -17,9 +18,11 @@ class MangaOriginToon(AsyncToon):
     class Mongo:
         manager_class = MangaOriginmManager
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     @property
     def url(self) -> str:
-        # return 'https://mangas-origines.fr/manga/martial-peak/'
         return f'https://{self.domain}/manga/{self.name}/{self.chapter}/'
 
     @property
@@ -28,19 +31,42 @@ class MangaOriginToon(AsyncToon):
 
     def get_cookies(self):
         return {
-            'wpmanga-reading-history': 'W3siaWQiOjI2MTAsImMiOiIyNDMwOCIsInAiOjEsImkiOiIiLCJ0IjoxNjM0ODQxNTEwfV0%3D; _ga=GA1.1.739239683.1634834303; _gid=GA1.2.299007645.1634834303; _ga_DPGCMVGV83=GS1.1.1634834303.1.1.1634834309.0; __cf_bm=VigKFFe.ibJTl2LJG90Im1PPjHc5Mgq0VEuNLwsrKKE-1634834304-0-AcpWsVVTkZQRvHCBMZhGq0G4vFTcz854FvsVRB5WFtAc0D18VKmsMwKRz5ewNysP8cYkes0wBcq5+67tImZzW5bsqI5gBcpWPRhdBBAAowrqfYvzfjrumuXMK2oHiTCJyw==',
-            'pum-23148': 'true'
+            'wpmanga-reading-history': 'W3siaWQiOjI2MTAsImMiOiIyNDMwOCIsInAiOjEsImkiOiIiLCJ0IjoxNjM0ODU5MTE0fV0=',
+            'pum-23148': 'true',
+            '_gid': 'GA1.2.299007645.1634834303',
+            '_ga_DPGCMVGV83': 'GS1.1.1634899075.3.1.1634899909.0',
+            '__gads': 'ID=1d4022007433f892-2274218888cc00e4:T=1634899351:RT=1634899351:S=ALNI_MYQvGe04Kpz4ROOb0FZg0R16ybm_w',
+            '__cf_bm': 'WiZRKsB9uV.DmO.WX5RLYExCeGEdRC_km1_47ckErQk-1634899351-0-AVEmc2nWOOxgRNfJVpaBvyiMDy2ql6ZfPV7Slj3hhSLfFUdzdLGZaFKhx/6DEzdt0Htb+9eGYWKdKPnEv1yS8Mm6+Ckzj6OpRCZrdDyioUhlhvqGdh4RVLUKaGH8INVROQ==',
+            '_gat': 1,
+            '_gat_gtag_UA_177067753_1': 1,
         }
 
     def get_headers(self):
         headers = super().get_headers()
         headers.update({
-            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Host': 'mangas-origines.fr',
+            'Accept': '*/*',
             'Pragma': 'no-cache',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'no-cors',
+            'Sec-Fetch-Site': 'same-origin',
             'Sec-Fetch-User': '?1',
             'Upgrade-Insecure-Requests': '1',
+            'X-Moz': 'prefetch',
         })
         return headers
+
+    async def get_pages(self):
+        soup = await self.get_soup()
+        reading_content = soup.find('div', 'reading-content')
+        images = reading_content.find_all('img')
+        return list([img['data-src'].strip() for img in images])
+
+    async def get_next(self) -> Optional["MangaOriginToon"]:
+        soup = await self.get_soup()
+        try:
+            next_url = soup.find('div', {'class': 'nav-next'}).find('a')['href']
+            return MangaOriginToon.objects.from_url(next_url)
+        except AttributeError:
+            return None

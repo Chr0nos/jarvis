@@ -1,15 +1,15 @@
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
+from functools import wraps
 import os
 import sys
 
 from typing import Dict, Optional, Any, Generator, Union
-from aiohttp.http_writer import HttpVersion
-from attr import astuple
+from aiohttp.helpers import get_running_loop
+import httpx
 from bson.objectid import ObjectId
 from motorized.types import PydanticObjectId
 from pydantic.types import PositiveInt
-from requests.cookies import cookiejar_from_dict
 from tempfile import TemporaryDirectory
 import zipfile
 from asyncio_pool import AioPool
@@ -17,6 +17,9 @@ import aiohttp
 import aiofile
 from typing import Tuple, List
 from enum import Enum
+from contextlib import asynccontextmanager
+import traceback
+import bs4 as BeautifulSoup
 
 from motorized import Document, QuerySet
 from pydantic import Field
@@ -30,8 +33,16 @@ class ToonNotAvailableError(Exception):
     pass
 
 
+def raise_on_any_error_from_pool(pool_result: List[Optional[Exception]]):
+    errors = list(filter(None, pool_result))
+    for error in errors:
+        print(traceback.format_exc(error))
+    assert not errors, errors
+
+
 class UserAgent(Enum):
     FIREFOX = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0'
+    CHROME_LINUX = 'Mozilla/5.0 (X11; Linux x86_64; rv:89.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     CHROME = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.54 Safari/537.36'
 
 
@@ -45,6 +56,57 @@ class Chdir:
 
     def __exit__(self, *_):
         os.chdir(self.previous_dir)
+
+
+class Http2Mixin:
+    """Only use if you have no choices, httpx is realy slower than aiohttp
+    """
+    _page_content: str
+    _no_session: False
+
+    async def get_page_content(self) -> str:
+        if self._page_content:
+            return self._page_content
+        async with httpx.AsyncClient(http2=True, timeout=10) as client:
+            response = await client.get(self.url, headers=self.get_headers(), cookies=self._cookies)
+            response.raise_for_status()
+            self._page_content = response.read()
+        return self._page_content
+
+    async def download_links(self, client: httpx.AsyncClient, cbz: zipfile.ZipFile, pair: Tuple[str, str]):
+        output_filepath, url = pair
+        if self._no_session:
+            response = await httpx.get(url, headers=self.get_headers(), cookies=self._cookies)
+        else:
+            response = await client.get(url)
+        response.raise_for_status()
+        page_data = response.read()
+        self.check_page_content(page_data)
+        await self._save_page_data_to_disk(output_filepath, page_data)
+        cbz.write(output_filepath, os.path.basename(output_filepath))
+        await self._progress()
+
+    @asynccontextmanager
+    async def get_client(self):
+        session  = httpx.AsyncClient(
+            http2=True,
+            headers=self.get_headers(),
+            cookies=self.get_cookies(),
+            follow_redirects=False
+        )
+        async with session as client:
+            yield client
+
+
+class SoupMixin:
+    _soup: Optional[BeautifulSoup.BeautifulSoup] = None
+
+    async def get_soup(self):
+        if self._soup:
+            return self._soup
+        page_content = await self.get_page_content()
+        self._soup = BeautifulSoup.BeautifulSoup(page_content, 'lxml')
+        return self._soup
 
 
 class ToonManager(QuerySet):
@@ -66,20 +128,25 @@ class AsyncToon(Document):
 
     _page_content: Optional[str] = None
     _cookies: aiohttp.CookieJar
+    _quote_cookies: bool = True
 
     class Mongo:
         manager_class = ToonManager
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        cookies = self.get_cookies()
-        if cookies:
-            self._cookies = cookiejar_from_dict(cookies)
-        else:
-            self._cookies = aiohttp.CookieJar()
+        self._cookies = self.get_cookie_jar()
 
     def __str__(self):
         return f'{self.name} {self.episode}'
+
+    def get_cookie_jar(self) -> aiohttp.CookieJar:
+        loop = get_running_loop()
+        jar = aiohttp.CookieJar(loop=loop, unsafe=True, quote_cookie=self._quote_cookies)
+        cookies: Optional[Dict] = self.get_cookies()
+        if cookies is not None:
+            jar.update_cookies(cookies)
+        return jar
 
     @property
     def path(self) -> str:
@@ -100,10 +167,10 @@ class AsyncToon(Document):
 
     def get_headers(self):
         headers = {
-            'Referer': self.domain,
+            'Referer': getattr(self, 'url', None) or self.domain,
             'User-Agent': UserAgent.CHROME.value,
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-            'Accept-Language': 'fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7,es;q=0.6',
+            'Accept-Language': 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3',
             'Accept-Encoding': 'gzip, deflate',
             'Cache-Control': 'max-age=0'
         }
@@ -118,7 +185,7 @@ class AsyncToon(Document):
             sys.stdout.flush()
 
     async def get_page_and_destination_pairs(self, folder: str) -> List[Tuple[str, str]]:
-        pages = await self.pages()
+        pages = await self.get_pages()
 
         def get_output_filename(index: int, page: str) -> str:
             return os.path.join(folder, f'{index:03}.jpg')
@@ -132,28 +199,25 @@ class AsyncToon(Document):
         if not os.path.exists(self.path):
             os.mkdir(self.path)
 
+    async def _save_page_data_to_disk(self, filepath: str, data: bytes) -> None:
+        async with aiofile.async_open(filepath, 'wb') as fp:
+            await fp.write(data)
+
+    async def download_links(self, client: aiohttp.ClientSession, cbz: zipfile.ZipFile, pair: Tuple[str, str]) -> None:
+        output_filepath, url = pair
+        request = client.get(url)
+        async with request as response:
+            response.raise_for_status()
+            page_data = await response.read()
+            self.check_page_content(page_data)
+            await self._save_page_data_to_disk(output_filepath, page_data)
+            cbz.write(output_filepath, os.path.basename(output_filepath))
+            await self._progress()
+
     async def pull(self, pool_size=3) -> None:
         assert self.name
         await self.create_folder()
         await self.log(f'{self}: ')
-        cbz = None
-
-        async def download_coroutine(pair) -> None:
-            output_filepath, url = pair
-            request = aiohttp.request(
-                url=url,
-                method='get',
-                headers=self.get_headers(),
-                cookies=self._cookies
-            )
-            async with request as response:
-                response.raise_for_status()
-                page_data = await response.read()
-                self.check_page_content(page_data)
-                async with aiofile.async_open(output_filepath, 'wb') as fp:
-                    await fp.write(page_data)
-                    cbz.write(output_filepath, os.path.basename(output_filepath))
-                    await self._progress()
 
         pool = AioPool(size=pool_size)
         with TemporaryDirectory() as tmpd:
@@ -161,13 +225,24 @@ class AsyncToon(Document):
                 pair_list = (await self.get_page_and_destination_pairs(tmpd))
                 cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
                 try:
-                    await pool.map(download_coroutine, pair_list)
+                    async with self.get_client() as client:
+                        download_coroutine = lambda pair: self.download_links(client, cbz, pair)
+                        raise_on_any_error_from_pool(await pool.map(download_coroutine, pair_list))
                     cbz.close()
                 except (KeyboardInterrupt, asyncio.exceptions.CancelledError):
                     cbz.close()
                     os.unlink(cbz.filename)
                     self.log('removed incomplete cbz', end='\n')
             await self.log('\n')
+
+    @asynccontextmanager
+    async def get_client(self):
+        session = aiohttp.ClientSession(
+            headers=self.get_headers(),
+            cookie_jar=self._cookies,
+        )
+        async with session as client:
+            yield client
 
     async def _progress(self):
         """Called each time a page has been downloaded successfully
@@ -184,9 +259,11 @@ class AsyncToon(Document):
         """
         if self._page_content:
             return self._page_content
-        async with aiohttp.ClientSession(headers=self.get_headers(), cookies=self._cookies) as session:
-            request = session.get(url=self.url)
+        async with self.get_client() as client:
+            request = client.get(url=self.url)
             async with request as response:
+                if response.status == 403:
+                    print(await response.read())
                 response.raise_for_status()
                 page_content = await response.read()
         self._page_content = page_content
@@ -233,5 +310,21 @@ class AsyncToon(Document):
         await self.objects.collection.update_many({'name': self.name}, {'$set': {'name': newname}})
         await self.reload()
 
+    async def get_pages(self):
+        raise NotImplementedError
+
 
 AsyncToon.update_forward_refs()
+
+
+def provide_soup(func):
+    @wraps(func)
+    async def wrapper(instance: SoupMixin, *args, **kwargs):
+        try:
+            soup = await instance.get_soup()
+        except aiohttp.ClientResponseError as response_error:
+            if response_error.status == 500:
+                raise ToonNotAvailableError
+            raise response_error
+        return await func(instance, *args, soup=soup, **kwargs)
+    return wrapper

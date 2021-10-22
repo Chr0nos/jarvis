@@ -1,31 +1,31 @@
 from typing import List, Optional
 import bs4 as BeautifulSoup
 import asyncio
-from motorized import Document
-from toonbase import AsyncToon
+from toonbase import AsyncToon, SoupMixin, provide_soup
 import sys
 from glob import glob
 
 
-class NHentaiToon(AsyncToon, Document):
+class NHentaiToon(SoupMixin, AsyncToon):
     name: Optional[str]
     episode: str
     domain: str = 'https://nhentai.xxx'
     page_content: Optional[str] = None
+    _cdn = 'https://cdn.nhentai.xxx'
 
     @property
     def url(self) -> str:
         return f'https://nhentai.net/g/{self.episode}'
 
-    async def resolve_name(self) -> str:
-        soup = BeautifulSoup.BeautifulSoup(await self.get_page_content(), 'lxml')
+    @provide_soup
+    async def resolve_name(self, soup: BeautifulSoup.BeautifulSoup) -> str:
         title = soup.find('meta', {'itemprop': 'name'})['content']
         for replacement in (' | ', '~', '|', ':', '?'):
             title = title.replace(replacement, '')
         return title
 
-    async def pages(self) -> List[str]:
-        soup = BeautifulSoup.BeautifulSoup(await self.get_page_content(), 'lxml')
+    @provide_soup
+    async def get_pages(self, soup: BeautifulSoup.BeautifulSoup) -> List[str]:
         thumbs_div = soup.find('div', 'thumbs')
         img_find = thumbs_div.find_all('img', {'class': 'lazyload'})
 
@@ -33,7 +33,7 @@ class NHentaiToon(AsyncToon, Document):
             parts = thumb_url.split('/')
             sauce_code = parts[4]
             filename = parts[-1].replace('t', '')
-            return f'{self.domain}/g/{sauce_code}/{filename}'
+            return f'{self._cdn}/g/{sauce_code}/{filename}'
 
         imgs = [thumb_to_img(img['data-src']) for img in img_find]
         return imgs

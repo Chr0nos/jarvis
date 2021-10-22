@@ -50,11 +50,13 @@ class WebToon(AsyncToon):
     def get_cookies(self):
         return {
             'needGDPR': 'false',
+            'needCCPA': 'false',
+            'needCOPPA': 'false',
             'ageGatePass': 'true',
             'allowedCookie': 'ga',
-            'contentLanguage': 'en',
-            'locale': 'en',
-            'countryCode': 'US'
+            'contentLanguage': self.lang,
+            'locale': self.lang,
+            'countryCode': self.lang.upper() if self.lang != 'en' else 'US'
         }
 
     @property
@@ -66,7 +68,7 @@ class WebToon(AsyncToon):
     @property
     def url(self):
         return ''.join(
-            f'https://webtoons.com/en/{self.gender}/{self.name}/'
+            f'https://www.webtoons.com/{self.lang}/{self.gender}/{self.name}/'
             f'{self.chapter}/viewer?title_no={self.titleno}'
             f'&episode_no={self.episode}'
         )

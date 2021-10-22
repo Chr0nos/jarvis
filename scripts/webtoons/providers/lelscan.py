@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from motorized import Document, QuerySet
 from pydantic import Field
-from toonbase import AsyncToon, ToonNotAvailableError
+from toonbase import AsyncToon, ToonNotAvailableError, SoupMixin, provide_soup
 import aiohttp
 import asyncio
 
@@ -29,7 +29,7 @@ class LelScanManager(QuerySet):
         return chapters
 
 
-class LelScan(AsyncToon):
+class LelScan(SoupMixin, AsyncToon):
     name: str
     episode: str
     domain: str = 'https://lelscan-vf.co'
@@ -43,14 +43,8 @@ class LelScan(AsyncToon):
     def url(self) -> str:
         return f'https://lelscan-vf.co/manga/{self.name}/{self.episode}'
 
-    async def pages(self) -> List[str]:
-        try:
-            soup = BeautifulSoup.BeautifulSoup(await self.get_page_content(), 'lxml')
-        except aiohttp.ClientResponseError as response_error:
-            # with lelscan if the pages does not exists the server returns a 500 instead of a 404
-            if response_error.status == 500:
-                raise ToonNotAvailableError from response_error
-            raise response_error
+    @provide_soup
+    async def get_pages(self, soup: BeautifulSoup.BeautifulSoup) -> List[str]:
         parent = soup.find('div', id='all')
         try:
             urls = [img['data-src'] for img in parent.find_all('img')]
@@ -97,7 +91,7 @@ async def main():
     subs = [
         'bijin-onna-joushi-takizawasan',
         'boku-no-kanojo-sensei',
-        'bug-player',
+        # 'bug-player',
         'dandadan',
         'dragon-ball-super',
         'i-picked-up-a-demon-lord-as-a-maid',

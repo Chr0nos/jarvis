@@ -190,7 +190,7 @@ class Toomic(AsyncToon):
     def dec(self):
         return self.move(to_next=False)
 
-    async def next(self) -> "Toomic":
+    async def get_next(self) -> Optional["Toomic"]:
         instance = self.copy()
         instance.move(to_next=True)
         return instance
