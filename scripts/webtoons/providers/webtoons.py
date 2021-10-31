@@ -6,8 +6,8 @@ from typing import Generator, Optional, Any
 import aiohttp
 import bs4 as BeautifulSoup
 
-from toonbase import ToonBaseUrlInvalidError, AsyncToon, ToonManager
-from motorized import Document, QuerySet
+from toonbase import ToonBaseUrlInvalidError, AsyncToon, ToonManager, SoupMixin, provide_soup
+from motorized import Document, QuerySet, Q
 
 
 class ToonManager(ToonManager):
@@ -34,18 +34,22 @@ class ToonManager(ToonManager):
     async def last(self, name: str) -> Optional['Document']:
         return await self.filter(name=name).sort(["name", '-created', '-chapter']).first()
 
+    async def leech(self) -> None:
+        async for toon in self.filter(finished=False).lasts():
+            await toon.leech()
 
-class WebToon(AsyncToon):
+
+class WebToon(SoupMixin, AsyncToon):
     titleno: int
     gender: str
     chapter: str
     lang: str
-
-    _soup: Optional[BeautifulSoup.BeautifulSoup] = None
+    domain:str = 'webtoons.com'
 
     class Mongo:
         manager_class = ToonManager
-        collection = 'mongotoon'
+        collection = 'toons'
+        filters = Q(domain__in=['webtoons.com', 'webtoon.com'])
 
     def get_cookies(self):
         return {
@@ -73,9 +77,7 @@ class WebToon(AsyncToon):
             f'&episode_no={self.episode}'
         )
 
-    async def index(self):
-        if not self._soup:
-            await self.get_soup()
+    async def index(self, soup: BeautifulSoup.BeautifulSoup):
         for img in self._soup.find_all('img', class_="_images"):
             url = img['data-url']
             if 'jpg' not in url and 'JPG' not in url and 'png' not in url:
@@ -83,17 +85,12 @@ class WebToon(AsyncToon):
                 continue
             yield url
 
-    async def get_pages(self):
-        return list([url async for url in self.index()])
+    @provide_soup
+    async def get_pages(self, soup: BeautifulSoup.BeautifulSoup):
+        return list([url async for url in self.index(soup)])
 
-    async def get_soup(self):
-        page = await self.get_page_content()
-        self._soup = BeautifulSoup.BeautifulSoup(page.decode(), 'lxml')
-        return self._soup
-
-    async def get_next(self) -> Optional["WebToon"]:
-        if not self._soup:
-            await self.get_soup()
+    @provide_soup
+    async def get_next(self, soup: BeautifulSoup.BeautifulSoup) -> Optional["WebToon"]:
         try:
             next_page = self._soup.find_all("a", class_='pg_next')[0].get('href')
             return WebToon.objects.from_url(next_page)

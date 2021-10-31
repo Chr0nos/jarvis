@@ -9,6 +9,7 @@ from aiohttp.helpers import get_running_loop
 import httpx
 from bson.objectid import ObjectId
 from motorized.types import PydanticObjectId
+from pydantic.main import BaseModel
 from pydantic.types import PositiveInt
 from tempfile import TemporaryDirectory
 import zipfile
@@ -36,6 +37,10 @@ class ToonNotAvailableError(Exception):
 def raise_on_any_error_from_pool(pool_result: List[Optional[Exception]]):
     errors = list(filter(None, pool_result))
     for error in errors:
+        if isinstance(error, asyncio.exceptions.CancelledError):
+            raise error
+        if isinstance(error, KeyboardInterrupt):
+            raise error
         print(traceback.format_exc(error))
     assert not errors, errors
 
@@ -125,6 +130,8 @@ class AsyncToon(Document):
     domain: str
     created: datetime = Field(default_factory=datetime.now)
     next: Optional[PydanticObjectId]
+    lang: str
+    corporate: bool = True
 
     _page_content: Optional[str] = None
     _cookies: aiohttp.CookieJar
@@ -132,6 +139,7 @@ class AsyncToon(Document):
 
     class Mongo:
         manager_class = ToonManager
+        collection = 'toons'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -229,10 +237,11 @@ class AsyncToon(Document):
                         download_coroutine = lambda pair: self.download_links(client, cbz, pair)
                         raise_on_any_error_from_pool(await pool.map(download_coroutine, pair_list))
                     cbz.close()
-                except (KeyboardInterrupt, asyncio.exceptions.CancelledError):
+                except (KeyboardInterrupt, asyncio.exceptions.CancelledError) as error:
                     cbz.close()
                     os.unlink(cbz.filename)
-                    self.log('removed incomplete cbz', end='\n')
+                    await self.log('removed incomplete cbz', end='\n')
+                    raise error
             await self.log('\n')
 
     @asynccontextmanager

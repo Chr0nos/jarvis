@@ -18,10 +18,10 @@ mongomodel = "^0.5.2"
 pydantic = "^1.8.2"
 motor = "^2.5.1"
 bs4 = "^0.0.1"
-motorized = "^0.2.4"
 Brotli = "^1.0.9"
 httpx = {extras = ["http2"], version = "^0.20.0"}
 aiohttp = {extras = ["brotli"], version = "^3.7.4"}
+motorized = "^0.3.2"
 
 [tool.poetry.dev-dependencies]
 

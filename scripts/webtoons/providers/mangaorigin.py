@@ -1,13 +1,18 @@
 import re
 from typing import Optional
 from toonbase import AsyncToon, ToonManager, UserAgent, SoupMixin
+from motorized import Q
 
 
 class MangaOriginmManager(ToonManager):
-    def from_url(self, url: str):
+    def from_url(self, url: str) -> "MangaOriginToon":
         m = re.compile(r"^https://mangas-origines.fr/manga/([\w-]+)/([\w-]+)/")
         name, chapter = m.match(url).groups()
         return self.model(name=name, episode=chapter)
+
+    async def leech(self):
+        async for toon in self.filter(next=None):
+            await toon.leech()
 
 
 class MangaOriginToon(SoupMixin, AsyncToon):
@@ -17,6 +22,8 @@ class MangaOriginToon(SoupMixin, AsyncToon):
 
     class Mongo:
         manager_class = MangaOriginmManager
+        collection = 'toons'
+        filters = Q(domain='mangas-origines.fr')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

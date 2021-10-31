@@ -2,7 +2,7 @@ from datetime import datetime
 import bs4 as BeautifulSoup
 from typing import List, Optional
 
-from motorized import Document, QuerySet
+from motorized import Document, QuerySet, Q
 from pydantic import Field
 from toonbase import AsyncToon, ToonNotAvailableError, SoupMixin, provide_soup
 import aiohttp
@@ -37,7 +37,9 @@ class LelScan(SoupMixin, AsyncToon):
 
     class Mongo:
         manager_class = LelScanManager
+        collection = 'toons'
         local_fields = ('page_content',)
+        filters = Q(domain='https://lelscan-vf.co')
 
     @property
     def url(self) -> str:
@@ -82,7 +84,7 @@ async def get_from_chapters(name: str, chapters: Optional[List[str]] = None) -> 
         )
         if not instance.exists():
             try:
-                await instance.pull(pool_size=8)
+                await instance.pull(pool_size=3)
             except ToonNotAvailableError:
                 await instance.log('Not available', end='\n')
 

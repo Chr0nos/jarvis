@@ -273,7 +273,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "ipython"
-version = "7.28.0"
+version = "7.29.0"
 description = "IPython: Productive Interactive Computing"
 category = "main"
 optional = false
@@ -370,7 +370,7 @@ encryption = ["pymongo[encryption] (>=3.12,<4)"]
 
 [[package]]
 name = "motorized"
-version = "0.2.5"
+version = "0.3.2"
 description = "Asyncio mongodb ODM"
 category = "main"
 optional = false
@@ -522,7 +522,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "traitlets"
-version = "5.1.0"
+version = "5.1.1"
 description = "Traitlets Python configuration system"
 category = "main"
 optional = false
@@ -575,7 +575,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "7f0c6ef8117503671542f64d634a9d4f896e3ac6c36476412b4b35f9a3cd8646"
+content-hash = "507496b9220647ef21e44a68d7d9eb3bc430a041f1403cf209cd235641c6c3ef"
 
 [metadata.files]
 aiofile = [
@@ -766,8 +766,8 @@ idna = [
     {file = "idna-3.3.tar.gz", hash = "sha256:9d643ff0a55b762d5cdb124b8eaa99c66322e2157b69160bc32796e824360e6d"},
 ]
 ipython = [
-    {file = "ipython-7.28.0-py3-none-any.whl", hash = "sha256:f16148f9163e1e526f1008d7c8d966d9c15600ca20d1a754287cf96d00ba6f1d"},
-    {file = "ipython-7.28.0.tar.gz", hash = "sha256:2097be5c814d1b974aea57673176a924c4c8c9583890e7a5f082f547b9975b11"},
+    {file = "ipython-7.29.0-py3-none-any.whl", hash = "sha256:a658beaf856ce46bc453366d5dc6b2ddc6c481efd3540cb28aa3943819caac9f"},
+    {file = "ipython-7.29.0.tar.gz", hash = "sha256:4f69d7423a5a1972f6347ff233e38bbf4df6a150ef20fbb00c635442ac3060aa"},
 ]
 jedi = [
     {file = "jedi-0.18.0-py2.py3-none-any.whl", hash = "sha256:18456d83f65f400ab0c2d3319e48520420ef43b23a086fdc05dff34132f0fb93"},
@@ -834,8 +834,8 @@ motor = [
     {file = "motor-2.5.1.tar.gz", hash = "sha256:663473f4498f955d35db7b6f25651cb165514c247136f368b84419cb7635f6b8"},
 ]
 motorized = [
-    {file = "motorized-0.2.5-py3-none-any.whl", hash = "sha256:9e69242f51ae311220141f7fbecc5f6de521ffd616d7325dbadeecdfad2b0de0"},
-    {file = "motorized-0.2.5.tar.gz", hash = "sha256:87c2f0c03a26ab31ed7c9d594038fe7dabea94235a53a0796a4188e6b9d15c9f"},
+    {file = "motorized-0.3.2-py3-none-any.whl", hash = "sha256:cb040636e5da5fab4e7264b88d880d108a3540a69656501fa43765e037a358ce"},
+    {file = "motorized-0.3.2.tar.gz", hash = "sha256:24f5aef0f2a2174b2c0d72d54f02f25f6de8574cd9f445156a53ebcabb4a249d"},
 ]
 multidict = [
     {file = "multidict-5.2.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:3822c5894c72e3b35aae9909bef66ec83e44522faf767c0ad39e0e2de11d3b55"},
@@ -1085,8 +1085,8 @@ soupsieve = [
     {file = "soupsieve-2.2.1.tar.gz", hash = "sha256:052774848f448cf19c7e959adf5566904d525f33a3f8b6ba6f6f8f26ec7de0cc"},
 ]
 traitlets = [
-    {file = "traitlets-5.1.0-py3-none-any.whl", hash = "sha256:03f172516916220b58c9f19d7f854734136dd9528103d04e9bf139a92c9f54c4"},
-    {file = "traitlets-5.1.0.tar.gz", hash = "sha256:bd382d7ea181fbbcce157c133db9a829ce06edffe097bcf3ab945b435452b46d"},
+    {file = "traitlets-5.1.1-py3-none-any.whl", hash = "sha256:2d313cc50a42cd6c277e7d7dc8d4d7fedd06a2c215f78766ae7b1a66277e0033"},
+    {file = "traitlets-5.1.1.tar.gz", hash = "sha256:059f456c5a7c1c82b98c2e8c799f39c9b8128f6d0d46941ee118daace9eb70c7"},
 ]
 typing-extensions = [
     {file = "typing_extensions-3.10.0.2-py2-none-any.whl", hash = "sha256:d8226d10bc02a29bcc81df19a26e56a9647f8b0a6d4a83924139f4a8b01f17b7"},

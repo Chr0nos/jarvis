@@ -6,7 +6,7 @@ import os
 
 from selenium import webdriver
 from selenium.common.exceptions import UnexpectedAlertPresentException
-
+from motorized import Q
 from toonbase import AsyncToon
 
 
@@ -25,10 +25,14 @@ class Chdir:
 class Toomic(AsyncToon):
     identifier: int
     code: int
-    corporate: bool = True
+    domain: str = 'toomics.com'
     _soup = None
     _html = None
     _driver = None
+
+    class Mongo:
+        collection = 'toomic'
+        filters = Q(domain='toomics.com')
 
     def copy(self):
         instance = Toomic(

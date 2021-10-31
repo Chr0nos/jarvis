@@ -2,6 +2,7 @@ from typing import List, Optional
 import bs4 as BeautifulSoup
 import asyncio
 from toonbase import AsyncToon, SoupMixin, provide_soup
+from motorized import Q
 import sys
 from glob import glob
 
@@ -9,9 +10,13 @@ from glob import glob
 class NHentaiToon(SoupMixin, AsyncToon):
     name: Optional[str]
     episode: str
-    domain: str = 'https://nhentai.xxx'
+    domain: str = 'nhentai.xxx'
     page_content: Optional[str] = None
     _cdn = 'https://cdn.nhentai.xxx'
+
+    class Mongo:
+        collection = 'toons'
+        filters = Q(domain='nhentai.xxx')
 
     @property
     def url(self) -> str:
