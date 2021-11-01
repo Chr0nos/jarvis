@@ -1,6 +1,6 @@
 import re
 from typing import Optional
-from toonbase import AsyncToon, ToonManager, UserAgent, SoupMixin
+from toonbase import AsyncToon, ToonManager, SoupMixin
 from motorized import Q
 
 

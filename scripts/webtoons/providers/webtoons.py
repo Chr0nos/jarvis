@@ -2,8 +2,7 @@
 import os
 
 import re
-from typing import Generator, Optional, Any
-import aiohttp
+from typing import Optional, Any
 import bs4 as BeautifulSoup
 
 from toonbase import ToonBaseUrlInvalidError, AsyncToon, ToonManager, SoupMixin, provide_soup
@@ -32,10 +31,11 @@ class ToonManager(ToonManager):
         return toon
 
     async def last(self, name: str) -> Optional['Document']:
-        return await self.filter(name=name).sort(["name", '-created', '-chapter']).first()
+        return await self.filter(name=name).order_by(["name", '-created', '-chapter']).first()
 
     async def leech(self) -> None:
-        async for toon in self.filter(finished=False).lasts():
+        query = Q.raw({"$or": [{"finished": False}, {"finished": {'$exists': False}}]})
+        async for toon in self.filter(query).lasts():
             await toon.leech()
 
 

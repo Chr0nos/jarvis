@@ -1,15 +1,12 @@
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import wraps
 import os
 import sys
 
-from typing import Dict, Optional, Any, Generator, Union
+from typing import Dict, Optional, Any, Generator
 from aiohttp.helpers import get_running_loop
 import httpx
-from bson.objectid import ObjectId
-from motorized.types import PydanticObjectId
-from pydantic.main import BaseModel
 from pydantic.types import PositiveInt
 from tempfile import TemporaryDirectory
 import zipfile
@@ -23,6 +20,7 @@ import traceback
 import bs4 as BeautifulSoup
 
 from motorized import Document, QuerySet
+from motorized.types import PydanticObjectId
 from pydantic import Field
 
 
@@ -120,7 +118,7 @@ class ToonManager(QuerySet):
     async def lasts(self) -> Generator[None, None, "AsyncToon"]:
         names: List[str] = await self.distinct('name')
         for toon_name in names:
-            toon = await self.filter(name=toon_name).sort(self.lasts_ordering_selector).first()
+            toon = await self.filter(name=toon_name).order_by(self.lasts_ordering_selector).first()
             yield toon
 
 
@@ -302,6 +300,7 @@ class AsyncToon(Document):
                     next_toon = next_toon_in_db
                 # otherwise save the new one
                 else:
+                    next_toon.corporate = toon.corporate
                     await next_toon.save()
                 toon.next = next_toon.id
                 await toon.save()
