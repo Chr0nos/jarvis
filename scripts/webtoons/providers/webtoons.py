@@ -33,11 +33,6 @@ class ToonManager(ToonManager):
     async def last(self, name: str) -> Optional['Document']:
         return await self.filter(name=name).order_by(["name", '-created', '-chapter']).first()
 
-    async def leech(self) -> None:
-        query = Q.raw({"$or": [{"finished": False}, {"finished": {'$exists': False}}]})
-        async for toon in self.filter(query).lasts():
-            await toon.leech()
-
 
 class WebToon(SoupMixin, AsyncToon):
     titleno: int

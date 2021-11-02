@@ -19,7 +19,7 @@ from contextlib import asynccontextmanager
 import traceback
 import bs4 as BeautifulSoup
 
-from motorized import Document, QuerySet
+from motorized import Document, QuerySet, Q
 from motorized.types import PydanticObjectId
 from pydantic import Field
 
@@ -121,6 +121,11 @@ class ToonManager(QuerySet):
             toon = await self.filter(name=toon_name).order_by(self.lasts_ordering_selector).first()
             yield toon
 
+    async def leech(self) -> None:
+        query = Q.raw({"$or": [{"finished": False}, {"finished": {'$exists': False}}]})
+        async for toon in self.filter(query).lasts():
+            await toon.leech()
+
 
 class AsyncToon(Document):
     name: str
@@ -130,6 +135,7 @@ class AsyncToon(Document):
     next: Optional[PydanticObjectId]
     lang: str
     corporate: bool = True
+    finished: bool = False
 
     _page_content: Optional[str] = None
     _cookies: aiohttp.CookieJar
@@ -229,6 +235,9 @@ class AsyncToon(Document):
         with TemporaryDirectory() as tmpd:
             with Chdir(tmpd):
                 pair_list = (await self.get_page_and_destination_pairs(tmpd))
+                if not pair_list:
+                    await self.log('No content', end='\n')
+                    return None
                 cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
                 try:
                     async with self.get_client() as client:
@@ -282,6 +291,9 @@ class AsyncToon(Document):
         """
         pass
 
+    async def load_extra_attributes(self, new_toon):
+        pass
+
     async def leech(self, pool_size: PositiveInt = 3) -> None:
         await self.log(f' --- {self.name} ---', end='\n')
         toon = self
@@ -298,6 +310,7 @@ class AsyncToon(Document):
                 next_toon_in_db: Optional[AsyncToon] = await self.objects.filter(name=next_toon.name, episode=next_toon.episode).first()
                 if next_toon_in_db:
                     next_toon = next_toon_in_db
+                    await self.load_extra_attributes(next_toon)
                 # otherwise save the new one
                 else:
                     next_toon.corporate = toon.corporate
@@ -315,7 +328,7 @@ class AsyncToon(Document):
         new_folder = os.path.join(folder, newname)
         os.rename(self.path, new_folder)
         # rename other chapters
-        await self.objects.collection.update_many({'name': self.name}, {'$set': {'name': newname}})
+        await self.objects.filter(name=self.name).update(name=newname)
         await self.reload()
 
     async def get_pages(self):
