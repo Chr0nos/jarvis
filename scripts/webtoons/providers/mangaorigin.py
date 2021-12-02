@@ -6,7 +6,7 @@ from motorized import Q
 
 class MangaOriginmManager(ToonManager):
     def from_url(self, url: str) -> "MangaOriginToon":
-        m = re.compile(r"^https://mangas-origines.fr/manga/([\w-]+)/([\w-]+)/")
+        m = re.compile(r"^https://mangas-origines.fr/catalogue/([\w-]+)/([\w-]+)/")
         name, chapter = m.match(url).groups()
         return self.model(name=name, episode=chapter)
 
@@ -30,7 +30,7 @@ class MangaOriginToon(SoupMixin, AsyncToon):
 
     @property
     def url(self) -> str:
-        return f'https://{self.domain}/manga/{self.name}/{self.chapter}/'
+        return f'https://{self.domain}/catalogue/{self.name}/{self.chapter}/?style=list'
 
     @property
     def chapter(self) -> str:

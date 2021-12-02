@@ -4,23 +4,23 @@ from typing import List, Optional
 
 from motorized import Document, QuerySet, Q
 from pydantic import Field
-from toonbase import AsyncToon, ToonNotAvailableError, SoupMixin, provide_soup
+from toonbase import AsyncToon, ToonNotAvailableError, SoupMixin, provide_soup, UserAgent
 import aiohttp
 import asyncio
 
 
 class LelScanManager(QuerySet):
     def from_name(self, name: str, episode: int = 1) -> 'LelScan':
-        instance = LelScan(
-            lang='fr',
-            name=name,
-            episode=episode
-        )
+        instance = LelScan(name=name, episode=episode)
         return instance
 
     async def chapters(self, name: str) -> List[str]:
-        url = f'https://lelscan-vf.co/manga/{name}'
-        async with aiohttp.request('get', url, headers={'Referer': url}) as response:
+        url = f'https://www.frscan.cc/manga/{name}'
+        headers = {
+            "Referer": url,
+            "User-Agent": UserAgent.FIREFOX.value
+        }
+        async with aiohttp.request('get', url, headers=headers) as response:
             response.raise_for_status()
             page_content = await response.read()
         page = BeautifulSoup.BeautifulSoup(page_content, 'lxml')
@@ -32,18 +32,18 @@ class LelScanManager(QuerySet):
 class LelScan(SoupMixin, AsyncToon):
     name: str
     episode: str
-    domain: str = 'https://lelscan-vf.co'
+    domain: str = 'lelscan-vf.co'
     created: datetime = Field(default_factory=datetime.now)
+    lang: str = "fr"
 
     class Mongo:
         manager_class = LelScanManager
         collection = 'toons'
-        local_fields = ('page_content',)
-        filters = Q(domain='https://lelscan-vf.co')
+        filters = Q(domain='lelscan-vf.co')
 
     @property
     def url(self) -> str:
-        return f'https://lelscan-vf.co/manga/{self.name}/{self.episode}'
+        return f'https://www.frscan.cc/manga/{self.name}/{self.episode}'
 
     @provide_soup
     async def get_pages(self, soup: BeautifulSoup.BeautifulSoup) -> List[str]:
@@ -54,7 +54,7 @@ class LelScan(SoupMixin, AsyncToon):
             raise ToonNotAvailableError from error
 
         def fix_url(url: str) -> str:
-            return ('https://lelscan-vf.co/' + '/'.join(url.split('/', 3)[3:])).strip()
+            return ('https://www.frscan.cc/' + '/'.join(url.split('/', 3)[3:])).strip()
 
         return list(fix_url(url) for url in urls)
 
@@ -75,13 +75,9 @@ async def get_from_chapters(name: str, chapters: Optional[List[str]] = None) -> 
     chapters: List[str] = await LelScan.objects.chapters(name) if not chapters else chapters
     chapters.sort(key=sorter)
 
+    #print(name, 'chapters', chapters)
     for chapter in chapters:
-        instance = LelScan(
-            domain='https://lelscan-vf.co',
-            lang='fr',
-            name=name,
-            episode=chapter
-        )
+        instance = LelScan(name=name, episode=chapter)
         if not instance.exists():
             try:
                 await instance.pull(pool_size=3)
@@ -91,30 +87,31 @@ async def get_from_chapters(name: str, chapters: Optional[List[str]] = None) -> 
 
 async def main():
     subs = [
-        'bijin-onna-joushi-takizawasan',
-        'boku-no-kanojo-sensei',
+        #'bijin-onna-joushi-takizawasan',
+        #'boku-no-kanojo-sensei',
         # 'bug-player',
-        'dandadan',
+        #'dandadan',
+        'cross-days',
         'dragon-ball-super',
-        'i-picked-up-a-demon-lord-as-a-maid',
-        'my-harem-grew-so-large-i-was-forced-to-ascend',
-        'my-wife-is-a-man',
-        'nana-to-kaoru-kokosei-no-sm-gokko',
-        'nana-to-kaoru-last-year',
+        #'i-picked-up-a-demon-lord-as-a-maid',
+        #'my-harem-grew-so-large-i-was-forced-to-ascend',
+        #'my-wife-is-a-man',
+        #'nana-to-kaoru-kokosei-no-sm-gokko',
+        #'nana-to-kaoru-last-year',
+        'girl-and-science',
         'one-piece',
-        'one-punch-man',
-        'otherworldly-sword-kings-survival-records',
-        'samayoeru-tenseishatachi-no-revival-game',
-        'sentouin-haken-shimasu',
-        'shinigami-bocchan-to-kuro-maid',
+        #'one-punch-man',
+        #'otherworldly-sword-kings-survival-records',
+        #'samayoeru-tenseishatachi-no-revival-game',
+        #'sentouin-haken-shimasu',
+        #'shinigami-bocchan-to-kuro-maid',
         'solo-leveling',
-        'time-stop-brave',
-        'touch-on',
+        'please-put-these-on-takaminesan',
+        #'time-stop-brave',
+        #'touch-on',
     ]
-
     for scan_name in subs:
         await get_from_chapters(scan_name)
-
 
 if __name__ == "__main__":
     asyncio.run(main())

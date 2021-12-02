@@ -69,7 +69,7 @@ class ToomicManager(ToonManager):
 
     def copy(self) -> "ToomicManager":
         instance = super().copy()
-        instance._driver = self.driver
+        #instance._driver = self.driver
         return instance
 
 

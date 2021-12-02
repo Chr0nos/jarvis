@@ -3,6 +3,7 @@ from datetime import datetime
 from functools import wraps
 import os
 import sys
+import ssl
 
 from typing import Dict, Optional, Any, Generator
 from aiohttp.helpers import get_running_loop
@@ -35,12 +36,7 @@ class ToonNotAvailableError(Exception):
 def raise_on_any_error_from_pool(pool_result: List[Optional[Exception]]):
     errors = list(filter(None, pool_result))
     for error in errors:
-        if isinstance(error, asyncio.exceptions.CancelledError):
-            raise error
-        if isinstance(error, KeyboardInterrupt):
-            raise error
-        print(traceback.format_exc(error))
-    assert not errors, errors
+        raise error
 
 
 class UserAgent(Enum):
@@ -162,6 +158,8 @@ class AsyncToon(Document):
 
     @property
     def path(self) -> str:
+        if not self.corporate:
+            return f'/mnt/aiur/Users/snicolet/Scans/Toons/Ero/{self.name}'
         return f'/mnt/aiur/Users/snicolet/Scans/Toons/{self.name}'
 
     @property
@@ -217,7 +215,7 @@ class AsyncToon(Document):
 
     async def download_links(self, client: aiohttp.ClientSession, cbz: zipfile.ZipFile, pair: Tuple[str, str]) -> None:
         output_filepath, url = pair
-        request = client.get(url)
+        request = client.get(url, ssl=ssl.SSLContext())
         async with request as response:
             response.raise_for_status()
             page_data = await response.read()
@@ -276,7 +274,7 @@ class AsyncToon(Document):
         if self._page_content:
             return self._page_content
         async with self.get_client() as client:
-            request = client.get(url=self.url)
+            request = client.get(url=self.url, ssl=ssl.SSLContext())
             async with request as response:
                 if response.status == 403:
                     print(await response.read())

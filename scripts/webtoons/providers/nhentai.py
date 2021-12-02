@@ -13,6 +13,7 @@ class NHentaiToon(SoupMixin, AsyncToon):
     domain: str = 'nhentai.xxx'
     page_content: Optional[str] = None
     _cdn = 'https://cdn.nhentai.xxx'
+    lang: str = 'en'
 
     class Mongo:
         collection = 'toons'
@@ -45,7 +46,7 @@ class NHentaiToon(SoupMixin, AsyncToon):
 
     @property
     def path(self):
-        return f'/mnt/aiur/Users/snicolet/Scans/Toons/nhentai'
+        return f'/mnt/aiur/Users/snicolet/Scans/Toons/Ero/nhentai'
 
     @property
     def cbz_path(self):

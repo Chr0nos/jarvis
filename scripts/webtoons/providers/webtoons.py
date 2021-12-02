@@ -96,3 +96,59 @@ class WebToon(SoupMixin, AsyncToon):
 async def pullall():
     async for toon in WebToon.objects.filter(finished=False).lasts():
         await toon.leech()
+
+
+
+# work for the v2
+
+
+from pydantic import BaseModel
+from typing import List
+
+class Chapter(BaseModel):
+    name: str
+    episode: int
+
+    def __str__(self):
+        return self.name
+
+
+class WebToonPacked(Document):
+    name: str
+    titleno: int
+    lang: str
+    finsihed: bool = False
+    domain: str = 'webtoons.com'
+    gender: str
+    chapters: List[Chapter] = []
+
+    @property
+    def chapter(self) -> str:
+        return self.chapters[-1].name
+
+    @property
+    def episode(self) -> int:
+        return self.chapters[-1].episode
+
+
+async def get_migrated_models():
+    out = []
+    toon_names = await WebToon.objects.distinct('name')
+    for toon_name in toon_names:
+        toon = await WebToon.objects.filter(name=toon_name, next=None).first()
+        toon_qs = WebToon.objects \
+            .filter(name=toon_name) \
+            .order_by(['created', 'episode'])
+        chapters = await toon_qs.distinct('chapter')
+        episodes = await toon_qs.distinct('episode')
+
+        instance = WebToonPacked(
+            name=toon.name,
+            titleno=toon.titleno,
+            lang=toon.lang,
+            gender=toon.gender,
+            chapters=[Chapter(name=name, episode=episode) for name, episode in zip(chapters, episodes)],
+            finished=toon.finished
+        )
+        out.append(instance)
+    return out
