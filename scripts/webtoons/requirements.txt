@@ -3,7 +3,7 @@ bs4==0.0.1
 certifi==2019.6.16
 chardet==3.0.4
 idna==2.8
-lxml==4.6.3
+lxml==4.6.5
 neo4j-driver==1.6.3
 neomodel==3.3.1
 neotime==1.7.4
