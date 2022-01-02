@@ -4,20 +4,19 @@ from functools import wraps
 import os
 import sys
 import ssl
+from io import BytesIO
 
 from typing import Dict, Optional, Any, Generator
 from aiohttp.helpers import get_running_loop
 import httpx
 from pydantic.types import PositiveInt
-from tempfile import TemporaryDirectory
 import zipfile
 from asyncio_pool import AioPool
 import aiohttp
 import aiofile
-from typing import Tuple, List
+from typing import Tuple, List, Union
 from enum import Enum
 from contextlib import asynccontextmanager
-import traceback
 import bs4 as BeautifulSoup
 
 from motorized import Document, QuerySet, Q
@@ -125,7 +124,7 @@ class ToonManager(QuerySet):
 
 class AsyncToon(Document):
     name: str
-    episode: int
+    episode: Union[int, str]
     domain: str
     created: datetime = Field(default_factory=datetime.now)
     next: Optional[PydanticObjectId]
@@ -140,6 +139,9 @@ class AsyncToon(Document):
     class Mongo:
         manager_class = ToonManager
         collection = 'toons'
+
+    class Config:
+        extra = 'allow'
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -194,34 +196,18 @@ class AsyncToon(Document):
         if flush:
             sys.stdout.flush()
 
-    async def get_page_and_destination_pairs(self, folder: str) -> List[Tuple[str, str]]:
-        pages = await self.get_pages()
-
-        def get_output_filename(index: int, page: str) -> str:
-            return os.path.join(folder, f'{index:03}.jpg')
-
-        return list([
-            (get_output_filename(i, page), page)
-            for i, page in enumerate(pages)
-        ])
-
     async def create_folder(self):
         if not os.path.exists(self.path):
             os.mkdir(self.path)
 
-    async def _save_page_data_to_disk(self, filepath: str, data: bytes) -> None:
-        async with aiofile.async_open(filepath, 'wb') as fp:
-            await fp.write(data)
-
     async def download_links(self, client: aiohttp.ClientSession, cbz: zipfile.ZipFile, pair: Tuple[str, str]) -> None:
-        output_filepath, url = pair
+        filename, url = pair
         request = client.get(url, ssl=ssl.SSLContext())
         async with request as response:
             response.raise_for_status()
-            page_data = await response.read()
+            page_data: bytes = await response.read()
             self.check_page_content(page_data)
-            await self._save_page_data_to_disk(output_filepath, page_data)
-            cbz.write(output_filepath, os.path.basename(output_filepath))
+            cbz.writestr(filename, page_data)
             await self._progress()
 
     async def pull(self, pool_size=3) -> None:
@@ -229,25 +215,24 @@ class AsyncToon(Document):
         await self.create_folder()
         await self.log(f'{self}: ')
 
+        cbz_io = BytesIO()
         pool = AioPool(size=pool_size)
-        with TemporaryDirectory() as tmpd:
-            with Chdir(tmpd):
-                pair_list = (await self.get_page_and_destination_pairs(tmpd))
-                if not pair_list:
-                    await self.log('No content', end='\n')
-                    return None
-                cbz = zipfile.ZipFile(self.cbz_path, 'w', zipfile.ZIP_DEFLATED)
-                try:
-                    async with self.get_client() as client:
-                        download_coroutine = lambda pair: self.download_links(client, cbz, pair)
-                        raise_on_any_error_from_pool(await pool.map(download_coroutine, pair_list))
-                    cbz.close()
-                except (KeyboardInterrupt, asyncio.exceptions.CancelledError) as error:
-                    cbz.close()
-                    os.unlink(cbz.filename)
-                    await self.log('removed incomplete cbz', end='\n')
-                    raise error
-            await self.log('\n')
+        pages = await self.get_pages()
+        if not pages:
+            await self.log('No content', end='\n')
+            return None
+        pair_list: List[Tuple[str, str]] = list([(f'{index:03}.jpg', url) for index, url in enumerate(pages)])
+        cbz = zipfile.ZipFile(cbz_io, 'w', zipfile.ZIP_DEFLATED)
+        async with self.get_client() as client:
+            download_coroutine = lambda pair: self.download_links(client, cbz, pair)
+            raise_on_any_error_from_pool(await pool.map(download_coroutine, pair_list))
+        cbz.close()
+        # async with aiofile.async_open(self.cbz_path, 'wb') as afp:
+        #     await afp.write(cbz_io.read())
+        cbz_io.seek(0)
+        with open(self.cbz_path, 'wb') as fp:
+            fp.write(cbz_io.read())
+        await self.log('\n')
 
     @asynccontextmanager
     async def get_client(self):

@@ -99,7 +99,7 @@ async def main():
         #'nana-to-kaoru-kokosei-no-sm-gokko',
         #'nana-to-kaoru-last-year',
         'girl-and-science',
-        'one-piece',
+        # 'one-piece',
         #'one-punch-man',
         #'otherworldly-sword-kings-survival-records',
         #'samayoeru-tenseishatachi-no-revival-game',
