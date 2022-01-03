@@ -1,6 +1,5 @@
-from selenium import webdriver
-from bs4 import BeautifulSoup
-from newtoon import Chapter, WebToonPacked
+from newtoon import Chapter, WebToonPacked, SeleniumMixin
+from motorized import Q
 from typing import Optional, List
 import re
 
@@ -34,21 +33,6 @@ class TbateChapter(Chapter):
         return list(filter(lambda chapter: chapter > self, await self._parent.get_chapters_from_website()))
 
 
-class SeleniumMixin:
-    _driver: Optional[webdriver.Firefox] = None
-
-    @property
-    def driver(self) -> webdriver.Firefox:
-        if not self._driver:
-            self._driver = webdriver.Firefox()
-        return self._driver
-
-    async def parse_url(self, url: str) -> BeautifulSoup:
-        self.driver.get(url)
-        page = BeautifulSoup(self._driver.page_source, 'lxml')
-        return page
-
-
 class Tbate(SeleniumMixin, WebToonPacked):
     name: str = 'the-beginning-after-the-end-vf'
     domain: str = 'thebeginningaftertheend.fr'
@@ -57,6 +41,7 @@ class Tbate(SeleniumMixin, WebToonPacked):
 
     class Mongo:
         collection = 'webtoonpackeds'
+        filters = Q(domain='thebeginningaftertheend.fr')
 
     @property
     def url(self) -> str:

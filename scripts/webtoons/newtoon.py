@@ -1,20 +1,19 @@
 import os
 import re
 import sys
-from contextlib import asynccontextmanager
-import aiohttp
-from bs4 import BeautifulSoup, ResultSet, element
-from pprint import pprint
-from datetime import datetime
-from pydantic import HttpUrl, validator
-from typing import Optional, Any, Dict
-from motorized import Document, EmbeddedDocument, Field, QuerySet, connection, Q, mark_parents, PrivatesAttrsMixin
-from typing import List, AsyncGenerator, Tuple, Union, AsyncGenerator
-from toonbase import AsyncToon
 import zipfile
+from contextlib import asynccontextmanager
+from datetime import datetime
 from io import BytesIO
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union
+
+import aiohttp
 from asyncio_pool import AioPool
-import asyncio
+from bs4 import BeautifulSoup
+from motorized import (Document, EmbeddedDocument, Field, PrivatesAttrsMixin,
+                       QuerySet)
+from pydantic import HttpUrl, validator
+from selenium import webdriver
 
 
 FIREFOX = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0'
@@ -53,7 +52,30 @@ class Cbz:
             fp.write(self.io.read())
 
 
+class SeleniumMixin:
+    _driver: Optional[webdriver.Firefox] = None
+
+    @property
+    def driver(self) -> webdriver.Firefox:
+        if not self._driver:
+            self._driver = webdriver.Firefox()
+        return self._driver
+
+    async def parse_url(self, url: str) -> BeautifulSoup:
+        self.driver.get(url)
+        return BeautifulSoup(self.driver.page_source, 'lxml')
+
+
 class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
+    """
+    Describe ONE chapter of a webtoon.
+    Things to override:
+    properties:
+    - url
+    functions:
+    - get_pages_urls (return the list of urls)
+    - nexts (return the list of next chapters after the curent instance)
+    """
     name: str
     episode: Optional[int]
     _parent: Optional["WebToonPacked"]
@@ -150,6 +172,11 @@ class ToonManager(QuerySet):
 
 
 class WebToonPacked(Document):
+    """
+    Things to override:
+    properties:
+    - url
+    """
     name: str
     titleno: Optional[int]
     lang: str = Field(max_length=2)
@@ -253,86 +280,3 @@ class WebToonPacked(Document):
         if cookies is not None:
             jar.update_cookies(cookies)
         return jar
-
-
-async def get_migrated_models(queryset: QuerySet = AsyncToon.objects) -> List[WebToonPacked]:
-    out = []
-    toon_names = await queryset.distinct('name')
-    for toon_name in toon_names:
-        toon = await queryset.filter(name=toon_name, next=None).first()
-        toon_qs = queryset \
-            .filter(name=toon_name) \
-            .order_by(['created', 'episode'])
-        chapters = await toon_qs.distinct('chapter')
-        episodes = await toon_qs.distinct('episode')
-        chapters_len = len(chapters)
-        episodes_len = len(episodes)
-        delta = episodes_len - chapters_len
-        if delta > 0:
-            chapters.extend([None for _ in range(delta)])
-
-        instance = WebToonPacked(
-            name=toon.name,
-            titleno=getattr(toon, 'titleno', None),
-            lang=toon.lang,
-            gender=getattr(toon, 'gender', None),
-            chapters=[
-                Chapter(
-                    name=name if name else episode,
-                    episode=episode,
-                )
-                for name, episode in zip(chapters, episodes)
-            ],
-            finished=toon.finished,
-            domain=toon.domain,
-            corporate=toon.corporate,
-        )
-        out.append(instance)
-    return out
-
-
-async def check_for_anomalies(models: List[WebToonPacked], targets: QuerySet) -> None:
-    print(targets._query)
-    if len(models) != len(await targets.distinct('name')):
-        raise Exception('Missing migrations !')
-
-
-async def migrate():
-    targets = AsyncToon.objects \
-        .filter(Q(finished=False) | Q(finished__exists=False))
-
-    models = await get_migrated_models(targets)
-    await WebToonPacked.objects.drop()
-    for model in models:
-        await model.save()
-
-    # await check_for_anomalies(models, targets)
-    # pprint(await models[3].to_mongo())
-
-async def main():
-    from providers import WebToon
-
-    await connection.connect("mongodb://192.168.1.12:27017/test")
-    # await migrate()
-    # u = await WebToon.objects.get(name='unordinary')
-    # u.lang = 'en'
-    # mark_parents(u)
-    # x = await WebToon.from_url('https://www.webtoons.com/en/supernatural/underprin/ep-1/viewer?title_no=78&episode_no=1')
-    x = await WebToon.from_url('https://www.webtoons.com/fr/drama/une-seconde-chance/ep1/viewer?title_no=3832&episode_no=1')
-    # x = await WebToon.from_url('https://www.webtoons.com/fr/romance/lore-olympus/episode-1/viewer?title_no=1825&episode_no=1')
-    # await x.leech(8)
-    print(x)
-    mark_parents(x)
-    x.chapters = await x.chapters[0].others()
-    await x.save()
-
-
-    # await u.save()
-    # pairs = [pair async for pair in u.chapters[0]]
-    # print(*pairs, sep='\n')
-
-    await connection.disconnect()
-
-
-if __name__ == '__main__':
-    asyncio.run(main())
