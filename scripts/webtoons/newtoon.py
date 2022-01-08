@@ -27,7 +27,7 @@ def raise_on_any_error_from_pool(pool_result: List[Optional[Exception]]):
         raise error
 
 
-class Cbz:
+class InMemoryZipFile:
     def __init__(self, filename: str):
         self.io = BytesIO()
         self.cbz = zipfile.ZipFile(self.io, 'w', zipfile.ZIP_DEFLATED)
@@ -110,7 +110,7 @@ class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
             return
 
         pool = AioPool(pool_size)
-        cbz = Cbz(self.cbz_path)
+        cbz = InMemoryZipFile(self.cbz_path)
 
         async with self._parent.get_client() as client:
             async def download_coroutine(pair: Tuple[str, str]):
@@ -166,9 +166,9 @@ class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
 
 
 class ToonManager(QuerySet):
-    async def leech(self) -> None:
+    async def leech(self, pool_size: int = 3) -> None:
         async for toon in self:
-            await toon.leech()
+            await toon.leech(pool_size)
 
 
 class WebToonPacked(Document):

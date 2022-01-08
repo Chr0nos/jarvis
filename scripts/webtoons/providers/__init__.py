@@ -4,3 +4,4 @@ from .mangaorigin import MangaOriginToon
 from .toomics import Toomic
 from .scantrad import ScanTrad
 from .tbate import Tbate
+from .scan1 import ScanOne

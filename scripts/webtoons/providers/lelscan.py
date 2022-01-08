@@ -80,7 +80,7 @@ async def get_from_chapters(name: str, chapters: Optional[List[str]] = None) -> 
         instance = LelScan(name=name, episode=chapter)
         if not instance.exists():
             try:
-                await instance.pull(pool_size=3)
+                await instance.pull(pool_size=1)
             except ToonNotAvailableError:
                 await instance.log('Not available', end='\n')
 

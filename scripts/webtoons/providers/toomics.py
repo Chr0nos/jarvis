@@ -7,12 +7,12 @@ from selenium import webdriver
 from selenium.common.exceptions import UnexpectedAlertPresentException
 from motorized import Q
 from toonbase import AsyncToon, ToonManager
+from newtoon import SeleniumMixin
 
 
-class ToomicManager(ToonManager):
+class ToomicManager(SeleniumMixin, ToonManager):
     domain = 'toomics.com'
     lang = 'fr'
-    _driver: Optional[webdriver.Firefox] = None
 
     def from_url(self, url, name=None) -> Optional["Toomic"]:
         m = re.compile(r'^https://([\w.]+)/(\w+)/webtoon/detail/code/(\d+)/'
@@ -60,12 +60,6 @@ class ToomicManager(ToonManager):
         # click on the submit button
         driver.find_element_by_id('login_fieldset') \
             .find_element_by_tag_name('button').click()
-
-    @property
-    def driver(self) -> webdriver.Firefox:
-        if self._driver is None:
-            self._driver = webdriver.Firefox()
-        return self._driver
 
     def copy(self) -> "ToomicManager":
         instance = super().copy()
