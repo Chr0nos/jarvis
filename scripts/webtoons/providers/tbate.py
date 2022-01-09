@@ -37,7 +37,7 @@ class Tbate(SeleniumMixin, WebToonPacked):
     name: str = 'the-beginning-after-the-end-vf'
     domain: str = 'thebeginningaftertheend.fr'
     lang: str = 'fr'
-    chapters: List[TbateChapter]
+    chapters: List[TbateChapter] = []
 
     class Mongo:
         collection = 'webtoonpackeds'

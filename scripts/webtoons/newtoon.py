@@ -170,6 +170,10 @@ class ToonManager(QuerySet):
         async for toon in self:
             await toon.leech(pool_size)
 
+    async def drop(self):
+        # prevent droping the whole table, just drop the current filtering
+        await self.delete()
+
 
 class WebToonPacked(Document):
     """

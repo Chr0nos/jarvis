@@ -5,3 +5,4 @@ from .toomics import Toomic
 from .scantrad import ScanTrad
 from .tbate import Tbate
 from .scan1 import ScanOne
+from .bugplayer import BugPlayer

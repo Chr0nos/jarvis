@@ -38,6 +38,7 @@ class WebToonChapter(Chapter):
         rule = re.compile(r'^https://www.webtoons.com/(\w+)/([\w-]+)/[\w-]+/([\w-]+)/viewer\?title_no=(\d+)&episode_no=(\d+)')
         match = rule.match(url)
         if not match:
+            print(url)
             return None
         lang, gender, episode_name, _, episode_number = match.groups()
         chapter = cls(name=name or episode_name, episode=episode_number)
@@ -53,7 +54,7 @@ class WebToonChapter(Chapter):
             chapter = WebToonChapter.from_url(link, pretty_name)
             return chapter
 
-        return list([unwrap_ul(li) for li in chapters])
+        return list(filter(None, [unwrap_ul(li) for li in chapters]))
 
     async def get_page(self) -> BeautifulSoup:
         if self._page:
