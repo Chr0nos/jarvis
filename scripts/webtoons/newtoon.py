@@ -90,6 +90,18 @@ class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
                 return int(chapter)
         return value
 
+    @validator('name', pre=True)
+    def validate_name(cls, value: str) -> str:
+        try:
+            return value \
+                .replace('"', "") \
+                .replace('/', '') \
+                .replace('*','') \
+                .replace('&amp;', '&') \
+                .replace('&#39;', '\'')
+        except Exception:
+            return value
+
     def __str__(self) -> str:
         return self.name
 
@@ -233,6 +245,8 @@ class WebToonPacked(Document):
             chapter._parent = self
             await chapter.pull(pool_size)
 
+        if not self.chapters:
+            return
         nexts = await self.chapters[-1].nexts()
         if not nexts:
             return

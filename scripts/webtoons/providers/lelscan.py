@@ -26,6 +26,12 @@ class LelScanChapter(Chapter):
             in page.find('div', {'id': 'all'}).find_all('img')
         ])
 
+    async def nexts(self) -> List["LelScanChapter"]:
+        instance = await self._parent.from_name(self._parent.name)
+        chapters = list(filter(lambda chapter: chapter > self, instance.chapters))
+        mark_parents(instance, self)
+        return chapters
+
 
 class LelScan(WebToonPacked):
     domain: str = 'lelscan-vf.co'
@@ -47,7 +53,7 @@ class LelScan(WebToonPacked):
 
         def unwrap_h5(h5) -> Optional[LelScanChapter]:
             link = h5.find('a')['href']
-            title = h5.find('em').text
+            title = h5.find('em').text.strip()
             episode = link.split('/')[-1]
             try:
                 episode = int(episode)

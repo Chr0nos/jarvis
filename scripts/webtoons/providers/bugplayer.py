@@ -34,6 +34,7 @@ class BugPlayer(SeleniumMixin, WebToonPacked):
 
     class Mongo:
         filters = Q(domain='bug-player.com')
+        collection = 'webtoonpackeds'
         manager_class = ToonManager
 
     @property

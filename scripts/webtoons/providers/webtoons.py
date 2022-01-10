@@ -11,12 +11,14 @@ from bs4 import BeautifulSoup, ResultSet, element
 
 class WebToonChapter(Chapter):
     episode: int
+    key_name: Optional[str]
     _page: Optional[BeautifulSoup] = None
 
     @property
     def url(self) -> str:
+        key_name = self.key_name if self.key_name else self.name
         return f'https://www.webtoons.com/{self._parent.lang}/' \
-               f'{self._parent.gender}/{self._parent.name}/{self.name}' \
+               f'{self._parent.gender}/{self._parent.name}/{key_name}' \
                f'/viewer?title_no={self._parent.titleno}' \
                f'&episode_no={self.episode}'
 
@@ -41,7 +43,11 @@ class WebToonChapter(Chapter):
             print(url)
             return None
         lang, gender, episode_name, _, episode_number = match.groups()
-        chapter = cls(name=name or episode_name, episode=episode_number)
+        chapter = cls(
+            name=name or episode_name,
+            key_name=episode_name,
+            episode=episode_number
+        )
         return chapter
 
     async def others(self) -> List["WebToonChapter"]:
