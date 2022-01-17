@@ -5,7 +5,7 @@ from typing import Optional, List
 
 from motorized import Q, mark_parents
 
-from newtoon import Chapter, WebToonPacked, ToonManager
+from newtoon import Chapter, WebToonPacked, ToonManager, retry
 from bs4 import BeautifulSoup, ResultSet, element
 
 
@@ -76,6 +76,7 @@ class WebToon(WebToonPacked):
     titleno: int
     chapters: List[WebToonChapter]
     domain: str = 'webtoons.com'
+    titleno: Optional[int]
 
     class Mongo:
         collection = 'webtoonpackeds'
@@ -102,6 +103,7 @@ class WebToon(WebToonPacked):
             'countryCode': self.lang.upper() if self.lang != 'en' else 'US'
         }
 
+    @retry(3, AttributeError, delay=3)
     async def get_chapters_from_website(self, page_number: int = 1):
         url = self.url + f'&page={page_number}'
         print(f'Scanning for page {page_number} on {self.name}')

@@ -48,7 +48,7 @@ class Tbate(SeleniumMixin, WebToonPacked):
         return f'https://www.thebeginningaftertheend.fr/manga/{self.name}/'
 
     async def get_chapters_from_website(self) -> List[TbateChapter]:
-        page = await self.parse_url(self.url)
+        page = await self.parse_url(self.url, delay=2)
         chapters_ul = page.find('ul', class_='version-chap')
         chapters_lis = chapters_ul.find_all('li')
 

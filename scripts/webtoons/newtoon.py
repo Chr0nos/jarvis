@@ -5,8 +5,9 @@ import zipfile
 from contextlib import asynccontextmanager
 from datetime import datetime
 from io import BytesIO
-from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union, Type
 
+import asyncio
 import aiohttp
 from asyncio_pool import AioPool
 from bs4 import BeautifulSoup
@@ -14,6 +15,7 @@ from motorized import (Document, EmbeddedDocument, Field, PrivatesAttrsMixin,
                        QuerySet)
 from pydantic import HttpUrl, validator
 from selenium import webdriver
+import undetected_chromedriver as uc
 
 
 FIREFOX = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0'
@@ -25,6 +27,21 @@ def raise_on_any_error_from_pool(pool_result: List[Optional[Exception]]):
     errors = list(filter(None, pool_result))
     for error in errors:
         raise error
+
+
+def retry(count: int, *exceptions: List[Type[Exception]], delay: int = 0):
+    def wrapper(func):
+        async def decorator(*args, **kwargs):
+            for retry_index in range(count + 1):
+                try:
+                    return await func(*args, **kwargs)
+                except Exception as error:
+                    if type(error) in exceptions:
+                        if delay:
+                            await asyncio.sleep(delay)
+                        continue
+        return decorator
+    return wrapper
 
 
 class InMemoryZipFile:
@@ -53,17 +70,47 @@ class InMemoryZipFile:
 
 
 class SeleniumMixin:
-    _driver: Optional[webdriver.Firefox] = None
+    _driver: Optional[Union[webdriver.Firefox, webdriver.Chrome]] = None
 
     @property
-    def driver(self) -> webdriver.Firefox:
+    def driver(self) -> Union[webdriver.Firefox, webdriver.Chrome]:
         if not self._driver:
-            self._driver = webdriver.Firefox()
+            # self._driver = webdriver.Firefox()
+            # self._driver = webdriver.Chrome()
+            self._driver = uc.Chrome()
         return self._driver
 
-    async def parse_url(self, url: str) -> BeautifulSoup:
-        self.driver.get(url)
+    async def parse_url(self, url: str, delay: int = 0) -> BeautifulSoup:
+        """The `delay` parameter wait for the page to load/execute the scripts
+        in the marionette, some websites require that otherwise the JS don't
+        have the time to populate divs/lists.
+        """
+        if self.url != self.driver.current_url:
+            self.driver.get(url)
+        if delay:
+            await asyncio.sleep(delay)
         return BeautifulSoup(self.driver.page_source, 'lxml')
+
+    async def parse_cloudflare_url(self, url: str, delay: int = 0) -> BeautifulSoup:
+        self.driver.get(url)
+        for index in range(20):
+            await asyncio.sleep(delay)
+            page = BeautifulSoup(self.driver.page_source, 'lxml')
+            # print(f'{index:02}: {self.driver.current_url}', x)
+            challenge_form = page.find('form', {'class': 'challenge-form'})
+            if not challenge_form:
+                return page
+            await asyncio.sleep(8)
+
+    async def post_cloudflare_challenge(self, page: BeautifulSoup) -> None:
+        challenge_form = page.find('form', {'class': 'challenge-form'})
+        challenge_link = challenge_form['action']
+        challenge_inputs = challenge_form.find_all('input')
+        payload = dict({
+            field['name']: field['value'] for field in challenge_inputs if field.get('value', None)
+        })
+        cookies = self.driver.get_cookies()
+        print('POST', challenge_link, payload, cookies)
 
 
 class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
@@ -194,9 +241,8 @@ class WebToonPacked(Document):
     - url
     """
     name: str
-    titleno: Optional[int]
     lang: str = Field(max_length=2)
-    finsihed: bool = False
+    finished: bool = False
     domain: str
     created: datetime = Field(default_factory=datetime.utcnow)
     updated: Optional[datetime] = None

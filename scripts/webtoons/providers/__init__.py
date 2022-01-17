@@ -6,3 +6,4 @@ from .scantrad import ScanTrad
 from .tbate import Tbate
 from .scan1 import ScanOne
 from .bugplayer import BugPlayer
+from .mangaowl import MangaOwl

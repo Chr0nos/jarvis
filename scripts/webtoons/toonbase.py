@@ -14,7 +14,7 @@ import zipfile
 from asyncio_pool import AioPool
 import aiohttp
 import aiofile
-from typing import Tuple, List, Union
+from typing import Tuple, List, Union, Type
 from enum import Enum
 from contextlib import asynccontextmanager
 import bs4 as BeautifulSoup

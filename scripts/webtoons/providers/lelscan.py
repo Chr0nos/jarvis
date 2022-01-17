@@ -13,13 +13,13 @@ class LelScanChapter(Chapter):
             episode = int(self.episode)
         except ValueError:
             episode = self.episode
-        return f'https://www.frscan.cc/manga/{self._parent.name}/{episode}'
+        return f'{self._parent.url}/{episode}'
 
     async def get_pages_urls(self) -> List[str]:
         page = await self._parent.parse_url(self.url)
 
         def fix_url(url: str) -> str:
-            return ('https://www.frscan.cc/' + '/'.join(url.split('/', 3)[3:])).strip()
+            return ('https://www.lelscan-vf.cc/' + '/'.join(url.split('/', 3)[3:])).strip()
 
         return list([
             fix_url(img['data-src']) for img
@@ -45,7 +45,7 @@ class LelScan(WebToonPacked):
 
     @property
     def url(self) -> str:
-        return f'https://www.frscan.cc/manga/{self.name}'
+        return f'https://www.lelscan-vf.cc/manga/{self.name}'
 
     async def discover_chapters(self) -> List[LelScanChapter]:
         page = await self.parse_url(self.url)
