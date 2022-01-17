@@ -420,7 +420,7 @@ encryption = ["pymongo[encryption] (>=3.12,<4)"]
 
 [[package]]
 name = "motorized"
-version = "0.4.6"
+version = "0.4.7"
 description = "Asyncio mongodb ODM based on pydantic"
 category = "main"
 optional = false
@@ -1232,8 +1232,8 @@ motor = [
     {file = "motor-2.5.1.tar.gz", hash = "sha256:663473f4498f955d35db7b6f25651cb165514c247136f368b84419cb7635f6b8"},
 ]
 motorized = [
-    {file = "motorized-0.4.6-py3-none-any.whl", hash = "sha256:d607dcba6ace4f00e40e15a31ac9b5c102895fac9979b8ce66e89531f8142d90"},
-    {file = "motorized-0.4.6.tar.gz", hash = "sha256:90b27e7595197f36b505e4eed9521141313b920b6a63b204ef6ffa887c6af116"},
+    {file = "motorized-0.4.7-py3-none-any.whl", hash = "sha256:d1e67e39518c671471e6a43c5576e107d60013e81d08e38b91359600a2ccb6e2"},
+    {file = "motorized-0.4.7.tar.gz", hash = "sha256:1374c005ba4b40b7b29397439fb4bdc07db780d3afdfda8b04fad961d7fffd27"},
 ]
 multidict = [
     {file = "multidict-5.2.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:3822c5894c72e3b35aae9909bef66ec83e44522faf767c0ad39e0e2de11d3b55"},

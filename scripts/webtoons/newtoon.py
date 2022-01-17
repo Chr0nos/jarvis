@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+from textwrap import wrap
 import zipfile
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -12,10 +13,11 @@ import aiohttp
 from asyncio_pool import AioPool
 from bs4 import BeautifulSoup
 from motorized import (Document, EmbeddedDocument, Field, PrivatesAttrsMixin,
-                       QuerySet)
+                       QuerySet, Q)
 from pydantic import HttpUrl, validator
 from selenium import webdriver
 import undetected_chromedriver as uc
+from functools import wraps
 
 
 FIREFOX = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0'
@@ -31,6 +33,7 @@ def raise_on_any_error_from_pool(pool_result: List[Optional[Exception]]):
 
 def retry(count: int, *exceptions: List[Type[Exception]], delay: int = 0):
     def wrapper(func):
+        @wraps(func)
         async def decorator(*args, **kwargs):
             for retry_index in range(count + 1):
                 try:
@@ -71,13 +74,27 @@ class InMemoryZipFile:
 
 class SeleniumMixin:
     _driver: Optional[Union[webdriver.Firefox, webdriver.Chrome]] = None
+    _headless: bool = True
+
+    @classmethod
+    def get_new_marionette(cls, headless: bool = False) -> uc.Chrome:
+        print('Requesting a new marionette')
+        options = uc.ChromeOptions()
+        if headless:
+            options.headless = True
+            options.add_argument('--headless')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--no-first-run --no-service-autorun --password-store=basic')
+        driver = uc.Chrome(options=options)
+        print('Got new marionette.')
+        return driver
 
     @property
     def driver(self) -> Union[webdriver.Firefox, webdriver.Chrome]:
         if not self._driver:
             # self._driver = webdriver.Firefox()
             # self._driver = webdriver.Chrome()
-            self._driver = uc.Chrome()
+            self._driver = self.get_new_marionette(self._headless)
         return self._driver
 
     async def parse_url(self, url: str, delay: int = 0) -> BeautifulSoup:
@@ -111,6 +128,42 @@ class SeleniumMixin:
         })
         cookies = self.driver.get_cookies()
         print('POST', challenge_link, payload, cookies)
+
+
+class LocalStorage:
+    """Allow to access to the local storage of the marionette from python.
+    """
+    def __init__(self, driver: uc.Chrome) :
+        self.driver = driver
+
+    def __len__(self):
+        return self.driver.execute_script("return window.localStorage.length;")
+
+    def items(self) :
+        return self.driver.execute_script( \
+            "var ls = window.localStorage, items = {}; " \
+            "for (var i = 0, k; i < ls.length; ++i) " \
+            "  items[k = ls.key(i)] = ls.getItem(k); " \
+            "return items; ")
+
+    def keys(self) :
+        return self.driver.execute_script( \
+            "var ls = window.localStorage, keys = []; " \
+            "for (var i = 0; i < ls.length; ++i) " \
+            "  keys[i] = ls.key(i); " \
+            "return keys; ")
+
+    def get(self, key):
+        return self.driver.execute_script("return window.localStorage.getItem(arguments[0]);", key)
+
+    def set(self, key, value):
+        self.driver.execute_script("window.localStorage.setItem(arguments[0], arguments[1]);", key, value)
+
+    def has(self, key):
+        return key in self.keys()
+
+    def remove(self, key):
+        self.driver.execute_script("window.localStorage.removeItem(arguments[0]);", key)
 
 
 class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
@@ -193,7 +246,11 @@ class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
 
     async def nexts(self) -> List["Chapter"]:
         # override this to implement the next pull feature
-        return []
+        get_chapters_func = getattr(self._parent, 'get_chapters_from_website')
+        if not get_chapters_func:
+            return []
+        chapters = await get_chapters_func()
+        return list(filter(lambda chapter: chapter > self, chapters))
 
     async def __aiter__(self) -> AsyncGenerator[Tuple[str, HttpUrl], None]:
         pages = await self.get_pages_urls()
@@ -225,8 +282,17 @@ class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
 
 
 class ToonManager(QuerySet):
-    async def leech(self, pool_size: int = 3) -> None:
-        async for toon in self:
+    async def leech(self, pool_size: int = 3, driver: Optional[uc.Chrome] = None) -> None:
+        # we want to iterate over all toons that are not explictly finished.
+        async for toon in self.filter(Q(finished=False) | Q(finished__exists=False)):
+            # if this can have a driver
+            if isinstance(toon, SeleniumMixin):
+                # and the driver in toon is set but not in global, we set it
+                if toon._driver and not driver:
+                    driver = toon._driver
+                # otherwise if we have a driver but not the toon, set set it
+                elif driver:
+                    toon._driver = driver
             await toon.leech(pool_size)
 
     async def drop(self):

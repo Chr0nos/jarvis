@@ -3,7 +3,14 @@ import os
 from typing import Optional, List, Literal
 from typing_extensions import Literal
 from motorized import mark_parents, Q
-from newtoon import Chapter, WebToonPacked, SeleniumMixin, ToonManager
+from newtoon import Chapter, WebToonPacked, SeleniumMixin, ToonManager, LocalStorage
+from selenium.common import exceptions
+from selenium.webdriver.remote.webelement import WebElement
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
+
+from undetected_chromedriver import Chrome
+from time import sleep
 
 
 class MangaOwlChapter(Chapter):
@@ -11,10 +18,13 @@ class MangaOwlChapter(Chapter):
 
     @property
     def url(self) -> str:
-        tr = self._parent.driver.execute_script('return tr;')
-        s = self._parent.driver.execute_script('return encodeURIComponent(btoa(document.location.origin));')
-        user = 0
-        return f'https://r.mangaowls.com/reader/{self._parent.code}/{self.id}/{user}?tr={tr}&s={s}'
+        # tr = self._parent.driver.execute_script('return tr;')
+        # s = self._parent.driver.execute_script('return encodeURIComponent(btoa(document.location.origin));')
+        # user = 0
+        # return f'https://r.mangaowls.com/reader/{self._parent.code}/{self.id}/{user}?tr={tr}&s={s}'
+        self.click()
+        url: str = self._parent.driver.current_url
+        return url
 
     async def get_pages_urls(self) -> List[str]:
         await self._parent.parse_url(self._parent.url)
@@ -27,6 +37,34 @@ class MangaOwlChapter(Chapter):
     def cbz_path(self) -> str:
         name = getattr(self, self._parent.chapters_naming)
         return os.path.join(self._parent.path, f'{name}.cbz')
+
+    def click(self) -> None:
+        driver: Chrome = self._parent.driver
+
+        # avoid the "adult content" warning
+        storage = LocalStorage(driver)
+        storage.set('mgo_warning', 'true')
+
+        # go back to the chapters's list
+        driver.get(self._parent.url)
+        sleep(3)
+
+        # getting the <ul id='simpleList'>
+        chapters_list: WebElement = driver.find_element_by_id('simpleList')
+
+        # move the cursor over the chapter's list.
+        ActionChains(driver).move_to_element(chapters_list).perform()
+        link = chapters_list.find_element(By.XPATH, f"//a[@chapter-id='{self.id}']")
+
+        # prevent thoses morrons to open the link in a new tab...
+        driver.execute_script("arguments[0].target='_self';", link)
+
+        # actually click on the link
+        actions = ActionChains(driver)
+        actions.move_to_element(link).click().perform()
+
+        # let the time to update the page.
+        sleep(1)
 
 
 class MangaOwl(SeleniumMixin, WebToonPacked):
@@ -77,6 +115,10 @@ class MangaOwl(SeleniumMixin, WebToonPacked):
         ])
 
     def rename_chapters(self) -> None:
+        """Rename local files from the current cbz name
+        (based on self.name) to new naming convention
+        (based on self._parent.chapers_naming)
+        """
         root_path = self.path
         for chapter in self.chapters:
             chapter._parent = self
