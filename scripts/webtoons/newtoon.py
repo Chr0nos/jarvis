@@ -6,7 +6,7 @@ import zipfile
 from contextlib import asynccontextmanager
 from datetime import datetime
 from io import BytesIO
-from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple, Union, Type
+from typing import Any, AsyncGenerator, Coroutine, Dict, List, Optional, Tuple, Union, Type, Callable
 
 import asyncio
 import aiohttp
@@ -47,6 +47,20 @@ def retry(count: int, *exceptions: List[Type[Exception]], delay: int = 0):
     return wrapper
 
 
+def error_handler(error: Type[Exception], message: Optional[str] = None):
+    def decorator(func: Callable) -> Coroutine:
+        @wraps(func)
+        async def wrapper(*args, **kwargs) -> Optional[Any]:
+            try:
+                return await func(*args, **kwargs)
+            except error:
+                if message:
+                    print(message)
+                return None
+        return wrapper
+    return decorator
+
+
 class InMemoryZipFile:
     def __init__(self, filename: str):
         self.io = BytesIO()
@@ -74,7 +88,7 @@ class InMemoryZipFile:
 
 class SeleniumMixin:
     _driver: Optional[Union[webdriver.Firefox, webdriver.Chrome]] = None
-    _headless: bool = True
+    _headless: bool = False
 
     @classmethod
     def get_new_marionette(cls, headless: bool = False) -> uc.Chrome:
@@ -113,7 +127,7 @@ class SeleniumMixin:
         for index in range(20):
             await asyncio.sleep(delay)
             page = BeautifulSoup(self.driver.page_source, 'lxml')
-            # print(f'{index:02}: {self.driver.current_url}', x)
+            # print(f'{index:02}: {self.driver.current_url}')
             challenge_form = page.find('form', {'class': 'challenge-form'})
             if not challenge_form:
                 return page

@@ -2,6 +2,7 @@ from typing import List, Optional
 from pydantic import Field
 from motorized import Q, mark_parents
 from newtoon import Chapter, WebToonPacked, ToonManager, SeleniumMixin
+from undetected_chromedriver import Chrome
 
 
 class BugPlayerChapter(Chapter):
@@ -60,8 +61,9 @@ class BugPlayer(SeleniumMixin, WebToonPacked):
         ])
 
     @classmethod
-    async def from_scratch(cls):
+    async def from_scratch(cls, driver: Optional[Chrome] = None):
         instance = cls()
+        instance._driver = driver
         instance.chapters = await instance.get_chapters()
         mark_parents(instance)
         return instance

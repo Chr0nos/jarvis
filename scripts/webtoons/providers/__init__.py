@@ -7,3 +7,4 @@ from .scantrad import ScanTrad
 from .tbate import Tbate
 from .toomics import Toomic
 from .webtoons import WebToon
+from .mangascan import MangaScan

@@ -3,7 +3,7 @@ import os
 from typing import Optional, List, Literal
 from typing_extensions import Literal
 from motorized import mark_parents, Q
-from newtoon import Chapter, WebToonPacked, SeleniumMixin, ToonManager, LocalStorage
+from newtoon import Chapter, WebToonPacked, SeleniumMixin, ToonManager, LocalStorage, error_handler
 from selenium.common import exceptions
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
@@ -11,6 +11,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 
 from undetected_chromedriver import Chrome
 from time import sleep
+from aiohttp.client_exceptions import ClientResponseError
 
 
 class MangaOwlChapter(Chapter):
@@ -83,6 +84,10 @@ class MangaOwl(SeleniumMixin, WebToonPacked):
     @property
     def url(self) -> str:
         return f'https://mangaowl.net/single/{self.code}/{self.name}'
+
+    @error_handler(ClientResponseError, 'Miserable failure')
+    async def leech(self, *args, **kwargs):
+        return await super().leech(*args, **kwargs)
 
     @classmethod
     async def from_url(cls, url: str) -> Optional["MangaOwl"]:
