@@ -161,8 +161,8 @@ class AsyncToon(Document):
     @property
     def path(self) -> str:
         if not self.corporate:
-            return f'/mnt/aiur/Users/snicolet/Scans/Toons/Ero/{self.name}'
-        return f'/mnt/aiur/Users/snicolet/Scans/Toons/{self.name}'
+            return f'/mnt/aiur/Scans/Toons/Ero/{self.name}'
+        return f'/mnt/aiur/Scans/Toons/{self.name}'
 
     @property
     def cbz_path(self) -> str:

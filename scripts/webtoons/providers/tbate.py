@@ -50,6 +50,9 @@ class Tbate(SeleniumMixin, WebToonPacked):
     async def get_chapters_from_website(self) -> List[TbateChapter]:
         page = await self.parse_url(self.url, delay=2)
         chapters_ul = page.find('ul', class_='version-chap')
+        if chapters_ul is None:
+            print('Warning: tbate can\'t get chapters')
+            return self.chapters
         chapters_lis = chapters_ul.find_all('li')
 
         links = [li.find('a')['href'] for li in chapters_lis]

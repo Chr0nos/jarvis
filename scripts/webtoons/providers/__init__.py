@@ -8,3 +8,4 @@ from .tbate import Tbate
 from .toomics import Toomic
 from .webtoons import WebToon
 from .mangascan import MangaScan
+from .manhwa import Manhwa

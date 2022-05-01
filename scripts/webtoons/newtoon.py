@@ -18,6 +18,7 @@ from pydantic import HttpUrl, validator
 from selenium import webdriver
 import undetected_chromedriver as uc
 from functools import wraps
+from PIL import Image, UnidentifiedImageError
 
 
 FIREFOX = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0'
@@ -28,7 +29,8 @@ CHROME = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, l
 def raise_on_any_error_from_pool(pool_result: List[Optional[Exception]]):
     errors = list(filter(None, pool_result))
     for error in errors:
-        raise error
+        if isinstance(error, Exception):
+            raise error
 
 
 def retry(count: int, *exceptions: List[Type[Exception]], delay: int = 0):
@@ -226,20 +228,31 @@ class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
     def exists(self) -> bool:
         return os.path.exists(self.cbz_path)
 
-    async def pull(self, pool_size: int = 3) -> None:
+    async def pull(self, pool_size: int = 3) -> bool:
+        """
+        download the files related to this chapter.
+        return True if the image is present on disk
+        False otherwise
+        Note that presence on disk can be True in multiples cases:
+        - it was here before
+        - it was downloaded successfully
+        """
         if self.exists():
-            return
+            return True
         self._start_pull()
         pair_list = list([(filename, str(url)) async for filename, url in self])
         if not pair_list:
             self._no_content()
-            return
+            return False
 
         pool = AioPool(pool_size)
         cbz = InMemoryZipFile(self.cbz_path)
 
         async with self._parent.get_client() as client:
-            async def download_coroutine(pair: Tuple[str, str]):
+            async def download_coroutine(pair: Tuple[str, str]) -> bool:
+                """return True if the file has been downloaded, False otherwise
+                may raise errors that will be present in results
+                """
                 filename, url = pair
                 # Download the page
                 response = await client.get(url)
@@ -247,13 +260,30 @@ class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
 
                 # Save the page content to the cbz file
                 page_content: bytes = await response.read()
+                if not await self.is_valid_page_content(page_content):
+                    return False
                 cbz.write(filename, page_content)
                 self._progress()
+                return True
 
             result = await pool.map(download_coroutine, pair_list)
             raise_on_any_error_from_pool(result)
+            if not any(result):
+                self.log('Empty, removed')
+                return False
         cbz.save()
         self.log('\n', end='')
+        return True
+
+    async def is_valid_page_content(self, page_content: bytes) -> bool:
+        """return True if the page content seems to be a valid image
+        False otherwise
+        """
+        try:
+            image = Image.open(BytesIO(page_content))
+            return True
+        except UnidentifiedImageError:
+            return False
 
     async def get_pages_urls(self) -> List[HttpUrl]:
         raise NotImplementedError
@@ -348,8 +378,8 @@ class WebToonPacked(Document):
     @property
     def path(self) -> str:
         if not self.corporate:
-            return f'/mnt/aiur/Users/snicolet/Scans/Toons/Ero/{self.name}'
-        return f'/mnt/aiur/Users/snicolet/Scans/Toons/{self.name}'
+            return f'/mnt/aiur/Scans/Toons/Ero/{self.name}'
+        return f'/mnt/aiur/Scans/Toons/{self.name}'
 
     def update_chapters_parent(self) -> None:
         for chapter in self.chapters:
@@ -408,9 +438,10 @@ class WebToonPacked(Document):
         async with session as client:
             yield client
 
-    async def parse_url(self, url: str) -> BeautifulSoup:
+    async def parse_url(self, url: str, method: str = 'get') -> BeautifulSoup:
         async with self.get_client() as client:
-            request = client.get(url)
+            func = getattr(client, method)
+            request = func(url)
             async with request as response:
                 response.raise_for_status()
                 page_content = await response.read()
