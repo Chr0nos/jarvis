@@ -18,7 +18,7 @@ pydantic = "^1.8.2"
 motor = "^2.5.1"
 bs4 = "^0.0.1"
 Brotli = "^1.0.9"
-httpx = {extras = ["http2"], version = "^0.20.0"}
+httpx = {extras = ["http2"], version = "^0.23.0"}
 aiohttp = {extras = ["brotli"], version = "^3.7.4"}
 xvfbwrapper = "^0.2.9"
 motorized = "^0.4.0"
