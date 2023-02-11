@@ -8,7 +8,6 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.9"
 beautifulsoup4 = "^4.8.2"
-ipython = "^7.12.0"
 click = "^7.0"
 lxml = "^4.5.0"
 aiofile = "^3.5.0"
@@ -18,15 +17,18 @@ pydantic = "^1.8.2"
 motor = "^2.5.1"
 bs4 = "^0.0.1"
 Brotli = "^1.0.9"
-httpx = {extras = ["http2"], version = "^0.20.0"}
 aiohttp = {extras = ["brotli"], version = "^3.7.4"}
 xvfbwrapper = "^0.2.9"
 motorized = "^0.4.0"
-certifi = "^2021.10.8"
 undetected-chromedriver = "^3.1.3"
 Pillow = "^9.1.0"
+httpx = "^0.23.3"
+certifi = "^2022.12.7"
 
 [tool.poetry.dev-dependencies]
+
+[tool.poetry.group.dev.dependencies]
+ipython = "^8.10.0"
 
 [build-system]
 requires = ["poetry>=0.12"]
