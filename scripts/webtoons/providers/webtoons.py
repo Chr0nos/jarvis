@@ -7,6 +7,7 @@ from motorized import Q, mark_parents
 
 from newtoon import Chapter, WebToonPacked, ToonManager, retry
 from bs4 import BeautifulSoup, ResultSet, element
+from urllib.parse import unquote
 
 
 class WebToonChapter(Chapter):
@@ -37,17 +38,19 @@ class WebToonChapter(Chapter):
 
     @classmethod
     def from_url(cls, url: str, name: str = None) -> Optional["WebToonChapter"]:
-        rule = re.compile(r'^https://www.webtoons.com/(\w+)/([\w-]+)/[\w-]+/([\w-]+)/viewer\?title_no=(\d+)&episode_no=(\d+)')
+        rule = re.compile(r'^https://www\.webtoons\.com/(\w+)/([\w-]+)/([\w-]+)/(.+)/viewer\?title_no=\d+&episode_no=(\d+)')
         match = rule.match(url)
         if not match:
-            print(url)
+            print('no regex match for url', url)
             return None
-        lang, gender, episode_name, _, episode_number = match.groups()
+        lang, gender, _, episode_name, episode_number = match.groups()
+        episode_name = unquote(episode_name)
         chapter = cls(
             name=name or episode_name,
             key_name=episode_name,
             episode=episode_number
         )
+        chapter.name = chapter.name.strip()
         return chapter
 
     async def others(self) -> List["WebToonChapter"]:
@@ -57,6 +60,8 @@ class WebToonChapter(Chapter):
         def unwrap_ul(li: element.NavigableString) -> WebToonChapter:
             link = li.find('a')['href']
             pretty_name = li.find('img')['alt']
+            if pretty_name:
+                pretty_name = pretty_name.strip()
             chapter = WebToonChapter.from_url(link, pretty_name)
             return chapter
 

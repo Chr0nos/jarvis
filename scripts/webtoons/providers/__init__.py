@@ -9,3 +9,5 @@ from .toomics import Toomic
 from .webtoons import WebToon
 from .mangascan import MangaScan
 from .manhwa import Manhwa
+from .manhuascan import ManHuaScan
+from .xunscans import XunScan

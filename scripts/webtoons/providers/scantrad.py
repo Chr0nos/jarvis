@@ -1,4 +1,3 @@
-import re
 import aiohttp
 import bs4
 from toonbase import AsyncToon, ToonManager, SoupMixin, UserAgent

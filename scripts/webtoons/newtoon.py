@@ -101,6 +101,11 @@ class SeleniumMixin:
             options.add_argument('--headless')
         options.add_argument('--disable-gpu')
         options.add_argument('--no-first-run --no-service-autorun --password-store=basic')
+        extenssions_paths = [
+            '/usr/lib/ublock-origin'
+        ]
+        for extenssion in extenssions_paths:
+            options.add_argument(f'--load-extension={extenssion}')
         driver = uc.Chrome(options=options)
         print('Got new marionette.')
         return driver
@@ -118,10 +123,8 @@ class SeleniumMixin:
         in the marionette, some websites require that otherwise the JS don't
         have the time to populate divs/lists.
         """
-        if self.url != self.driver.current_url:
+        if url != self.driver.current_url:
             self.driver.get(url)
-        if delay:
-            await asyncio.sleep(delay)
         return BeautifulSoup(self.driver.page_source, 'lxml')
 
     async def parse_cloudflare_url(self, url: str, delay: int = 0) -> BeautifulSoup:
@@ -223,7 +226,7 @@ class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
 
     @property
     def cbz_path(self) -> str:
-        return os.path.join(self._parent.path, self.name + '.cbz')
+        return os.path.join(self._parent.path, self.name.strip() + '.cbz')
 
     def exists(self) -> bool:
         return os.path.exists(self.cbz_path)
@@ -326,7 +329,7 @@ class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
 
 
 class ToonManager(QuerySet):
-    async def leech(self, pool_size: int = 3, driver: Optional[uc.Chrome] = None) -> None:
+    async def leech(self, pool_size: int = 1, driver: Optional[uc.Chrome] = None) -> None:
         # we want to iterate over all toons that are not explictly finished.
         async for toon in self.filter(Q(finished=False) | Q(finished__exists=False)):
             # if this can have a driver
@@ -393,7 +396,7 @@ class WebToonPacked(Document):
         self.updated = datetime.utcnow()
         return await super().save(*args, **kwargs)
 
-    async def leech(self, pool_size: int = 3):
+    async def leech(self, pool_size: int = 1):
         await self.create_folder()
         print(f'--- {self.name} ---')
         # check for missing chapters on local

@@ -27,10 +27,17 @@ class MangaOwlChapter(Chapter):
         url: str = self._parent.driver.current_url
         return url
 
+    async def get_page_content(self, retries=10):
+        for _ in range(0, retries):
+            page = await self._parent.parse_cloudflare_url(self.url, delay=3)
+            if 'mangaowl' in self._parent.driver.current_url:
+                return page
+        raise Exception('cannot enforce self url' + self._parent.driver.current_url)
+
     async def get_pages_urls(self) -> List[str]:
         await self._parent.parse_url(self._parent.url)
-        page = await self._parent.parse_cloudflare_url(self.url, delay=3)
-        # print(page)
+
+        page = await self.get_page_content()
         reader = page.find('div', {'id': 'reader'})
         return list([img['data-src'] for img in reader.find_all('img', {'class': 'owl-lazy'})])
 
