@@ -19,6 +19,7 @@ from selenium import webdriver
 import undetected_chromedriver as uc
 from functools import wraps
 from PIL import Image, UnidentifiedImageError
+import ssl
 
 
 FIREFOX = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0'
@@ -258,7 +259,7 @@ class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
                 """
                 filename, url = pair
                 # Download the page
-                response = await client.get(url)
+                response = await client.get(url, ssl=self.ssl_context)
                 response.raise_for_status()
 
                 # Save the page content to the cbz file
@@ -431,6 +432,10 @@ class WebToonPacked(Document):
 
     def get_cookies(self) -> Dict[str, str]:
         return {}
+
+    @property
+    def ssl_context(self) -> ssl.SSLContext | None:
+        return None
 
     @asynccontextmanager
     async def get_client(self):

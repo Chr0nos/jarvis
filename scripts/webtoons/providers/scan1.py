@@ -2,6 +2,7 @@ import re
 from typing import List, Optional
 from motorized import mark_parents, Q
 from newtoon import Chapter, WebToonPacked, ToonManager
+import ssl
 
 
 class ScanOneChapter(Chapter):
