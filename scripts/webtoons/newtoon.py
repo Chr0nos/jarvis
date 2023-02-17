@@ -259,7 +259,7 @@ class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
                 """
                 filename, url = pair
                 # Download the page
-                response = await client.get(url, ssl=self.ssl_context)
+                response = await client.get(url, ssl=self._parent.ssl_context)
                 response.raise_for_status()
 
                 # Save the page content to the cbz file
