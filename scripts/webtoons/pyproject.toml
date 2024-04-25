@@ -12,7 +12,7 @@ click = "^7.0"
 lxml = "^4.5.0"
 aiofile = "^3.5.0"
 asyncio-pool = "^0.5.2"
-pydantic = "^1.8.2"
+pydantic = "^1.10.13"
 bs4 = "^0.0.1"
 Brotli = "^1.0.9"
 aiohttp = {extras = ["brotli"], version = "^3.9.0"}
