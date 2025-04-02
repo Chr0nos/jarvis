@@ -14,7 +14,6 @@ import aiofile
 import aiohttp
 import bs4 as BeautifulSoup
 import httpx
-from aiohttp.helpers import get_running_loop
 from asyncio_pool import AioPool
 from motorized import Document, Q, QuerySet
 from motorized.types import PydanticObjectId
@@ -154,7 +153,7 @@ class AsyncToon(Document):
         return f'{self.name} {self.episode}'
 
     def get_cookie_jar(self) -> aiohttp.CookieJar:
-        loop = get_running_loop()
+        loop = asyncio.get_event_loop()
         jar = aiohttp.CookieJar(loop=loop, unsafe=True, quote_cookie=self._quote_cookies)
         cookies: Optional[Dict] = self.get_cookies()
         if cookies is not None:
