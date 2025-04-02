@@ -1,27 +1,25 @@
 import asyncio
-from datetime import datetime
-from functools import wraps
 import os
-import sys
 import ssl
-from io import BytesIO
-
-from typing import Dict, Optional, Any, Generator
-from aiohttp.helpers import get_running_loop
-import httpx
-from pydantic.types import PositiveInt
+import sys
 import zipfile
-from asyncio_pool import AioPool
-import aiohttp
-import aiofile
-from typing import Tuple, List, Union, Type
-from enum import Enum
 from contextlib import asynccontextmanager
-import bs4 as BeautifulSoup
+from datetime import datetime
+from enum import Enum
+from functools import wraps
+from io import BytesIO
+from typing import Any, Dict, Generator, List, Optional, Tuple, Type, Union
 
-from motorized import Document, QuerySet, Q
+import aiofile
+import aiohttp
+import bs4 as BeautifulSoup
+import httpx
+from aiohttp.helpers import get_running_loop
+from asyncio_pool import AioPool
+from motorized import Document, Q, QuerySet
 from motorized.types import PydanticObjectId
 from pydantic import Field
+from pydantic.types import PositiveInt
 
 
 class ToonBaseUrlInvalidError(Exception):
@@ -116,10 +114,15 @@ class ToonManager(QuerySet):
             toon = await self.filter(name=toon_name).order_by(self.lasts_ordering_selector).first()
             yield toon
 
-    async def leech(self) -> None:
+    async def leech(self) -> list[Exception]:
         query = Q.raw({"$or": [{"finished": False}, {"finished": {'$exists': False}}]})
+        errors: list[Exception] = []
         async for toon in self.filter(query).lasts():
-            await toon.leech()
+            try:
+                await toon.leech()
+            except Exception as e:
+                errors.append(e)
+        return errors
 
 
 class AsyncToon(Document):

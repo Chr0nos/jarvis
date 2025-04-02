@@ -1,26 +1,26 @@
+import asyncio
 import os
 import re
+import ssl
 import sys
-from textwrap import wrap
 import zipfile
 from contextlib import asynccontextmanager
 from datetime import datetime
+from functools import wraps
 from io import BytesIO
-from typing import Any, AsyncGenerator, Coroutine, Dict, List, Optional, Tuple, Union, Type, Callable
+from textwrap import wrap
+from typing import (Any, AsyncGenerator, Callable, Coroutine, Dict, List,
+                    Optional, Tuple, Type, Union)
 
-import asyncio
 import aiohttp
+import undetected_chromedriver as uc
 from asyncio_pool import AioPool
 from bs4 import BeautifulSoup
 from motorized import (Document, EmbeddedDocument, Field, PrivatesAttrsMixin,
-                       QuerySet, Q)
+                       Q, QuerySet)
+from PIL import Image, UnidentifiedImageError
 from pydantic import HttpUrl, validator
 from selenium import webdriver
-import undetected_chromedriver as uc
-from functools import wraps
-from PIL import Image, UnidentifiedImageError
-import ssl
-
 
 FIREFOX = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0'
 CHROME_LINUX = 'Mozilla/5.0 (X11; Linux x86_64; rv:89.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -330,7 +330,8 @@ class Chapter(PrivatesAttrsMixin, EmbeddedDocument):
 
 
 class ToonManager(QuerySet):
-    async def leech(self, pool_size: int = 1, driver: Optional[uc.Chrome] = None) -> None:
+    async def leech(self, pool_size: int = 1, driver: Optional[uc.Chrome] = None) -> list[Exception]:
+        errors: list[Exception] = []
         # we want to iterate over all toons that are not explictly finished.
         async for toon in self.filter(Q(finished=False) | Q(finished__exists=False)):
             # if this can have a driver
@@ -341,7 +342,11 @@ class ToonManager(QuerySet):
                 # otherwise if we have a driver but not the toon, set set it
                 elif driver:
                     toon._driver = driver
-            await toon.leech(pool_size)
+            try:
+                await toon.leech(pool_size)
+            except Exception as error:
+                errors.append(error)
+        return errors
 
     async def drop(self):
         # prevent droping the whole table, just drop the current filtering
@@ -382,7 +387,7 @@ class WebToonPacked(Document):
     @property
     def path(self) -> str:
         if not self.corporate:
-            return f'/mnt/aiur/Scans/Toons/Ero/{self.name}'
+            return f'/mnt/aiur/Scans/Ero/{self.name}'
         return f'/mnt/aiur/Scans/Toons/{self.name}'
 
     def update_chapters_parent(self) -> None:

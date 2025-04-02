@@ -1,7 +1,9 @@
 import re
 from typing import Optional
-from toonbase import AsyncToon, ToonManager, SoupMixin
+
 from motorized import Q
+
+from toonbase import AsyncToon, SoupMixin, ToonManager
 
 
 class MangaOriginmManager(ToonManager):
@@ -10,9 +12,12 @@ class MangaOriginmManager(ToonManager):
         name, chapter = m.match(url).groups()
         return self.model(name=name, episode=chapter)
 
-    async def leech(self):
+    async def leech(self) -> list[Exception]:
         async for toon in self.filter(next=None):
-            await toon.leech()
+            try:
+                await toon.leech()
+            except Exception as error:
+                return [error]
 
 
 class MangaOriginToon(SoupMixin, AsyncToon):
@@ -75,5 +80,7 @@ class MangaOriginToon(SoupMixin, AsyncToon):
         try:
             next_url = soup.find('div', {'class': 'nav-next'}).find('a')['href']
             return MangaOriginToon.objects.from_url(next_url)
+        except AttributeError:
+            return None
         except AttributeError:
             return None
